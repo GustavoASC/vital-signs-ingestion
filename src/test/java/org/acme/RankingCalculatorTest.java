@@ -11,7 +11,7 @@ public class RankingCalculatorTest {
 
     @BeforeEach
     public void setUp() {
-        calculator = new RankingCalculator();
+        calculator = new RankingCalculator(service -> 6);
     }
 
     @Test

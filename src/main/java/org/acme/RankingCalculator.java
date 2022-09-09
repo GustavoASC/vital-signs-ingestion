@@ -1,15 +1,7 @@
 package org.acme;
 
-public class RankingCalculator {
+public interface RankingCalculator {
 
-    private final ServicePriorityLocator servicePriorityLocator;
+    int calculate(int userPriority, String serviceName);
 
-    public RankingCalculator(ServicePriorityLocator servicePriorityLocator) {
-        this.servicePriorityLocator = servicePriorityLocator;
-    }
-
-    public int calculate(int userPriority, String serviceName) {
-        return userPriority + servicePriorityLocator.locate(serviceName);
-    }
-    
 }

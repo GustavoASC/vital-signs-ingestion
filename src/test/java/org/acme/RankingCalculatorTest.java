@@ -19,7 +19,7 @@ public class RankingCalculatorTest {
     private ServicePriorityLocator servicePriorityLocator;
 
     @InjectMocks
-    private RankingCalculator calculator;
+    private RankingCalculatorImpl calculator;
 
     @Test
     public void shouldCalculateRankingForUserAndService() {

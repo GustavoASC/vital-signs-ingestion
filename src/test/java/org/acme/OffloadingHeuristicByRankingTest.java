@@ -58,6 +58,50 @@ public class OffloadingHeuristicByRankingTest {
         }
 
         @Test
+        public void shouldNotOffloadWhenHigherThanOtherRankingsButOddAmountOfRankings() throws Throwable {
+                when(rankingCalculator.calculate(USER_PRIORITY, FOO_SERVICE))
+                                .thenReturn(9);
+                when(runningServicesInformationProvider.provideRankings())
+                                .thenReturn(Map.of(FOO_SERVICE, List.of(3, 7, 12)));
+
+                assertThat(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, FOO_SERVICE))
+                                .isFalse();
+        }
+
+        @Test
+        public void shouldNotOffloadWhenHigherThanOtherRankingsButOnlyOneRanking() throws Throwable {
+                when(rankingCalculator.calculate(USER_PRIORITY, FOO_SERVICE))
+                                .thenReturn(9);
+                when(runningServicesInformationProvider.provideRankings())
+                                .thenReturn(Map.of(FOO_SERVICE, List.of(7)));
+
+                assertThat(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, FOO_SERVICE))
+                                .isFalse();
+        }
+
+        @Test
+        public void shouldOffloadWhenLowerThanOtherRankingsButOddAmountOfRankings() throws Throwable {
+                when(rankingCalculator.calculate(USER_PRIORITY, FOO_SERVICE))
+                                .thenReturn(9);
+                when(runningServicesInformationProvider.provideRankings())
+                                .thenReturn(Map.of(FOO_SERVICE, List.of(3, 10, 12)));
+
+                assertThat(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, FOO_SERVICE))
+                                .isTrue();
+        }
+
+        @Test
+        public void shouldOffloadWhenLowerThanOtherRankingsButOnlyOneRanking() throws Throwable {
+                when(rankingCalculator.calculate(USER_PRIORITY, FOO_SERVICE))
+                                .thenReturn(9);
+                when(runningServicesInformationProvider.provideRankings())
+                                .thenReturn(Map.of(FOO_SERVICE, List.of(10)));
+
+                assertThat(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, FOO_SERVICE))
+                                .isTrue();
+        }
+
+        @Test
         public void shouldNotOffloadWhenRankingIsHigherThanOtherRankingsButOnlySameService() throws Throwable {
                 when(rankingCalculator.calculate(USER_PRIORITY, FOO_SERVICE))
                                 .thenReturn(MAX_RANKING);

@@ -6,7 +6,7 @@ import java.util.Map;
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class OffloadingHeuristicByRankingImpl {
+public class OffloadingHeuristicByRankingImpl implements OffloadingHeuristicByRanking {
 
     private final RankingCalculator rankingCalculator;
     private final RunningServicesProvider servicesProvider;

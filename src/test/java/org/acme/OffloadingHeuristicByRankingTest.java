@@ -35,7 +35,7 @@ public class OffloadingHeuristicByRankingTest {
         private RunningServicesProvider runningServicesInformationProvider;
 
         @InjectMocks
-        private OffloadingHeuristicByRanking offloadingHeuristicByRanking;
+        private OffloadingHeuristicByRankingImpl offloadingHeuristicByRanking;
 
         @AfterEach
         public void after() {

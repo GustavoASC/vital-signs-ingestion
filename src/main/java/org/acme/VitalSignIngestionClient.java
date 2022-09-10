@@ -10,6 +10,6 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 public interface VitalSignIngestionClient {
 
     @POST
-    Void ingestVitalSigns(String vitalSigns);
+    Void ingestVitalSigns(VigalSignIngestionClientInputDto input);
     
 }

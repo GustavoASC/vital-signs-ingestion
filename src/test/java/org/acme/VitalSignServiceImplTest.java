@@ -1,6 +1,7 @@
 package org.acme;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -19,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 public class VitalSignServiceImplTest {
 
         private static final String VITAL_SIGN = "{ \"heartbeat\": 100}";
+        private static final int USER_PRIORITY = 7;
 
         @InjectMocks
         VitalSignServiceImpl vitalSignService;
@@ -36,13 +38,16 @@ public class VitalSignServiceImplTest {
         @Mock
         ResourcesLocator resourcesLocator;
 
+        @Mock
+        OffloadingHeuristicByRanking offloadingHeuristicByRanking;
+
         @Test
-        public void shouldTriggerAllServicesLocallyWhenLowCpuUsed() {
+        public void shouldTriggerAllServicesLocallyWithLowCpuUsed() throws Throwable {
 
                 when(resourcesLocator.usedCpuPercentage())
                                 .thenReturn(74);
 
-                vitalSignService.ingestVitalSign(VITAL_SIGN);
+                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
                 verify(vitalSignIngestionClient, never())
                                 .ingestVitalSigns(any());
@@ -52,24 +57,82 @@ public class VitalSignServiceImplTest {
                                 .runAsyncHealthService("foo-function", VITAL_SIGN);
                 verify(serverlessFunctionClient, times(1))
                                 .runAsyncHealthService("bar-function", VITAL_SIGN);
-                verify(resourcesLocator, times(1))
+                verify(resourcesLocator, times(2))
                                 .usedCpuPercentage();
+                verify(offloadingHeuristicByRanking, never())
+                                .shouldOffloadVitalSigns(anyInt(), any());
         }
 
         @Test
-        public void shouldOffloadVitalSignsWithHighCpuUsed() {
+        public void shouldOffloadVitalSignsWithHighCpuUsed() throws Throwable {
 
                 when(resourcesLocator.usedCpuPercentage())
-                                .thenReturn(95);
+                                .thenReturn(90);
 
-                vitalSignService.ingestVitalSign(VITAL_SIGN);
+                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
+                verify(vitalSignIngestionClient, times(2))
+                                .ingestVitalSigns(any());
                 verify(vitalSignIngestionClient, times(1))
-                                .ingestVitalSigns(VITAL_SIGN);
+                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("foo-function", VITAL_SIGN, USER_PRIORITY));
+                verify(vitalSignIngestionClient, times(1))
+                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
                 verify(serverlessFunctionClient, never())
                                 .runAsyncHealthService(any(), any());
-                verify(resourcesLocator, times(1))
+                verify(resourcesLocator, times(2))
                                 .usedCpuPercentage();
+                verify(offloadingHeuristicByRanking, never())
+                                .shouldOffloadVitalSigns(anyInt(), any());
+        }
+
+        @Test
+        public void shouldTriggerOffloadingHeuristicOnAlertScenario() throws Throwable {
+                when(resourcesLocator.usedCpuPercentage())
+                                .thenReturn(80);
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "foo-function"))
+                                .thenReturn(true);
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "bar-function"))
+                                .thenReturn(true);
+
+                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+
+                verify(vitalSignIngestionClient, times(2))
+                                .ingestVitalSigns(any());
+                verify(vitalSignIngestionClient, times(1))
+                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("foo-function", VITAL_SIGN, USER_PRIORITY));
+                verify(vitalSignIngestionClient, times(1))
+                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
+                verify(serverlessFunctionClient, never())
+                                .runAsyncHealthService(any(), any());
+                verify(resourcesLocator, times(2))
+                                .usedCpuPercentage();
+                verify(offloadingHeuristicByRanking, times(2))
+                                .shouldOffloadVitalSigns(anyInt(), any());
+        }
+
+        @Test
+        public void shouldOffloadWhenHeuristicCannotDetermineOperation() throws Throwable {
+                when(resourcesLocator.usedCpuPercentage())
+                                .thenReturn(80);
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "foo-function"))
+                                .thenThrow(new CouldNotDetermineException());
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "bar-function"))
+                                .thenThrow(new CouldNotDetermineException());
+
+                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+
+                verify(vitalSignIngestionClient, times(2))
+                                .ingestVitalSigns(any());
+                verify(vitalSignIngestionClient, times(1))
+                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("foo-function", VITAL_SIGN, USER_PRIORITY));
+                verify(vitalSignIngestionClient, times(1))
+                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
+                verify(serverlessFunctionClient, never())
+                                .runAsyncHealthService(any(), any());
+                verify(resourcesLocator, times(2))
+                                .usedCpuPercentage();
+                verify(offloadingHeuristicByRanking, times(2))
+                                .shouldOffloadVitalSigns(anyInt(), any());
         }
 
 }

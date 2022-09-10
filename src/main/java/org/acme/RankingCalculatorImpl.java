@@ -1,5 +1,8 @@
 package org.acme;
 
+import javax.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
 public class RankingCalculatorImpl implements RankingCalculator {
 
     private final ServicePriorityLocator servicePriorityLocator;
@@ -11,5 +14,5 @@ public class RankingCalculatorImpl implements RankingCalculator {
     public int calculate(int userPriority, String serviceName) {
         return userPriority + servicePriorityLocator.locate(serviceName);
     }
-    
+
 }

@@ -13,7 +13,7 @@ public class VitalSignResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response hello(String vitalSign) {
+    public Response hello(VitalSignInputDto inputDto) {
         return Response.accepted().build();
     }
 }

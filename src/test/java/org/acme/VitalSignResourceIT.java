@@ -57,7 +57,8 @@ public class VitalSignResourceIT {
     @Test
     public void testSingleVitalSignIngestionOnLocalMachineWithoutSpecificService() throws Throwable {
         
-        stubServerlessFunctions("foo-function", "bar-function");
+        String[] functions = {"foo-function", "bar-function"};
+        stubServerlessFunctions(functions);
         stubUsedCpuPercentage(0);
         
         given()
@@ -69,14 +70,33 @@ public class VitalSignResourceIT {
             .statusCode(202)
             .body(is(""));
 
-        verify(1, postRequestedFor(urlEqualTo("/async-function/foo-function")));
-        verify(1, postRequestedFor(urlEqualTo("/async-function/bar-function")));
+        verifyFunctionsWereInvokedOnlyOnce(functions);
+    }
+
+    @Test
+    public void testSingleVitalSignIngestionOnLocalMachineDependingOnHeuristicWithoutSpecificService() throws Throwable {
+        
+        String[] functions = {"foo-function", "bar-function"};
+        stubServerlessFunctions(functions);
+        stubUsedCpuPercentage(85);
+        
+        given()
+            .contentType(ContentType.JSON)
+            .body(jsonFromResource("vital-sign-with-user-priority.json"))
+        .when()
+            .post("/vital-sign")
+        .then()
+            .statusCode(202)
+            .body(is(""));
+
+        verifyFunctionsWereInvokedOnlyOnce(functions);
     }
 
     @Test
     public void testSingleVitalSignIngestionOnLocalMachineWithSpecificService() throws Throwable {
         
-        stubServerlessFunctions("foo-function");
+        String[] functions = {"foo-function"};
+        stubServerlessFunctions(functions);
         stubUsedCpuPercentage(0);
         
         given()
@@ -88,7 +108,7 @@ public class VitalSignResourceIT {
             .statusCode(202)
             .body(is(""));
 
-        verify(1, postRequestedFor(urlEqualTo("/async-function/foo-function")));
+        verifyFunctionsWereInvokedOnlyOnce(functions);
     }
 
     @Test
@@ -121,11 +141,17 @@ public class VitalSignResourceIT {
         configureFor(SERVERLESS_PLATFORM_PORT);
         for (var function : functions) {
             stubFor(
-                post(String.format("/async-function/%1s", function))
+                post("/async-function/" + function)
                     .withHost(equalTo("localhost"))
                     .withPort(SERVERLESS_PLATFORM_PORT)
                     .withRequestBody(equalToJson("{\"heartbeat\": 100}"))
             );
+        }
+    }
+
+    private void verifyFunctionsWereInvokedOnlyOnce(String[] functions) {
+        for (var function : functions) {
+            verify(1, postRequestedFor(urlEqualTo("/async-function/" + function)));
         }
     }
 

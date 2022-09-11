@@ -10,10 +10,17 @@ import javax.ws.rs.core.Response;
 @Path("/vital-sign")
 public class VitalSignResource {
 
+    private final VitalSignService vitalSignService;
+
+    public VitalSignResource(VitalSignService vitalSignService) {
+        this.vitalSignService = vitalSignService;
+    }
+
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public Response hello(VitalSignInputDto inputDto) {
+        vitalSignService.ingestVitalSignRunningAllServices(inputDto.getVitalSign(), inputDto.getUserPriority());
         return Response.accepted().build();
     }
 }

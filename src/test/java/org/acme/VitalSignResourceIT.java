@@ -57,23 +57,8 @@ public class VitalSignResourceIT {
     @Test
     public void testSingleVitalSignIngestionOnLocalMachineWithoutSpecificService() throws Throwable {
         
-        configureFor(SERVERLESS_PLATFORM_PORT);
-        stubFor(
-            post("/async-function/foo-function")
-                .withHost(equalTo("localhost"))
-                .withPort(SERVERLESS_PLATFORM_PORT)
-                .withRequestBody(equalToJson("{\"heartbeat\": 100}"))
-        );
-        
-        stubFor(
-            post("/async-function/bar-function")
-                .withHost(equalTo("localhost"))
-                .withPort(SERVERLESS_PLATFORM_PORT)
-                .withRequestBody(equalToJson("{\"heartbeat\": 100}"))
-        );
-        
-        when(resourcesLocator.usedCpuPercentage())
-            .thenReturn(0);
+        stubServerlessFunctions("foo-function", "bar-function");
+        stubUsedCpuPercentage(0);
         
         given()
             .contentType(ContentType.JSON)
@@ -91,16 +76,8 @@ public class VitalSignResourceIT {
     @Test
     public void testSingleVitalSignIngestionOnLocalMachineWithSpecificService() throws Throwable {
         
-        configureFor(SERVERLESS_PLATFORM_PORT);
-        stubFor(
-            post("/async-function/foo-function")
-                .withHost(equalTo("localhost"))
-                .withPort(SERVERLESS_PLATFORM_PORT)
-                .withRequestBody(equalToJson("{\"heartbeat\": 100}"))
-        );
-        
-        when(resourcesLocator.usedCpuPercentage())
-            .thenReturn(0);
+        stubServerlessFunctions("foo-function");
+        stubUsedCpuPercentage(0);
         
         given()
             .contentType(ContentType.JSON)
@@ -116,16 +93,9 @@ public class VitalSignResourceIT {
 
     @Test
     public void testSingleVitalSignIngestionOnRemoteMachineWithoutSpecificService() throws Throwable {
-        configureFor(VITAL_SIGN_PORT);
-
-        stubFor(
-            post("/vital-sign")
-                .withHost(equalTo("localhost"))
-                .withPort(VITAL_SIGN_PORT)
-        );
         
-        when(resourcesLocator.usedCpuPercentage())
-            .thenReturn(99);
+        stubVitalSignsEndpoint();
+        stubUsedCpuPercentage(99);
         
         given()
             .contentType(ContentType.JSON)
@@ -145,6 +115,32 @@ public class VitalSignResourceIT {
                 .withRequestBody(equalToJson(jsonFromResource("vital-sign-with-bar-service-and-user-priority.json")))
         );
         verify(2, postRequestedFor(urlEqualTo("/vital-sign")));
+    }
+
+    private void stubServerlessFunctions(String... functions) {
+        configureFor(SERVERLESS_PLATFORM_PORT);
+        for (var function : functions) {
+            stubFor(
+                post(String.format("/async-function/%1s", function))
+                    .withHost(equalTo("localhost"))
+                    .withPort(SERVERLESS_PLATFORM_PORT)
+                    .withRequestBody(equalToJson("{\"heartbeat\": 100}"))
+            );
+        }
+    }
+
+    private void stubVitalSignsEndpoint() {
+        configureFor(VITAL_SIGN_PORT);
+        stubFor(
+            post("/vital-sign")
+                .withHost(equalTo("localhost"))
+                .withPort(VITAL_SIGN_PORT)
+        );
+    }
+
+    private void stubUsedCpuPercentage(int cpuPercentage) {
+        when(resourcesLocator.usedCpuPercentage())
+            .thenReturn(cpuPercentage);
     }
 
     public String jsonFromResource(String resourcePath) throws IOException {

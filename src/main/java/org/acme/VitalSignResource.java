@@ -1,5 +1,7 @@
 package org.acme;
 
+import java.util.List;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -20,7 +22,12 @@ public class VitalSignResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public Response hello(VitalSignInputDto inputDto) {
-        vitalSignService.ingestVitalSignRunningAllServices(inputDto.getVitalSign(), inputDto.getUserPriority());
+        String service = inputDto.getServiceName();
+        if (service == null) {
+            vitalSignService.ingestVitalSignRunningAllServices(inputDto.getVitalSign(), inputDto.getUserPriority());
+        } else {
+            vitalSignService.ingestVitalSign(List.of(service), inputDto.getVitalSign(), inputDto.getUserPriority());
+        }
         return Response.accepted().build();
     }
 }

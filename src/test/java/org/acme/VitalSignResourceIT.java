@@ -89,6 +89,32 @@ public class VitalSignResourceIT {
     }
 
     @Test
+    public void testSingleVitalSignIngestionOnLocalMachineWithSpecificService() throws Throwable {
+        
+        configureFor(SERVERLESS_PLATFORM_PORT);
+        stubFor(
+            post("/async-function/foo-function")
+                .withHost(equalTo("localhost"))
+                .withPort(SERVERLESS_PLATFORM_PORT)
+                .withRequestBody(equalToJson("{\"heartbeat\": 100}"))
+        );
+        
+        when(resourcesLocator.usedCpuPercentage())
+            .thenReturn(0);
+        
+        given()
+            .contentType(ContentType.JSON)
+            .body(jsonFromResource("vital-sign-with-foo-service-and-user-priority.json"))
+        .when()
+            .post("/vital-sign")
+        .then()
+            .statusCode(202)
+            .body(is(""));
+
+        verify(1, postRequestedFor(urlEqualTo("/async-function/foo-function")));
+    }
+
+    @Test
     public void testSingleVitalSignIngestionOnRemoteMachineWithoutSpecificService() throws Throwable {
         configureFor(VITAL_SIGN_PORT);
 

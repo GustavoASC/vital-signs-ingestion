@@ -4,18 +4,18 @@ import java.util.Objects;
 
 public class VitalSignInputDto {
 
-    private final String service;
+    private final String serviceName;
     private final String vitalSign;
     private final Integer userPriority;
 
-    public VitalSignInputDto(String service, String vitalSign, int userPriority) {
-        this.service = service;
+    public VitalSignInputDto(String serviceName, String vitalSign, int userPriority) {
+        this.serviceName = serviceName;
         this.vitalSign = vitalSign;
         this.userPriority = userPriority;
     }
 
-    public String getService() {
-        return this.service;
+    public String getServiceName() {
+        return this.serviceName;
     }
 
     public String getVitalSign() {
@@ -29,7 +29,7 @@ public class VitalSignInputDto {
     @Override
     public String toString() {
         return "{" +
-                " service='" + getService() + "'" +
+                " serviceName='" + getServiceName() + "'" +
                 ", vitalSign='" + getVitalSign() + "'" +
                 ", userPriority='" + getUserPriority() + "'" +
                 "}";
@@ -43,14 +43,14 @@ public class VitalSignInputDto {
             return false;
         }
         VitalSignInputDto vitalSignInputDto = (VitalSignInputDto) o;
-        return Objects.equals(service, vitalSignInputDto.service)
+        return Objects.equals(serviceName, vitalSignInputDto.serviceName)
                 && Objects.equals(vitalSign, vitalSignInputDto.vitalSign)
                 && userPriority == vitalSignInputDto.userPriority;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(service, vitalSign, userPriority);
+        return Objects.hash(serviceName, vitalSign, userPriority);
     }
 
 }

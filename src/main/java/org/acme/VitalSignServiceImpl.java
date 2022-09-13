@@ -57,6 +57,8 @@ public class VitalSignServiceImpl implements VitalSignService {
 
                         // Runs on the local machine
                         serverlessFunctionClient.runAsyncHealthService(fn, vitalSign);
+
+                        runningServicesProvider.removeRunningService(fn, ranking);
                     }
                 });
     }

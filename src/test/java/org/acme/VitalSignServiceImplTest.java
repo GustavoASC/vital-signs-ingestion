@@ -85,6 +85,10 @@ public class VitalSignServiceImplTest {
                                 .addRunningService("foo-function", 13);
                 verify(runningServicesProvider, times(1))
                                 .addRunningService("bar-function", 17);
+                verify(runningServicesProvider, times(1))
+                                .removeRunningService("foo-function", 13);
+                verify(runningServicesProvider, times(1))
+                                .removeRunningService("bar-function", 17);
         }
 
         @Test

@@ -7,6 +7,9 @@ import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import io.quarkus.arc.Lock;
+
+@Lock
 @ApplicationScoped
 public class RunningServicesProviderImpl implements RunningServicesProvider {
 

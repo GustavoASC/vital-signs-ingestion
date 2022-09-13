@@ -2,6 +2,7 @@ package org.acme;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -13,6 +14,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -71,23 +73,27 @@ public class VitalSignServiceImplTest {
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
-                verify(serverlessFunctionClient, times(1))
-                                .runAsyncHealthService("foo-function", VITAL_SIGN);
-                verify(serverlessFunctionClient, times(1))
-                                .runAsyncHealthService("bar-function", VITAL_SIGN);
                 verify(resourcesLocator, times(2))
                                 .usedCpuPercentage();
                 verify(rankingCalculator, times(1))
                                 .calculate(USER_PRIORITY, "foo-function");
                 verify(rankingCalculator, times(1))
                                 .calculate(USER_PRIORITY, "bar-function");
-                verify(runningServicesProvider, times(1))
+
+                InOrder orderVerifier = inOrder(runningServicesProvider, serverlessFunctionClient);
+
+                orderVerifier.verify(runningServicesProvider, times(1))
                                 .addRunningService("foo-function", 13);
-                verify(runningServicesProvider, times(1))
-                                .addRunningService("bar-function", 17);
-                verify(runningServicesProvider, times(1))
+                orderVerifier.verify(serverlessFunctionClient, times(1))
+                                .runAsyncHealthService("foo-function", VITAL_SIGN);
+                orderVerifier.verify(runningServicesProvider, times(1))
                                 .removeRunningService("foo-function", 13);
-                verify(runningServicesProvider, times(1))
+
+                orderVerifier.verify(runningServicesProvider, times(1))
+                                .addRunningService("bar-function", 17);
+                orderVerifier.verify(serverlessFunctionClient, times(1))
+                                .runAsyncHealthService("bar-function", VITAL_SIGN);
+                orderVerifier.verify(runningServicesProvider, times(1))
                                 .removeRunningService("bar-function", 17);
         }
 

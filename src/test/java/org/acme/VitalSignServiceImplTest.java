@@ -42,18 +42,30 @@ public class VitalSignServiceImplTest {
         @Mock
         OffloadingHeuristicByRanking offloadingHeuristicByRanking;
 
+        @Mock
+        RankingCalculator rankingCalculator;
+
+        @Mock
+        RunningServicesProvider runningServicesProvider;
+
         @AfterEach
         public void afterEach() {
                 verifyNoMoreInteractions(
                                 serverlessFunctionClient,
                                 vitalSignIngestionClient,
                                 resourcesLocator,
-                                offloadingHeuristicByRanking);
+                                offloadingHeuristicByRanking,
+                                rankingCalculator,
+                                runningServicesProvider);
         }
 
         @Test
         public void shouldTriggerAllServicesLocallyWithLowCpuUsed() throws Throwable {
 
+                when(rankingCalculator.calculate(USER_PRIORITY, "foo-function"))
+                                .thenReturn(13);
+                when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                                .thenReturn(17);
                 when(resourcesLocator.usedCpuPercentage())
                                 .thenReturn(74);
 
@@ -65,6 +77,14 @@ public class VitalSignServiceImplTest {
                                 .runAsyncHealthService("bar-function", VITAL_SIGN);
                 verify(resourcesLocator, times(2))
                                 .usedCpuPercentage();
+                verify(rankingCalculator, times(1))
+                                .calculate(USER_PRIORITY, "foo-function");
+                verify(rankingCalculator, times(1))
+                                .calculate(USER_PRIORITY, "bar-function");
+                verify(runningServicesProvider, times(1))
+                                .addRunningService("foo-function", 13);
+                verify(runningServicesProvider, times(1))
+                                .addRunningService("bar-function", 17);
         }
 
         @Test

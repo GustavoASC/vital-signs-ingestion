@@ -16,16 +16,22 @@ public class VitalSignServiceImpl implements VitalSignService {
     private final VitalSignIngestionClient vitalSignIngestionClient;
     private final ResourcesLocator resourcesLocator;
     private final OffloadingHeuristicByRanking offloadingHeuristicByRanking;
+    private final RankingCalculator rankingCalculator;
+    private final RunningServicesProvider runningServicesProvider;
 
     public VitalSignServiceImpl(
             @RestClient ServerlessFunctionClient serverlessFunctionClient,
             @RestClient VitalSignIngestionClient vitalSignIngestionClient,
             ResourcesLocator resourcesLocator,
-            OffloadingHeuristicByRanking offloadingHeuristicByRanking) {
+            OffloadingHeuristicByRanking offloadingHeuristicByRanking,
+            RankingCalculator rankingCalculator,
+            RunningServicesProvider runningServicesProvider) {
         this.serverlessFunctionClient = serverlessFunctionClient;
         this.vitalSignIngestionClient = vitalSignIngestionClient;
         this.resourcesLocator = resourcesLocator;
         this.offloadingHeuristicByRanking = offloadingHeuristicByRanking;
+        this.rankingCalculator = rankingCalculator;
+        this.runningServicesProvider = runningServicesProvider;
     }
 
     @Override
@@ -45,6 +51,9 @@ public class VitalSignServiceImpl implements VitalSignService {
                         vitalSignIngestionClient.ingestVitalSigns(input);
                         
                     } else {
+
+                        int ranking = rankingCalculator.calculate(userPriority, fn);
+                        runningServicesProvider.addRunningService(fn, ranking);
 
                         // Runs on the local machine
                         serverlessFunctionClient.runAsyncHealthService(fn, vitalSign);

@@ -141,7 +141,7 @@ public class VitalSignResourceIT {
         configureFor(SERVERLESS_PLATFORM_PORT);
         for (var function : functions) {
             stubFor(
-                post("/async-function/" + function)
+                post("/function/" + function)
                     .withHost(equalTo("localhost"))
                     .withPort(SERVERLESS_PLATFORM_PORT)
                     .withRequestBody(equalToJson("{\"heartbeat\": 100}"))
@@ -151,7 +151,7 @@ public class VitalSignResourceIT {
 
     private void verifyFunctionsWereInvokedOnlyOnce(String[] functions) {
         for (var function : functions) {
-            verify(1, postRequestedFor(urlEqualTo("/async-function/" + function)));
+            verify(1, postRequestedFor(urlEqualTo("/function/" + function)));
         }
     }
 

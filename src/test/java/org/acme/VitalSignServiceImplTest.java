@@ -85,14 +85,14 @@ public class VitalSignServiceImplTest {
                 orderVerifier.verify(runningServicesProvider, times(1))
                                 .addRunningService("foo-function", 13);
                 orderVerifier.verify(serverlessFunctionClient, times(1))
-                                .runAsyncHealthService("foo-function", VITAL_SIGN);
+                                .runFunction("foo-function", VITAL_SIGN);
                 orderVerifier.verify(runningServicesProvider, times(1))
                                 .removeRunningService("foo-function", 13);
 
                 orderVerifier.verify(runningServicesProvider, times(1))
                                 .addRunningService("bar-function", 17);
                 orderVerifier.verify(serverlessFunctionClient, times(1))
-                                .runAsyncHealthService("bar-function", VITAL_SIGN);
+                                .runFunction("bar-function", VITAL_SIGN);
                 orderVerifier.verify(runningServicesProvider, times(1))
                                 .removeRunningService("bar-function", 17);
         }

@@ -23,6 +23,17 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     }
 
     @Override
+    public void removeRunningService(String service, int ranking) {
+        List<Integer> rankings = services.get(service);
+        if (rankings != null) {
+            rankings.remove(Integer.valueOf(ranking));
+            if (rankings.isEmpty()) {
+                services.remove(service);
+            }
+        }        
+    }
+
+    @Override
     public Map<String, List<Integer>> provideRankings() {
         return new HashMap<>(services);
     }

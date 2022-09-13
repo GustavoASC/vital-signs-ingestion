@@ -5,7 +5,8 @@ import java.util.Map;
 
 public interface RunningServicesProvider {
 
-    public void addRunningService(String service, int ranking);
-    public Map<String, List<Integer>> provideRankings();
+    void addRunningService(String service, int ranking);
+    void removeRunningService(String service, int ranking);
+    Map<String, List<Integer>> provideRankings();
 
 }

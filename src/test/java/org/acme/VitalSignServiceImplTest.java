@@ -161,4 +161,12 @@ public class VitalSignServiceImplTest {
                                 .shouldOffloadVitalSigns(anyInt(), any());
         }
 
+        @Test
+        public void shouldUpdateUsedCpuPercentage() {
+
+                vitalSignService.updateUsedCpuPercentage(37);
+                verify(resourcesLocator, times(1))
+                                .updateUsedCpuPercentage(37);
+        }
+
 }

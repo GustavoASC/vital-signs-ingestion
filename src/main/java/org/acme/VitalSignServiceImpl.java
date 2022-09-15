@@ -7,7 +7,7 @@ import javax.enterprise.context.ApplicationScoped;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @ApplicationScoped
-public class VitalSignServiceImpl implements VitalSignService {
+public class VitalSignServiceImpl implements VitalSignService, ResourceService {
     private static final List<String> FUNCTIONS = List.of("foo-function", "bar-function");
     private static final int CRITICAL_CPU_USAGE = 90;
     private static final int WARNING_CPU_USAGE = 75;
@@ -78,6 +78,11 @@ public class VitalSignServiceImpl implements VitalSignService {
         }
 
         return false;
+    }
+
+    @Override
+    public void updateUsedCpuPercentage(int usedCpu) {
+        resourcesLocator.updateUsedCpuPercentage(usedCpu);
     }
 
 }

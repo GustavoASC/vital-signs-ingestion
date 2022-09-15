@@ -68,13 +68,13 @@ public class VitalSignServiceImplTest {
                                 .thenReturn(13);
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
                                 .thenReturn(17);
-                when(resourcesLocator.usedCpuPercentage())
+                when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(74);
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
                 verify(resourcesLocator, times(2))
-                                .usedCpuPercentage();
+                                .getUsedCpuPercentage();
                 verify(rankingCalculator, times(1))
                                 .calculate(USER_PRIORITY, "foo-function");
                 verify(rankingCalculator, times(1))
@@ -100,7 +100,7 @@ public class VitalSignServiceImplTest {
         @Test
         public void shouldOffloadVitalSignsWithHighCpuUsed() throws Throwable {
 
-                when(resourcesLocator.usedCpuPercentage())
+                when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(90);
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
@@ -112,12 +112,12 @@ public class VitalSignServiceImplTest {
                                 .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN,
                                                 USER_PRIORITY));
                 verify(resourcesLocator, times(2))
-                                .usedCpuPercentage();
+                                .getUsedCpuPercentage();
         }
 
         @Test
         public void shouldTriggerOffloadingHeuristicOnAlertScenario() throws Throwable {
-                when(resourcesLocator.usedCpuPercentage())
+                when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(80);
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "foo-function"))
                                 .thenReturn(true);
@@ -133,14 +133,14 @@ public class VitalSignServiceImplTest {
                                 .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN,
                                                 USER_PRIORITY));
                 verify(resourcesLocator, times(2))
-                                .usedCpuPercentage();
+                                .getUsedCpuPercentage();
                 verify(offloadingHeuristicByRanking, times(2))
                                 .shouldOffloadVitalSigns(anyInt(), any());
         }
 
         @Test
         public void shouldOffloadWhenHeuristicCannotDetermineOperation() throws Throwable {
-                when(resourcesLocator.usedCpuPercentage())
+                when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(80);
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "foo-function"))
                                 .thenThrow(new CouldNotDetermineException());
@@ -156,7 +156,7 @@ public class VitalSignServiceImplTest {
                                 .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN,
                                                 USER_PRIORITY));
                 verify(resourcesLocator, times(2))
-                                .usedCpuPercentage();
+                                .getUsedCpuPercentage();
                 verify(offloadingHeuristicByRanking, times(2))
                                 .shouldOffloadVitalSigns(anyInt(), any());
         }

@@ -165,7 +165,7 @@ public class VitalSignResourceIT {
     }
 
     private void stubUsedCpuPercentage(int cpuPercentage) {
-        when(resourcesLocator.usedCpuPercentage())
+        when(resourcesLocator.getUsedCpuPercentage())
             .thenReturn(cpuPercentage);
     }
 

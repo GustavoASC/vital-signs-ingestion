@@ -64,7 +64,7 @@ public class VitalSignServiceImpl implements VitalSignService {
     }
 
     private boolean shouldOffloadToParent(String service, int userPriority) {
-        int usedCpu = resourcesLocator.usedCpuPercentage();
+        int usedCpu = resourcesLocator.getUsedCpuPercentage();
         if (usedCpu >= CRITICAL_CPU_USAGE) {
             return true;
         }

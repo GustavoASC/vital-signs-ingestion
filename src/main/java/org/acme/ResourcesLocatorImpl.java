@@ -5,9 +5,16 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class ResourcesLocatorImpl implements ResourcesLocator {
 
+    private int usedCpu = 0;
+
     @Override
-    public int usedCpuPercentage() {
-        return 0;
+    public int getUsedCpuPercentage() {
+        return usedCpu;
+    }
+
+    @Override
+    public void updateUsedCpuPercentage(int usedCpu) {
+        this.usedCpu = usedCpu;
     }
 
 }

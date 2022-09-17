@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -33,12 +34,20 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
             if (rankings.isEmpty()) {
                 services.remove(service);
             }
-        }        
+        }
     }
 
     @Override
     public Map<String, List<Integer>> provideRankings() {
         return new HashMap<>(services);
+    }
+
+    @Override
+    public List<Integer> provideAllRankings() {
+        return services.values()
+                .stream()
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
     }
 
 }

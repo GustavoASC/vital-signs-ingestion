@@ -38,11 +38,6 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     }
 
     @Override
-    public Map<String, List<Integer>> provideRankings() {
-        return new HashMap<>(services);
-    }
-
-    @Override
     public List<Integer> provideAllRankings() {
         return services.values()
                 .stream()

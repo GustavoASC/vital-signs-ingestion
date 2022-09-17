@@ -1,7 +1,6 @@
 package org.acme;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -21,16 +20,15 @@ public class OffloadingHeuristicByRankingImpl implements OffloadingHeuristicByRa
     public boolean shouldOffloadVitalSigns(int userPriority, String service) throws CouldNotDetermineException {
 
         int calculatedRanking = rankingCalculator.calculate(userPriority, service);
-        Map<String, List<Integer>> rankingsForAllServices = servicesProvider.provideRankings();
+        List<Integer> rankingsForAllServices = servicesProvider.provideAllRankings();
 
-        if (rankingsForAllServices.containsKey(service)) {
-            List<Integer> rankingsForService = rankingsForAllServices.get(service)
-                                                                     .stream()
+        if (!rankingsForAllServices.isEmpty()) {
+            List<Integer> normalizedRankings = rankingsForAllServices.stream()
                                                                      .sorted()
                                                                      .distinct()
                                                                      .toList();
 
-            int intermediateRanking = intermediateRanking(rankingsForService);
+            int intermediateRanking = intermediateRanking(normalizedRankings);
             if (calculatedRanking == intermediateRanking) {
                 throw new CouldNotDetermineException();
             }

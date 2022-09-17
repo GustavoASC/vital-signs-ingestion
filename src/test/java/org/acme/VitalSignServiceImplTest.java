@@ -64,7 +64,7 @@ public class VitalSignServiceImplTest {
         @Test
         public void shouldTriggerAllServicesLocallyWithLowCpuUsed() throws Throwable {
 
-                when(rankingCalculator.calculate(USER_PRIORITY, "foo-function"))
+                when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
                                 .thenReturn(13);
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
                                 .thenReturn(17);
@@ -76,18 +76,18 @@ public class VitalSignServiceImplTest {
                 verify(resourcesLocator, times(2))
                                 .getUsedCpuPercentage();
                 verify(rankingCalculator, times(1))
-                                .calculate(USER_PRIORITY, "foo-function");
+                                .calculate(USER_PRIORITY, "body-temperature-monitor");
                 verify(rankingCalculator, times(1))
                                 .calculate(USER_PRIORITY, "bar-function");
 
                 InOrder orderVerifier = inOrder(runningServicesProvider, serverlessFunctionClient);
 
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .addRunningService("foo-function", 13);
+                                .addRunningService("body-temperature-monitor", 13);
                 orderVerifier.verify(serverlessFunctionClient, times(1))
-                                .runFunction("foo-function", VITAL_SIGN);
+                                .runFunction("body-temperature-monitor", VITAL_SIGN);
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .removeRunningService("foo-function", 13);
+                                .removeRunningService("body-temperature-monitor", 13);
 
                 orderVerifier.verify(runningServicesProvider, times(1))
                                 .addRunningService("bar-function", 17);
@@ -106,7 +106,7 @@ public class VitalSignServiceImplTest {
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
                 verify(vitalSignIngestionClient, times(1))
-                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("foo-function", VITAL_SIGN,
+                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("body-temperature-monitor", VITAL_SIGN,
                                                 USER_PRIORITY));
                 verify(vitalSignIngestionClient, times(1))
                                 .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN,
@@ -119,7 +119,7 @@ public class VitalSignServiceImplTest {
         public void shouldTriggerOffloadingHeuristicOnAlertScenario() throws Throwable {
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(80);
-                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "foo-function"))
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "body-temperature-monitor"))
                                 .thenReturn(true);
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "bar-function"))
                                 .thenReturn(true);
@@ -127,7 +127,7 @@ public class VitalSignServiceImplTest {
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
                 verify(vitalSignIngestionClient, times(1))
-                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("foo-function", VITAL_SIGN,
+                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("body-temperature-monitor", VITAL_SIGN,
                                                 USER_PRIORITY));
                 verify(vitalSignIngestionClient, times(1))
                                 .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN,
@@ -142,7 +142,7 @@ public class VitalSignServiceImplTest {
         public void shouldOffloadWhenHeuristicCannotDetermineOperation() throws Throwable {
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(80);
-                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "foo-function"))
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "body-temperature-monitor"))
                                 .thenThrow(new CouldNotDetermineException());
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "bar-function"))
                                 .thenThrow(new CouldNotDetermineException());
@@ -150,7 +150,7 @@ public class VitalSignServiceImplTest {
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
                 verify(vitalSignIngestionClient, times(1))
-                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("foo-function", VITAL_SIGN,
+                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("body-temperature-monitor", VITAL_SIGN,
                                                 USER_PRIORITY));
                 verify(vitalSignIngestionClient, times(1))
                                 .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN,

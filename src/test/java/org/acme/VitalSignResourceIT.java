@@ -57,7 +57,7 @@ public class VitalSignResourceIT {
     @Test
     public void testSingleVitalSignIngestionOnLocalMachineWithoutSpecificService() throws Throwable {
         
-        String[] functions = {"foo-function", "bar-function"};
+        String[] functions = {"body-temperature-monitor", "bar-function"};
         stubServerlessFunctions(functions);
         stubUsedCpuPercentage(0);
         
@@ -76,7 +76,7 @@ public class VitalSignResourceIT {
     @Test
     public void testSingleVitalSignIngestionOnLocalMachineDependingOnHeuristicWithoutSpecificService() throws Throwable {
         
-        String[] functions = {"foo-function", "bar-function"};
+        String[] functions = {"body-temperature-monitor", "bar-function"};
         stubServerlessFunctions(functions);
         stubUsedCpuPercentage(85);
         
@@ -95,7 +95,7 @@ public class VitalSignResourceIT {
     @Test
     public void testSingleVitalSignIngestionOnLocalMachineWithSpecificService() throws Throwable {
         
-        String[] functions = {"foo-function"};
+        String[] functions = {"body-temperature-monitor"};
         stubServerlessFunctions(functions);
         stubUsedCpuPercentage(0);
         

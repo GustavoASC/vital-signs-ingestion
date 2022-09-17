@@ -8,7 +8,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @ApplicationScoped
 public class VitalSignServiceImpl implements VitalSignService, ResourceService {
-    private static final List<String> FUNCTIONS = List.of("foo-function", "bar-function");
+    private static final List<String> FUNCTIONS = List.of("body-temperature-monitor", "bar-function");
     private static final int CRITICAL_CPU_USAGE = 90;
     private static final int WARNING_CPU_USAGE = 75;
 

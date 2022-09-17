@@ -8,7 +8,7 @@ public class ServicePriorityLocatorTest {
     
     @Test
     public void shouldLocatePriorityForConfiguredService() {
-        assertThat(new ServicePriorityLocatorImpl().locate("foo-function"))
+        assertThat(new ServicePriorityLocatorImpl().locate("body-temperature-monitor"))
             .isEqualTo(4);
     }
     

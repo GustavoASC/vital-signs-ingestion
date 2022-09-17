@@ -27,10 +27,10 @@ public class RunningServicesProviderTest {
         @Test
         public void shouldRemoveNonExistingRankingFroExistingService() {
 
-                runningServicesProviderImpl.addRunningService("foo-function", 1);
-                runningServicesProviderImpl.removeRunningService("foo-function", 7);
+                runningServicesProviderImpl.addRunningService("body-temperature-monitor", 1);
+                runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 7);
                 assertThat(runningServicesProviderImpl.provideRankings())
-                                .isEqualTo(Map.of("foo-function", List.of(1)));
+                                .isEqualTo(Map.of("body-temperature-monitor", List.of(1)));
         }
 
         @Test
@@ -39,24 +39,24 @@ public class RunningServicesProviderTest {
                 assertThat(runningServicesProviderImpl.provideRankings())
                                 .isEmpty();
 
-                runningServicesProviderImpl.addRunningService("foo-function", 1);
-                runningServicesProviderImpl.addRunningService("foo-function", 7);
-                runningServicesProviderImpl.addRunningService("foo-function", 9);
+                runningServicesProviderImpl.addRunningService("body-temperature-monitor", 1);
+                runningServicesProviderImpl.addRunningService("body-temperature-monitor", 7);
+                runningServicesProviderImpl.addRunningService("body-temperature-monitor", 9);
                 runningServicesProviderImpl.addRunningService("bar-function", 15);
                 runningServicesProviderImpl.addRunningService("bar-function", 2);
 
                 assertThat(runningServicesProviderImpl.provideRankings())
-                                .isEqualTo(Map.of("foo-function", List.of(1, 7, 9), "bar-function", List.of(15, 2)));
+                                .isEqualTo(Map.of("body-temperature-monitor", List.of(1, 7, 9), "bar-function", List.of(15, 2)));
 
-                runningServicesProviderImpl.removeRunningService("foo-function", 1);
+                runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 1);
                 assertThat(runningServicesProviderImpl.provideRankings())
-                                .isEqualTo(Map.of("foo-function", List.of(7, 9), "bar-function", List.of(15, 2)));
+                                .isEqualTo(Map.of("body-temperature-monitor", List.of(7, 9), "bar-function", List.of(15, 2)));
 
-                runningServicesProviderImpl.removeRunningService("foo-function", 7);
+                runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 7);
                 assertThat(runningServicesProviderImpl.provideRankings())
-                                .isEqualTo(Map.of("foo-function", List.of(9), "bar-function", List.of(15, 2)));
+                                .isEqualTo(Map.of("body-temperature-monitor", List.of(9), "bar-function", List.of(15, 2)));
 
-                runningServicesProviderImpl.removeRunningService("foo-function", 9);
+                runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 9);
                 assertThat(runningServicesProviderImpl.provideRankings())
                                 .isEqualTo(Map.of("bar-function", List.of(15, 2)));
 

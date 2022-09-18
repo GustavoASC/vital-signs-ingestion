@@ -19,7 +19,7 @@ public class RunningServicesProviderTest {
         public void shouldRemoveRankingFromNonExistingService() {
 
                 runningServicesProviderImpl.removeRunningService("non-existing", 7);
-                assertThat(runningServicesProviderImpl.provideAllRankings())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEmpty();
         }
 
@@ -28,7 +28,7 @@ public class RunningServicesProviderTest {
 
                 runningServicesProviderImpl.addRunningService("body-temperature-monitor", 1);
                 runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 7);
-                assertThat(runningServicesProviderImpl.provideAllRankings())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(1));
         }
 
@@ -42,27 +42,27 @@ public class RunningServicesProviderTest {
                 runningServicesProviderImpl.addRunningService("bar-function", 15);
                 runningServicesProviderImpl.addRunningService("bar-function", 2);
 
-                assertThat(runningServicesProviderImpl.provideAllRankings())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(1, 7, 9, 15, 2));
 
                 runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 1);
-                assertThat(runningServicesProviderImpl.provideAllRankings())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(7, 9, 15, 2));
 
                 runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 7);
-                assertThat(runningServicesProviderImpl.provideAllRankings())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(9, 15, 2));
 
                 runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 9);
-                assertThat(runningServicesProviderImpl.provideAllRankings())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(15, 2));
 
                 runningServicesProviderImpl.removeRunningService("bar-function", 15);
-                assertThat(runningServicesProviderImpl.provideAllRankings())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(2));
 
                 runningServicesProviderImpl.removeRunningService("bar-function", 2);
-                assertThat(runningServicesProviderImpl.provideAllRankings())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEmpty();
 
         }

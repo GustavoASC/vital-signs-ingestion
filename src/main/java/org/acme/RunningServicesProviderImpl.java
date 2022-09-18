@@ -38,7 +38,7 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     }
 
     @Override
-    public List<Integer> provideAllRankings() {
+    public List<Integer> getRankingsForRunningSerices() {
         return services.values()
                 .stream()
                 .flatMap(List::stream)

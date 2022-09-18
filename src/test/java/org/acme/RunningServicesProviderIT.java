@@ -27,7 +27,7 @@ public class RunningServicesProviderIT {
                                         runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 7);
                                 });
 
-                assertThat(runningServicesProviderImpl.provideAllRankings())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEmpty();
         }
 

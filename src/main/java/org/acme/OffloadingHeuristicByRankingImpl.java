@@ -20,7 +20,7 @@ public class OffloadingHeuristicByRankingImpl implements OffloadingHeuristicByRa
     public boolean shouldOffloadVitalSigns(int userPriority, String service) throws CouldNotDetermineException {
 
         int calculatedRanking = rankingCalculator.calculate(userPriority, service);
-        List<Integer> rankingsForAllServices = servicesProvider.provideAllRankings();
+        List<Integer> rankingsForAllServices = servicesProvider.getRankingsForRunningSerices();
 
         if (!rankingsForAllServices.isEmpty()) {
             List<Integer> normalizedRankings = rankingsForAllServices.stream()

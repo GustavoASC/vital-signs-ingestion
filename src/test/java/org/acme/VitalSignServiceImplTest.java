@@ -87,14 +87,14 @@ public class VitalSignServiceImplTest {
                 orderVerifier.verify(serverlessFunctionClient, times(1))
                                 .runFunction("body-temperature-monitor", VITAL_SIGN);
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .executionFinished("body-temperature-monitor", 13);
+                                .executionFinished(any());
 
                 orderVerifier.verify(runningServicesProvider, times(1))
                                 .executionStarted("bar-function", 17);
                 orderVerifier.verify(serverlessFunctionClient, times(1))
                                 .runFunction("bar-function", VITAL_SIGN);
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .executionFinished("bar-function", 17);
+                                .executionFinished(any());
         }
 
         @Test

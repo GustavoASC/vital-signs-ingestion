@@ -23,15 +23,6 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     }
 
     @Override
-    public void executionFinished(String service, int ranking) {
-        services.entrySet()
-                .removeIf(entry -> {
-                    var execution = entry.getValue();
-                    return execution.serviceName.equals(service) && execution.ranking == ranking;
-                });
-    }
-
-    @Override
     public void executionFinished(UUID id) {
         services.remove(id);
     }

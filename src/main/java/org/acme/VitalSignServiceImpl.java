@@ -1,6 +1,7 @@
 package org.acme;
 
 import java.util.List;
+import java.util.UUID;
 
 import javax.enterprise.context.ApplicationScoped;
 
@@ -53,12 +54,12 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
                     } else {
 
                         int ranking = rankingCalculator.calculate(userPriority, fn);
-                        runningServicesProvider.executionStarted(fn, ranking);
+                        UUID id = runningServicesProvider.executionStarted(fn, ranking);
 
                         // Runs on the local machine
                         serverlessFunctionClient.runFunction(fn, vitalSign);
 
-                        runningServicesProvider.executionFinished(fn, ranking);
+                        runningServicesProvider.executionFinished(id);
                     }
                 });
     }

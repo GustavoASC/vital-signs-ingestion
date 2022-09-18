@@ -17,7 +17,7 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     private final Map<String, List<Integer>> services = new HashMap<>();
 
     @Override
-    public void addRunningService(String service, int ranking) {
+    public void executionStarted(String service, int ranking) {
         List<Integer> rankings = services.get(service);
         if (rankings == null) {
             rankings = new ArrayList<>();
@@ -27,7 +27,7 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     }
 
     @Override
-    public void removeRunningService(String service, int ranking) {
+    public void executionFinished(String service, int ranking) {
         List<Integer> rankings = services.get(service);
         if (rankings != null) {
             rankings.remove(Integer.valueOf(ranking));

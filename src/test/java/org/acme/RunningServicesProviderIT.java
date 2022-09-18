@@ -23,8 +23,8 @@ public class RunningServicesProviderIT {
                                 .boxed()
                                 .parallel()
                                 .forEach(i -> {
-                                        runningServicesProviderImpl.addRunningService("body-temperature-monitor", 7);
-                                        runningServicesProviderImpl.removeRunningService("body-temperature-monitor", 7);
+                                        runningServicesProviderImpl.executionStarted("body-temperature-monitor", 7);
+                                        runningServicesProviderImpl.executionFinished("body-temperature-monitor", 7);
                                 });
 
                 assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())

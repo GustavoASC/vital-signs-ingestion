@@ -53,12 +53,12 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
                     } else {
 
                         int ranking = rankingCalculator.calculate(userPriority, fn);
-                        runningServicesProvider.addRunningService(fn, ranking);
+                        runningServicesProvider.executionStarted(fn, ranking);
 
                         // Runs on the local machine
                         serverlessFunctionClient.runFunction(fn, vitalSign);
 
-                        runningServicesProvider.removeRunningService(fn, ranking);
+                        runningServicesProvider.executionFinished(fn, ranking);
                     }
                 });
     }

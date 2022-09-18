@@ -83,18 +83,18 @@ public class VitalSignServiceImplTest {
                 InOrder orderVerifier = inOrder(runningServicesProvider, serverlessFunctionClient);
 
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .addRunningService("body-temperature-monitor", 13);
+                                .executionStarted("body-temperature-monitor", 13);
                 orderVerifier.verify(serverlessFunctionClient, times(1))
                                 .runFunction("body-temperature-monitor", VITAL_SIGN);
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .removeRunningService("body-temperature-monitor", 13);
+                                .executionFinished("body-temperature-monitor", 13);
 
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .addRunningService("bar-function", 17);
+                                .executionStarted("bar-function", 17);
                 orderVerifier.verify(serverlessFunctionClient, times(1))
                                 .runFunction("bar-function", VITAL_SIGN);
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .removeRunningService("bar-function", 17);
+                                .executionFinished("bar-function", 17);
         }
 
         @Test

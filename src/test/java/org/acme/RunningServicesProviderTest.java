@@ -46,25 +46,58 @@ public class RunningServicesProviderTest {
 
         assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(1, 7, 9, 15, 2));
+        assertThat(runningServicesProvider.getRunningServices())
+                .isEqualTo(List.of(
+                        new RunningServicesProvider.ServiceExecution("body-temperature-monitor", 1),
+                        new RunningServicesProvider.ServiceExecution("body-temperature-monitor", 7),
+                        new RunningServicesProvider.ServiceExecution("body-temperature-monitor", 9),
+                        new RunningServicesProvider.ServiceExecution("bar-function", 15),
+                        new RunningServicesProvider.ServiceExecution("bar-function", 2)
+        ));
 
         runningServicesProvider.executionFinished(first);
         assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(7, 9, 15, 2));
 
+        assertThat(runningServicesProvider.getRunningServices())
+                .isEqualTo(List.of(
+                        new RunningServicesProvider.ServiceExecution("body-temperature-monitor", 7),
+                        new RunningServicesProvider.ServiceExecution("body-temperature-monitor", 9),
+                        new RunningServicesProvider.ServiceExecution("bar-function", 15),
+                        new RunningServicesProvider.ServiceExecution("bar-function", 2)
+        ));
+
         runningServicesProvider.executionFinished(second);
         assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(9, 15, 2));
+        assertThat(runningServicesProvider.getRunningServices())
+                .isEqualTo(List.of(
+                        new RunningServicesProvider.ServiceExecution("body-temperature-monitor", 9),
+                        new RunningServicesProvider.ServiceExecution("bar-function", 15),
+                        new RunningServicesProvider.ServiceExecution("bar-function", 2)
+        ));
 
         runningServicesProvider.executionFinished(third);
         assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(15, 2));
+        assertThat(runningServicesProvider.getRunningServices())
+                .isEqualTo(List.of(
+                        new RunningServicesProvider.ServiceExecution("bar-function", 15),
+                        new RunningServicesProvider.ServiceExecution("bar-function", 2)
+        ));
 
         runningServicesProvider.executionFinished(fourth);
         assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(2));
+        assertThat(runningServicesProvider.getRunningServices())
+                .isEqualTo(List.of(
+                        new RunningServicesProvider.ServiceExecution("bar-function", 2)
+        ));
 
         runningServicesProvider.executionFinished(fifth);
         assertThat(runningServicesProvider.getRankingsForRunningServices())
+                .isEmpty();
+        assertThat(runningServicesProvider.getRunningServices())
                 .isEmpty();
 
     }

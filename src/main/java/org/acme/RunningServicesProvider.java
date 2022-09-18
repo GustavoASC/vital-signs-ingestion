@@ -8,7 +8,16 @@ public interface RunningServicesProvider {
 
     UUID executionStarted(String service, int ranking);
     void executionFinished(UUID id);
-    List<Integer> getRankingsForRunningServices();
+    List<ServiceExecution> getRunningServices();
     List<Duration> getDurationsForService(String service);
+
+    default List<Integer> getRankingsForRunningServices() {
+        return getRunningServices()
+                .stream()
+                .map(ServiceExecution::ranking)
+                .toList();
+    }
+
+    public static record ServiceExecution(String serviceName, int ranking) {}
 
 }

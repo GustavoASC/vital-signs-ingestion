@@ -18,7 +18,7 @@ import io.quarkus.arc.Lock;
 @ApplicationScoped
 public class RunningServicesProviderImpl implements RunningServicesProvider {
 
-    private final Map<UUID, ServiceExecution> services = new LinkedHashMap<>();
+    private final Map<UUID, ExecutionWithDuration> services = new LinkedHashMap<>();
     private final Map<String, List<Duration>> durations = new LinkedHashMap<>();
     private final Clock clock;
 
@@ -30,7 +30,7 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     public UUID executionStarted(String service, int ranking) {
         var id = UUID.randomUUID();
         var executionStart = clock.instant();
-        services.put(id, new ServiceExecution(service, ranking, executionStart));
+        services.put(id, new ExecutionWithDuration(new ServiceExecution(service, ranking), executionStart));
         return id;
     }
 
@@ -38,11 +38,11 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     public void executionFinished(UUID id) {
 
         Optional.ofNullable(services.get(id))
-                .ifPresent(execution -> {
+                .ifPresent(service -> {
 
                     var now = clock.instant();
-                    getDurationsForService(execution.serviceName())
-                            .add(Duration.between(execution.executionStart(), now));
+                    getDurationsForService(service.execution().serviceName())
+                            .add(Duration.between(service.executionStart(), now));
 
                 });
 
@@ -51,11 +51,11 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     }
 
     @Override
-    public List<Integer> getRankingsForRunningServices() {
+    public List<ServiceExecution> getRunningServices() {
         return services.values()
-                .stream()
-                .map(ServiceExecution::ranking)
-                .toList();
+                       .stream()
+                       .map(ExecutionWithDuration::execution)
+                       .toList();
     }
 
     @Override
@@ -68,7 +68,7 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
         return durationsForService;
     }
 
-    private record ServiceExecution(String serviceName, int ranking, Instant executionStart) {
+    private record ExecutionWithDuration(ServiceExecution execution, Instant executionStart) {
     }
 
 }

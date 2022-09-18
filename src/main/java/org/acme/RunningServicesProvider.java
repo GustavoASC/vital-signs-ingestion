@@ -8,5 +8,6 @@ public interface RunningServicesProvider {
     UUID executionStarted(String service, int ranking);
     void executionFinished(UUID id);
     List<Integer> getRankingsForRunningSerices();
+    List<Long> getDurationsForService(String service);
 
 }

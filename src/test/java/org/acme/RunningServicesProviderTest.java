@@ -1,61 +1,80 @@
 package org.acme;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class RunningServicesProviderTest {
 
+        @Mock
+        Clock clock;
+
         @InjectMocks
-        RunningServicesProviderImpl runningServicesProviderImpl;
+        RunningServicesProviderImpl runningServicesProvider;
 
         @Test
         public void shouldRemoveNonExistingExecutionId() {
 
-                runningServicesProviderImpl.executionFinished(UUID.randomUUID());
-                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                runningServicesProvider.executionFinished(UUID.randomUUID());
+                assertThat(runningServicesProvider.getRankingsForRunningSerices())
                                 .isEmpty();
         }
 
         @Test
         public void shouldRetrieveRankingAfterTheyAreStoredButRemovingWithId() {
 
+                var first = runningServicesProvider.executionStarted("body-temperature-monitor", 1);
+                var second = runningServicesProvider.executionStarted("body-temperature-monitor", 7);
+                var third = runningServicesProvider.executionStarted("body-temperature-monitor", 9);
+                var fourth = runningServicesProvider.executionStarted("bar-function", 15);
+                var fifth = runningServicesProvider.executionStarted("bar-function", 2);
 
-                var first = runningServicesProviderImpl.executionStarted("body-temperature-monitor", 1);
-                var second = runningServicesProviderImpl.executionStarted("body-temperature-monitor", 7);
-                var third = runningServicesProviderImpl.executionStarted("body-temperature-monitor", 9);
-                var fourth = runningServicesProviderImpl.executionStarted("bar-function", 15);
-                var fifth = runningServicesProviderImpl.executionStarted("bar-function", 2);
-
-                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                assertThat(runningServicesProvider.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(1, 7, 9, 15, 2));
 
-                runningServicesProviderImpl.executionFinished(first);
-                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                runningServicesProvider.executionFinished(first);
+                assertThat(runningServicesProvider.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(7, 9, 15, 2));
 
-                runningServicesProviderImpl.executionFinished(second);
-                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                runningServicesProvider.executionFinished(second);
+                assertThat(runningServicesProvider.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(9, 15, 2));
 
-                runningServicesProviderImpl.executionFinished(third);
-                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                runningServicesProvider.executionFinished(third);
+                assertThat(runningServicesProvider.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(15, 2));
 
-                runningServicesProviderImpl.executionFinished(fourth);
-                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                runningServicesProvider.executionFinished(fourth);
+                assertThat(runningServicesProvider.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(2));
 
-                runningServicesProviderImpl.executionFinished(fifth);
-                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                runningServicesProvider.executionFinished(fifth);
+                assertThat(runningServicesProvider.getRankingsForRunningSerices())
                                 .isEmpty();
+
+        }
+
+        @Test
+        public void shouldStoreDurationForServiceExecutions() throws Exception {
+
+                when(clock.millis())
+                                .thenReturn(1663527788128l, 1663527789759l);
+
+                runningServicesProvider.executionFinished(
+                                runningServicesProvider.executionStarted("body-temperature-monitor", 7));
+
+                assertThat(runningServicesProvider.getDurationsForService("body-temperature-monitor"))
+                                .isEqualTo(List.of(1631l));
 
         }
 }

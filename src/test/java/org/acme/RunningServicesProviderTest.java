@@ -28,7 +28,7 @@ public class RunningServicesProviderTest {
     public void shouldRemoveNonExistingExecutionId() {
 
         runningServicesProvider.executionFinished(UUID.randomUUID());
-        assertThat(runningServicesProvider.getRankingsForRunningSerices())
+        assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEmpty();
     }
 
@@ -44,27 +44,27 @@ public class RunningServicesProviderTest {
         var fourth = runningServicesProvider.executionStarted("bar-function", 15);
         var fifth = runningServicesProvider.executionStarted("bar-function", 2);
 
-        assertThat(runningServicesProvider.getRankingsForRunningSerices())
+        assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(1, 7, 9, 15, 2));
 
         runningServicesProvider.executionFinished(first);
-        assertThat(runningServicesProvider.getRankingsForRunningSerices())
+        assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(7, 9, 15, 2));
 
         runningServicesProvider.executionFinished(second);
-        assertThat(runningServicesProvider.getRankingsForRunningSerices())
+        assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(9, 15, 2));
 
         runningServicesProvider.executionFinished(third);
-        assertThat(runningServicesProvider.getRankingsForRunningSerices())
+        assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(15, 2));
 
         runningServicesProvider.executionFinished(fourth);
-        assertThat(runningServicesProvider.getRankingsForRunningSerices())
+        assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(2));
 
         runningServicesProvider.executionFinished(fifth);
-        assertThat(runningServicesProvider.getRankingsForRunningSerices())
+        assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEmpty();
 
     }

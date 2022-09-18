@@ -27,7 +27,7 @@ public class RunningServicesProviderIT {
                                         runningServicesProviderImpl.executionFinished(id);
                                 });
 
-                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                assertThat(runningServicesProviderImpl.getRankingsForRunningServices())
                                 .isEmpty();
         }
 

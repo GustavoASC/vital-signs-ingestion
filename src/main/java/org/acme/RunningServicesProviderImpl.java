@@ -51,7 +51,7 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     }
 
     @Override
-    public List<Integer> getRankingsForRunningSerices() {
+    public List<Integer> getRankingsForRunningServices() {
         return services.values()
                 .stream()
                 .map(ServiceExecution::ranking)

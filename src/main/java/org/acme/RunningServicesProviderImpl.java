@@ -16,9 +16,10 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     private final Map<UUID, ServiceExecution> services = new LinkedHashMap<>();
 
     @Override
-    public void executionStarted(String service, int ranking) {
+    public UUID executionStarted(String service, int ranking) {
         UUID id = UUID.randomUUID();
         services.put(id, new ServiceExecution(service, ranking));
+        return id;
     }
 
     @Override
@@ -28,6 +29,11 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
                     var execution = entry.getValue();
                     return execution.serviceName.equals(service) && execution.ranking == ranking;
                 });
+    }
+
+    @Override
+    public void executionFinished(UUID id) {
+        services.remove(id);
     }
 
     @Override

@@ -1,11 +1,13 @@
 package org.acme;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface RunningServicesProvider {
 
-    void executionStarted(String service, int ranking);
+    UUID executionStarted(String service, int ranking);
     void executionFinished(String service, int ranking);
+    void executionFinished(UUID id);
     List<Integer> getRankingsForRunningSerices();
 
 }

@@ -2,6 +2,7 @@ package org.acme;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,22 @@ public class RunningServicesProviderTest {
                 runningServicesProviderImpl.executionFinished("body-temperature-monitor", 7);
                 assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
                                 .isEqualTo(List.of(1));
+        }
+
+        @Test
+        public void shouldRemoveAllElementsWithGivenInput() {
+
+                runningServicesProviderImpl.executionStarted("body-temperature-monitor", 1);
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                                .isEqualTo(List.of(1));
+                                
+                runningServicesProviderImpl.executionStarted("body-temperature-monitor", 1);
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                                .isEqualTo(List.of(1, 1));
+
+                runningServicesProviderImpl.executionFinished("body-temperature-monitor", 1);
+                assertThat(runningServicesProviderImpl.getRankingsForRunningSerices())
+                                .isEqualTo(Collections.emptyList());
         }
 
         @Test

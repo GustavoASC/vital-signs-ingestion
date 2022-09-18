@@ -1,6 +1,8 @@
 package org.acme;
 
 import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,7 +19,7 @@ import io.quarkus.arc.Lock;
 public class RunningServicesProviderImpl implements RunningServicesProvider {
 
     private final Map<UUID, ServiceExecution> services = new LinkedHashMap<>();
-    private final Map<String, List<Long>> durations = new LinkedHashMap<>();
+    private final Map<String, List<Duration>> durations = new LinkedHashMap<>();
     private final Clock clock;
 
     public RunningServicesProviderImpl(Clock clock) {
@@ -26,8 +28,8 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
 
     @Override
     public UUID executionStarted(String service, int ranking) {
-        UUID id = UUID.randomUUID();
-        long executionStart = clock.millis();
+        var id = UUID.randomUUID();
+        var executionStart = clock.instant();
         services.put(id, new ServiceExecution(service, ranking, executionStart));
         return id;
     }
@@ -38,8 +40,9 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
         Optional.ofNullable(services.get(id))
                 .ifPresent(execution -> {
 
+                    var now = clock.instant();
                     getDurationsForService(execution.serviceName())
-                            .add(clock.millis() - execution.executionStartInMillis());
+                            .add(Duration.between(execution.executionStart(), now));
 
                 });
 
@@ -56,8 +59,8 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     }
 
     @Override
-    public List<Long> getDurationsForService(String service) {
-        List<Long> durationsForService = durations.get(service);
+    public List<Duration> getDurationsForService(String service) {
+        List<Duration> durationsForService = durations.get(service);
         if (durationsForService == null) {
             durationsForService = new ArrayList<>();
             durations.put(service, durationsForService);
@@ -65,7 +68,7 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
         return durationsForService;
     }
 
-    private record ServiceExecution(String serviceName, int ranking, long executionStartInMillis) {
+    private record ServiceExecution(String serviceName, int ranking, Instant executionStart) {
     }
 
 }

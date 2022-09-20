@@ -13,6 +13,6 @@ import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 public interface ServerlessFunctionClient {
 
     @POST
-    Void runFunction(@PathParam("fn_name") String fnName, String payload);
+    String runFunction(@PathParam("fn_name") String fnName, String payload);
 
 }

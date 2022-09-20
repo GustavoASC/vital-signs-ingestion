@@ -1,0 +1,8 @@
+{
+    "data": [
+        123
+    ],
+    "smoothing_level": 0.8,
+    "smoothing_trend": 0.2,
+    "future_data_points": 1
+}

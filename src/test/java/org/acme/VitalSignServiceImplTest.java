@@ -1,7 +1,6 @@
 package org.acme;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -100,6 +99,10 @@ public class VitalSignServiceImplTest {
         @Test
         public void shouldOffloadVitalSignsWithHighCpuUsed() throws Throwable {
 
+                when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                                .thenReturn(13);
+                when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                                .thenReturn(14);
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(90);
 
@@ -119,9 +122,13 @@ public class VitalSignServiceImplTest {
         public void shouldTriggerOffloadingHeuristicOnAlertScenario() throws Throwable {
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(80);
-                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "body-temperature-monitor"))
+                when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                                .thenReturn(13);
+                when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                                .thenReturn(14);
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(13))
                                 .thenReturn(true);
-                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "bar-function"))
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(14))
                                 .thenReturn(true);
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
@@ -134,8 +141,10 @@ public class VitalSignServiceImplTest {
                                                 USER_PRIORITY));
                 verify(resourcesLocator, times(2))
                                 .getUsedCpuPercentage();
-                verify(offloadingHeuristicByRanking, times(2))
-                                .shouldOffloadVitalSigns(anyInt(), any());
+                verify(offloadingHeuristicByRanking, times(1))
+                                .shouldOffloadVitalSigns(13);
+                verify(offloadingHeuristicByRanking, times(1))
+                                .shouldOffloadVitalSigns(14);
         }
 
         @Test
@@ -147,9 +156,9 @@ public class VitalSignServiceImplTest {
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
                                 .thenReturn(17);
 
-                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "body-temperature-monitor"))
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(13))
                                 .thenThrow(new CouldNotDetermineException());
-                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "bar-function"))
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(17))
                                 .thenThrow(new CouldNotDetermineException());
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);

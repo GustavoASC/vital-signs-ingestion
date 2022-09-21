@@ -7,19 +7,14 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class OffloadingHeuristicByRankingImpl implements OffloadingHeuristicByRanking {
 
-    private final RankingCalculator rankingCalculator;
     private final RunningServicesProvider servicesProvider;
 
-    public OffloadingHeuristicByRankingImpl(
-                            RankingCalculator rankingCalculator,
-                            RunningServicesProvider servicesProvider) {
-        this.rankingCalculator = rankingCalculator;
+    public OffloadingHeuristicByRankingImpl(RunningServicesProvider servicesProvider) {
         this.servicesProvider = servicesProvider;
     }
 
-    public boolean shouldOffloadVitalSigns(int userPriority, String service) throws CouldNotDetermineException {
+    public boolean shouldOffloadVitalSigns(int calculatedRanking) throws CouldNotDetermineException {
 
-        int calculatedRanking = rankingCalculator.calculate(userPriority, service);
         List<Integer> rankingsForAllServices = servicesProvider.getRankingsForRunningServices();
 
         if (!rankingsForAllServices.isEmpty()) {

@@ -45,7 +45,8 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
         services.stream()
                 .forEach(fn -> {
 
-                    if (shouldOffloadToParent(fn, userPriority)) {
+                    int ranking = rankingCalculator.calculate(userPriority, fn);
+                    if (shouldOffloadToParent(ranking)) {
 
                         // Executes on a remote machine
                         var input = new VigalSignIngestionClientInputDto(fn, vitalSign, userPriority);
@@ -53,18 +54,15 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
                         
                     } else {
 
-                        int ranking = rankingCalculator.calculate(userPriority, fn);
-                        UUID id = runningServicesProvider.executionStarted(fn, ranking);
-
                         // Runs on the local machine
+                        UUID id = runningServicesProvider.executionStarted(fn, ranking);
                         serverlessFunctionClient.runFunction(fn, vitalSign);
-
                         runningServicesProvider.executionFinished(id);
                     }
                 });
     }
 
-    private boolean shouldOffloadToParent(String service, int userPriority) {
+    private boolean shouldOffloadToParent(int ranking) {
         int usedCpu = resourcesLocator.getUsedCpuPercentage();
         if (usedCpu >= CRITICAL_CPU_USAGE) {
             return true;
@@ -72,7 +70,7 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
 
         if (usedCpu >= WARNING_CPU_USAGE) {
             try {
-                return offloadingHeuristicByRanking.shouldOffloadVitalSigns(userPriority, service);
+                return offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);
             } catch (CouldNotDetermineException e) {
 
                 // Run locally because it is a match and we could not detect which one is more

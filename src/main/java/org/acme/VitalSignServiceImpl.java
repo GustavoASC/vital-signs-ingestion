@@ -74,7 +74,11 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
             try {
                 return offloadingHeuristicByRanking.shouldOffloadVitalSigns(userPriority, service);
             } catch (CouldNotDetermineException e) {
-                return true;
+
+                // Run locally because it is a match and we could not detect which one is more
+                // important. Therefore, we assume that running locally is the best approach
+                // because it does not incur the overhead of performing an offloading operation.
+                return false;
             }
         }
 

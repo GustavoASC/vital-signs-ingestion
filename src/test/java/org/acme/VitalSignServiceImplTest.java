@@ -139,9 +139,14 @@ public class VitalSignServiceImplTest {
         }
 
         @Test
-        public void shouldOffloadWhenHeuristicCannotDetermineOperation() throws Throwable {
+        public void shouldNotOffloadWhenHeuristicCannotDetermineOperation() throws Throwable {
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(80);
+                when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                                .thenReturn(13);
+                when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                                .thenReturn(17);
+
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "body-temperature-monitor"))
                                 .thenThrow(new CouldNotDetermineException());
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(USER_PRIORITY, "bar-function"))
@@ -149,16 +154,19 @@ public class VitalSignServiceImplTest {
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
-                verify(vitalSignIngestionClient, times(1))
-                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("body-temperature-monitor", VITAL_SIGN,
-                                                USER_PRIORITY));
-                verify(vitalSignIngestionClient, times(1))
-                                .ingestVitalSigns(new VigalSignIngestionClientInputDto("bar-function", VITAL_SIGN,
-                                                USER_PRIORITY));
-                verify(resourcesLocator, times(2))
-                                .getUsedCpuPercentage();
-                verify(offloadingHeuristicByRanking, times(2))
-                                .shouldOffloadVitalSigns(anyInt(), any());
+                verify(runningServicesProvider, times(1))
+                                .executionStarted("body-temperature-monitor", 13);
+                verify(serverlessFunctionClient, times(1))
+                                .runFunction("body-temperature-monitor", VITAL_SIGN);
+
+                verify(runningServicesProvider, times(1))
+                                .executionStarted("bar-function", 17);
+                verify(serverlessFunctionClient, times(1))
+                                .runFunction("bar-function", VITAL_SIGN);
+
+                verify(runningServicesProvider, times(2))
+                                .executionFinished(any());
+
         }
 
         @Test

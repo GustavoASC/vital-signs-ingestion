@@ -3,8 +3,11 @@ package org.acme;
 import java.util.List;
 import java.util.Optional;
 
+import javax.enterprise.context.ApplicationScoped;
+
 import org.acme.RunningServicesProvider.ServiceExecution;
 
+@ApplicationScoped
 public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByDuration {
 
     private final RunningServicesProvider servicesProvider;

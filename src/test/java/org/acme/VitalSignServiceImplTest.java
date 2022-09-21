@@ -44,6 +44,9 @@ public class VitalSignServiceImplTest {
         OffloadingHeuristicByRanking offloadingHeuristicByRanking;
 
         @Mock
+        OffloadingHeuristicByDuration offloadingHeuristicByDuration;
+
+        @Mock
         RankingCalculator rankingCalculator;
 
         @Mock
@@ -56,6 +59,7 @@ public class VitalSignServiceImplTest {
                                 vitalSignIngestionClient,
                                 resourcesLocator,
                                 offloadingHeuristicByRanking,
+                                offloadingHeuristicByDuration,
                                 rankingCalculator,
                                 runningServicesProvider);
         }
@@ -160,6 +164,10 @@ public class VitalSignServiceImplTest {
                                 .thenThrow(new CouldNotDetermineException());
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(17))
                                 .thenThrow(new CouldNotDetermineException());
+                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(13, "body-temperature-monitor"))
+                                .thenThrow(new CouldNotDetermineException());
+                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(17, "bar-function"))
+                                .thenThrow(new CouldNotDetermineException());
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
@@ -175,7 +183,40 @@ public class VitalSignServiceImplTest {
 
                 verify(runningServicesProvider, times(2))
                                 .executionFinished(any());
+        }
 
+        @Test
+        public void shouldNotOffloadAccordingToDurationHeuristic() throws Throwable {
+                when(resourcesLocator.getUsedCpuPercentage())
+                                .thenReturn(80);
+                when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                                .thenReturn(13);
+                when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                                .thenReturn(17);
+
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(13))
+                                .thenThrow(new CouldNotDetermineException());
+                when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(17))
+                                .thenThrow(new CouldNotDetermineException());
+                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(13, "body-temperature-monitor"))
+                                .thenReturn(false);
+                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(17, "bar-function"))
+                                .thenReturn(false);
+
+                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+
+                verify(runningServicesProvider, times(1))
+                                .executionStarted("body-temperature-monitor", 13);
+                verify(serverlessFunctionClient, times(1))
+                                .runFunction("body-temperature-monitor", VITAL_SIGN);
+
+                verify(runningServicesProvider, times(1))
+                                .executionStarted("bar-function", 17);
+                verify(serverlessFunctionClient, times(1))
+                                .runFunction("bar-function", VITAL_SIGN);
+
+                verify(runningServicesProvider, times(2))
+                                .executionFinished(any());
         }
 
         @Test

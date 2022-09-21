@@ -17,6 +17,7 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
     private final VitalSignIngestionClient vitalSignIngestionClient;
     private final ResourcesLocator resourcesLocator;
     private final OffloadingHeuristicByRanking offloadingHeuristicByRanking;
+    private final OffloadingHeuristicByDuration offloadingHeuristicByDuration;
     private final RankingCalculator rankingCalculator;
     private final RunningServicesProvider runningServicesProvider;
 
@@ -25,12 +26,14 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
             @RestClient VitalSignIngestionClient vitalSignIngestionClient,
             ResourcesLocator resourcesLocator,
             OffloadingHeuristicByRanking offloadingHeuristicByRanking,
+            OffloadingHeuristicByDuration offloadingHeuristicByDuration,
             RankingCalculator rankingCalculator,
             RunningServicesProvider runningServicesProvider) {
         this.serverlessFunctionClient = serverlessFunctionClient;
         this.vitalSignIngestionClient = vitalSignIngestionClient;
         this.resourcesLocator = resourcesLocator;
         this.offloadingHeuristicByRanking = offloadingHeuristicByRanking;
+        this.offloadingHeuristicByDuration = offloadingHeuristicByDuration;
         this.rankingCalculator = rankingCalculator;
         this.runningServicesProvider = runningServicesProvider;
     }
@@ -46,7 +49,7 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
                 .forEach(fn -> {
 
                     int ranking = rankingCalculator.calculate(userPriority, fn);
-                    if (shouldOffloadToParent(ranking)) {
+                    if (shouldOffloadToParent(ranking, fn)) {
 
                         // Executes on a remote machine
                         var input = new VigalSignIngestionClientInputDto(fn, vitalSign, userPriority);
@@ -62,7 +65,7 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
                 });
     }
 
-    private boolean shouldOffloadToParent(int ranking) {
+    private boolean shouldOffloadToParent(int ranking, String fn) {
         int usedCpu = resourcesLocator.getUsedCpuPercentage();
         if (usedCpu >= CRITICAL_CPU_USAGE) {
             return true;
@@ -72,11 +75,14 @@ public class VitalSignServiceImpl implements VitalSignService, ResourceService {
             try {
                 return offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);
             } catch (CouldNotDetermineException e) {
-
-                // Run locally because it is a match and we could not detect which one is more
-                // important. Therefore, we assume that running locally is the best approach
-                // because it does not incur the overhead of performing an offloading operation.
-                return false;
+                try {
+                    return offloadingHeuristicByDuration.shouldOffloadVitalSigns(ranking, fn);
+                } catch (CouldNotDetermineException e1) {
+                    // Run locally because it is a match and we could not detect which request is
+                    // more important. Therefore, we assume that running locally is the best approach
+                    // because it does not incur the overhead of performing an offloading operation.
+                    return false;
+                }
             }
         }
 

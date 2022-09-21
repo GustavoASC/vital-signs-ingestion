@@ -3,10 +3,15 @@ package org.acme;
 import java.time.Duration;
 import java.util.List;
 
+import javax.enterprise.context.ApplicationScoped;
+
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+@ApplicationScoped
 public class DurationPredictorImpl implements DurationPredictor {
 
     private final static String PREDICTOR_FN = "predictor";
@@ -17,7 +22,7 @@ public class DurationPredictorImpl implements DurationPredictor {
 
     public DurationPredictorImpl(
             RunningServicesProvider runningServices,
-            ServerlessFunctionClient serverlessFunctionClient) {
+            @RestClient ServerlessFunctionClient serverlessFunctionClient) {
         this.runningServices = runningServices;
         this.serverlessFunctionClient = serverlessFunctionClient;
     }

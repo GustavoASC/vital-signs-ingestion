@@ -3,4 +3,5 @@ login:
 	@docker login
 
 deployfn:
-	cd functions && faas-cli up -f body-temperature-monitor.yml
+	cd functions && faas-cli up -f body-temperature-monitor.yml --build-arg TEST_ENABLED=false
+	cd functions && faas-cli up -f predictor.yml --build-arg TEST_ENABLED=false

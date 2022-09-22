@@ -1,16 +1,14 @@
-import psutil, urllib.request, socket, json, traceback
+import urllib.request, json, traceback
 
-URL = "http://localhost:8095/resources"
-HOSTNAME = socket.gethostname()
+URL = "http://localhost:8095/vital-sign"
 
 while True:
 
     try:
-        cpu_percent = psutil.cpu_percent(interval=1)
-        print(f"Current cpu: {cpu_percent}")
-
         headers = {"content-type": "application/json"}
-        data = json.dumps({"hostname": HOSTNAME, "cpu": cpu_percent}).encode("utf-8")
+        data = json.dumps(
+            {"vital_sign": '{"temperature": 100}', "user_priority": 3}
+        ).encode("utf-8")
         req = urllib.request.Request(URL, data=data, headers=headers)
         with urllib.request.urlopen(req) as response:
             print(f"Response: {str(response.read())}")

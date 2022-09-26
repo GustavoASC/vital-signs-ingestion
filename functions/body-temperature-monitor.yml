@@ -5,6 +5,6 @@ provider:
 functions:
   body-temperature-monitor:
     lang: python3-flask
-    handler: ./body-temperature-monitor
+    handler: ./health-services/openfaas/body-temperature-monitor
     image: gustavoasc/body-temperature-monitor:latest
 

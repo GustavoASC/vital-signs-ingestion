@@ -5,6 +5,6 @@ provider:
 functions:
   predictor:
     lang: python3-debian
-    handler: ./modules/predictor
+    handler: ./modules/openfaas/predictor
     image: gustavoasc/predictor:latest
 

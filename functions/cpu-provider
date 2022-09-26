@@ -1,0 +1,9 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  body-temperature-monitor:
+    lang: python3-flask
+    handler: ./modules/openfaas/cpu-provider
+    image: gustavoasc/cpu-provider:latest

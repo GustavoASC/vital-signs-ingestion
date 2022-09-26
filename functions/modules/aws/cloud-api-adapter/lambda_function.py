@@ -3,7 +3,7 @@ import boto3
 
 
 client = boto3.client("lambda")
-health_services = ["body-temperature-monitor", "bar-function"]
+health_services = ["body-temperature-monitor"]
 
 
 def invoke_fn(fn_name, payload):

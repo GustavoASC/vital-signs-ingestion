@@ -17,7 +17,7 @@ public class RankingOfffoadingResourceTest {
             .contentType(ContentType.JSON)
             .body("{\"all_rankings\": [1, 3, 6, 3, 7, 8, 2], \"calculated_ranking\": 15}")
         .when()
-            .get("/")
+            .post("/")
         .then()
              .statusCode(200)
              .body(is("{\"offloading_decision\":\"RUN_LOCALLY\"}"));
@@ -29,7 +29,7 @@ public class RankingOfffoadingResourceTest {
             .contentType(ContentType.JSON)
             .body("{\"all_rankings\": [7, 7, 7, 7, 7, 7, 7], \"calculated_ranking\": 2}")
         .when()
-            .get("/")
+            .post("/")
         .then()
              .statusCode(200)
              .body(is("{\"offloading_decision\":\"OFFLOAD\"}"));
@@ -41,7 +41,7 @@ public class RankingOfffoadingResourceTest {
             .contentType(ContentType.JSON)
             .body("{\"all_rankings\": [7, 7, 7, 7, 7, 7, 7], \"calculated_ranking\": 7}")
         .when()
-            .get("/")
+            .post("/")
         .then()
              .statusCode(200)
              .body(is("{\"offloading_decision\":\"UNKNOWN\"}"));

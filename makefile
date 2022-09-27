@@ -11,10 +11,10 @@ deployfn:
 	cd functions && faas-cli up -f predictor.yml --build-arg TEST_ENABLED=false
 
 run:
-	@./mvnw quarkus:dev
+	@./mvnw -Dquarkus.http.port=8097 quarkus:dev &
 
 collect-cpu:
-	@python3 scripts/collect-machine-resources-usage.py
+	@python3 scripts/collect-machine-resources-usage.py &
 
 eval:
-	@python3 scripts/evaluation.py
+	@python3 scripts/evaluation.py &

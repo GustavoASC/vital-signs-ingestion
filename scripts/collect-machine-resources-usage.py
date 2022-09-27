@@ -1,6 +1,6 @@
 import psutil, urllib.request, socket, json, traceback
 
-URL = "http://localhost:8095/resources"
+URL = "http://localhost:8097/resources"
 HOSTNAME = socket.gethostname()
 
 while True:

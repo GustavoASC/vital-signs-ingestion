@@ -1,6 +1,6 @@
 import urllib.request, json, traceback
 
-URL = "http://localhost:8095/vital-sign"
+URL = "http://localhost:8097/vital-sign"
 
 while True:
 

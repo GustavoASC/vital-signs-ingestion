@@ -1,0 +1,10 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  ranking-offloading-openfaas:
+    lang: java11
+    handler: ./ranking-offloading-openfaas
+    image: ranking-offloading-openfaas:latest
+

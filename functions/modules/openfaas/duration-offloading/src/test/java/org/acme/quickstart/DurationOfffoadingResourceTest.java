@@ -13,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Objects;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -46,14 +45,34 @@ public class DurationOfffoadingResourceTest {
     }
 
     @Test
+    public void shouldDetectLocalExecution() throws Throwable {
+
+        stubPredictorFunctionForGivenPayloadAndResponse(
+            "/duration-predictor/input-one-two-three.json",
+            "/duration-predictor/output-forecast-two.json"
+        );
+        stubPredictorFunctionForGivenPayloadAndResponse(
+            "/duration-predictor/input-four-five-six.json",
+            "/duration-predictor/output-forecast-five.json"
+        );
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(jsonFromResource("input-services-with-different-durations.json"))
+        .when()
+            .post("/")
+        .then()
+             .statusCode(200)
+             .body(is("{\"offloading_decision\":\"RUN_LOCALLY\"}"));
+
+    }
+
+    @Test
     public void shouldNotDetectOffloading() throws Throwable {
 
-        stubFor(
-            post("/function/predictor")
-                .withHost(equalTo("localhost"))
-                .withPort(STUBBED_SERVERLESS_PLATFORM_PORT)
-                .withRequestBody(equalToJson(jsonFromResource("/duration-predictor/input-three-values.json")))
-                .willReturn(okJson(jsonFromResource("/duration-predictor/output-single-forecast.json")))
+        stubPredictorFunctionForGivenPayloadAndResponse(
+            "/duration-predictor/input-one-two-three.json",
+            "/duration-predictor/output-forecast-two.json"
         );
 
         given()
@@ -66,11 +85,20 @@ public class DurationOfffoadingResourceTest {
              .body(is("{\"offloading_decision\":\"UNKNOWN\"}"));
     }
 
+    private void stubPredictorFunctionForGivenPayloadAndResponse(String requestBodyFile, String responseFile) throws IOException {
+        stubFor(
+            post("/function/predictor")
+                .withHost(equalTo("localhost"))
+                .withPort(STUBBED_SERVERLESS_PLATFORM_PORT)
+                .withRequestBody(equalToJson(jsonFromResource(requestBodyFile)))
+                .willReturn(okJson(jsonFromResource(responseFile)))
+        );
+    }
+
     private String jsonFromResource(String resourcePath) throws IOException {
         String fullResourcePath = Path.of("/component", resourcePath).toString();
         InputStream resourceStream = Objects.requireNonNull(this.getClass().getResourceAsStream(fullResourcePath));
-        var result = new String(resourceStream.readAllBytes(), Charset.defaultCharset());
-        return result;
+        return new String(resourceStream.readAllBytes(), Charset.defaultCharset());
     }    
 
 }

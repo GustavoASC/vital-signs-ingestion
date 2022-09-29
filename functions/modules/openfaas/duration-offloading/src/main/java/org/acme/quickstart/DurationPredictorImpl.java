@@ -33,10 +33,12 @@ public class DurationPredictorImpl implements DurationPredictor {
         if (durationsForService.size() < MIN_HISTORICAL_DURATIONS) {
             throw new CouldNotPredictDurationException();
         }
-
-        String payload = new Formatter().format(PREDICTION_INPUT_TEMPLATE, durationsForService).toString();
-        String result = serverlessFunctionClient.runFunction(PREDICTOR_FN, payload);
-        return extractFirstForecast(result);
+        
+        try (var formatter = new Formatter().format(PREDICTION_INPUT_TEMPLATE, durationsForService)) {
+            String payload = formatter.toString();
+            String result = serverlessFunctionClient.runFunction(PREDICTOR_FN, payload);
+            return extractFirstForecast(result);
+        }
     }
 
     private long extractFirstForecast(String result) {

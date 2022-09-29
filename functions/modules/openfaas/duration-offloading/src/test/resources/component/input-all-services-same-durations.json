@@ -1,0 +1,17 @@
+{
+    "previous_durations": [
+        {
+            "name": "foo",
+            "durations": [1, 2, 3]
+        },
+        {
+            "name": "bar",
+            "durations": [1, 2, 3]
+        },
+        {
+            "name": "xyz",
+            "durations": [1, 2, 3]
+        }
+    ],
+    "target_service": "foo"
+}

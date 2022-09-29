@@ -58,7 +58,7 @@ public class DurationOfffoadingResourceTest {
 
         given()
             .contentType(ContentType.JSON)
-            .body(jsonFromResource("input-services-with-different-durations.json"))
+            .body(jsonFromResource("/endpoint-input/input-services-with-different-durations-and-target-service-faster.json"))
         .when()
             .post("/")
         .then()
@@ -68,7 +68,30 @@ public class DurationOfffoadingResourceTest {
     }
 
     @Test
-    public void shouldNotDetectOffloading() throws Throwable {
+    public void shouldDetectOffloading() throws Throwable {
+
+        stubPredictorFunctionForGivenPayloadAndResponse(
+            "/duration-predictor/input-one-two-three.json",
+            "/duration-predictor/output-forecast-two.json"
+        );
+        stubPredictorFunctionForGivenPayloadAndResponse(
+            "/duration-predictor/input-four-five-six.json",
+            "/duration-predictor/output-forecast-five.json"
+        );
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(jsonFromResource("/endpoint-input/input-services-with-different-durations-and-target-service-slower.json"))
+        .when()
+            .post("/")
+        .then()
+             .statusCode(200)
+             .body(is("{\"offloading_decision\":\"OFFLOAD\"}"));
+    
+    }
+
+    @Test
+    public void shouldNotBeAbleToDetect() throws Throwable {
 
         stubPredictorFunctionForGivenPayloadAndResponse(
             "/duration-predictor/input-one-two-three.json",
@@ -77,7 +100,7 @@ public class DurationOfffoadingResourceTest {
 
         given()
             .contentType(ContentType.JSON)
-            .body(jsonFromResource("input-all-services-same-durations.json"))
+            .body(jsonFromResource("/endpoint-input/input-all-services-same-durations.json"))
         .when()
             .post("/")
         .then()
@@ -96,7 +119,7 @@ public class DurationOfffoadingResourceTest {
     }
 
     private String jsonFromResource(String resourcePath) throws IOException {
-        String fullResourcePath = Path.of("/component", resourcePath).toString();
+        String fullResourcePath = Path.of("/component-test", resourcePath).toString();
         InputStream resourceStream = Objects.requireNonNull(this.getClass().getResourceAsStream(fullResourcePath));
         return new String(resourceStream.readAllBytes(), Charset.defaultCharset());
     }    

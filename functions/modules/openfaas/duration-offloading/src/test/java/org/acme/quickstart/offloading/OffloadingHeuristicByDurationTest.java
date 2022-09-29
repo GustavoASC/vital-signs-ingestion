@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.offloading;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.List;
 
 import org.acme.quickstart.input.PreviousServiceDuration;
+import org.acme.quickstart.prediction.CouldNotPredictDurationException;
+import org.acme.quickstart.prediction.DurationPredictor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

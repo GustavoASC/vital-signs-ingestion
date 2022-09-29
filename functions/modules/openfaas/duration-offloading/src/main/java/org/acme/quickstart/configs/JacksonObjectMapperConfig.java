@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.configs;
 
 import javax.inject.Singleton;
 

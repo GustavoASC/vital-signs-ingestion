@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.prediction;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.POST;

@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.output;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 

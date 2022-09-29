@@ -6,8 +6,11 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import org.acme.quickstart.OutputDto.OffloadingDecision;
 import org.acme.quickstart.input.InputDto;
+import org.acme.quickstart.offloading.CouldNotDetermineException;
+import org.acme.quickstart.offloading.OffloadingHeuristicByDuration;
+import org.acme.quickstart.output.OutputDto;
+import org.acme.quickstart.output.OutputDto.OffloadingDecision;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

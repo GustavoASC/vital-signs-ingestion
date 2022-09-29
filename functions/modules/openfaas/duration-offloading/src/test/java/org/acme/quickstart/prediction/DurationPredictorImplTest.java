@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.prediction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

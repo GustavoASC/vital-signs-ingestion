@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.offloading;
 
 import java.util.List;
 import java.util.Optional;
@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 
 import org.acme.quickstart.input.PreviousServiceDuration;
+import org.acme.quickstart.prediction.CouldNotPredictDurationException;
+import org.acme.quickstart.prediction.DurationPredictor;
 
 @ApplicationScoped
 public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByDuration {

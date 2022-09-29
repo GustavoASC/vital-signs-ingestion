@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.prediction;
 
 import java.util.Formatter;
 import java.util.List;
@@ -33,7 +33,7 @@ public class DurationPredictorImpl implements DurationPredictor {
         if (durationsForService.size() < MIN_HISTORICAL_DURATIONS) {
             throw new CouldNotPredictDurationException();
         }
-        
+
         try (var formatter = new Formatter().format(PREDICTION_INPUT_TEMPLATE, durationsForService)) {
             String payload = formatter.toString();
             String result = serverlessFunctionClient.runFunction(PREDICTOR_FN, payload);

@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.prediction;
 
 import java.util.List;
 

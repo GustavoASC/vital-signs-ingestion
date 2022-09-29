@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.prediction;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;

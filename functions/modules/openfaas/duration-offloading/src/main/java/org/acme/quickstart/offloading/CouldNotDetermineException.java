@@ -1,4 +1,4 @@
-package org.acme.quickstart;
+package org.acme.quickstart.offloading;
 
 public class CouldNotDetermineException extends Exception {
 

@@ -52,7 +52,7 @@ public class ServerlessFunctionClientIT {
     void shouldNotReturnAnyContentForAGivenServerlessFunction() throws IOException {
         stubFor(
                 post("/function/foo-fn")
-                        .withHost(equalTo("localhost")));
+                        .withHost(equalTo("127.0.0.1")));
 
         var result = serverlessFunctionClient.runFunction("foo-fn", "{\"abc\": 10}");
 
@@ -64,7 +64,7 @@ public class ServerlessFunctionClientIT {
     void shouldReturnJsonContentForAGivenServerlessFunction() throws IOException {
         stubFor(
                 post("/function/foo-fn")
-                        .withHost(equalTo("localhost"))
+                        .withHost(equalTo("127.0.0.1"))
                         .willReturn(okJson(jsonFromResource("output-sample-fn-response.json"))));
 
         var result = serverlessFunctionClient.runFunction("foo-fn", "{\"abc\": 10}");

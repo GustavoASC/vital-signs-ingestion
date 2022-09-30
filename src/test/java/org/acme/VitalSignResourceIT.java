@@ -182,7 +182,7 @@ public class VitalSignResourceIT {
         for (var function : functions) {
             stubFor(
                 post("/function/" + function)
-                    .withHost(equalTo("localhost"))
+                    .withHost(equalTo("127.0.0.1"))
                     .withPort(SERVERLESS_PLATFORM_PORT)
                     .withRequestBody(equalToJson("{\"heartbeat\": 100}"))
                     .willReturn(ResponseDefinitionBuilder.responseDefinition().withFixedDelay((int) delay * 1000))

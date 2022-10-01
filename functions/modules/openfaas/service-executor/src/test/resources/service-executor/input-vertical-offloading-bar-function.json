@@ -1,0 +1,5 @@
+{
+    "service_name": "bar-function",
+    "vital_sign": "{\"heartbeat\": 100}",
+    "user_priority": 3
+}

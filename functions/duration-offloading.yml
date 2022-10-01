@@ -3,8 +3,8 @@ provider:
   name: openfaas
   gateway: http://127.0.0.1:8080
 functions:
-  ranking-offloading:
+  duration-offloading:
     lang: quarkus-native
-    handler: ./modules/openfaas/ranking-offloading
-    image: gustavoasc/ranking-offloading:latest
+    handler: ./modules/openfaas/duration-offloading
+    image: gustavoasc/duration-offloading:latest
 

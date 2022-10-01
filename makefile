@@ -8,7 +8,11 @@ start-note:
 
 deployfn:
 	cd functions && faas-cli up -f body-temperature-monitor.yml --build-arg TEST_ENABLED=false
+	cd functions && faas-cli up -f cpu-provider.yml --build-arg TEST_ENABLED=false
+	cd functions && faas-cli up -f duration-offloading.yml --build-arg TEST_ENABLED=false
 	cd functions && faas-cli up -f predictor.yml --build-arg TEST_ENABLED=false
+	cd functions && faas-cli up -f ranking-offloading.yml --build-arg TEST_ENABLED=false
+	cd functions && faas-cli up -f service-executor.yml --build-arg TEST_ENABLED=false
 
 run:
 	@./mvnw -Dquarkus.http.port=8097 quarkus:dev &

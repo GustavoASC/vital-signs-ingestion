@@ -6,7 +6,7 @@ class Serv(BaseHTTPRequestHandler):
 
     def do_GET(self):
 
-        cpu_percent = psutil.cpu_percent(interval=1)
+        cpu_percent = psutil.cpu_percent()
         print(f"Current cpu: {cpu_percent}")
 
         response_bytes = json.dumps({

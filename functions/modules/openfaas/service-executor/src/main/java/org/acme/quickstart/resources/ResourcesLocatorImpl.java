@@ -2,19 +2,20 @@ package org.acme.quickstart.resources;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+
 @ApplicationScoped
 public class ResourcesLocatorImpl implements ResourcesLocator {
 
-    private int usedCpu = 0;
+    private final MachineResourcesClient machineResourcesClient;
 
+    public ResourcesLocatorImpl(@RestClient MachineResourcesClient machineResourcesClient) {
+        this.machineResourcesClient = machineResourcesClient;
+    }
+    
     @Override
     public int getUsedCpuPercentage() {
-        return usedCpu;
-    }
-
-    @Override
-    public void updateUsedCpuPercentage(int usedCpu) {
-        this.usedCpu = usedCpu;
+        return machineResourcesClient.getMachineResources().getCpu().intValue();
     }
 
 }

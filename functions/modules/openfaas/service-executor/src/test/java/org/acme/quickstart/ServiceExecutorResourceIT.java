@@ -2,6 +2,7 @@ package org.acme.quickstart;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
@@ -11,7 +12,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.is;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,52 +24,67 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.acme.quickstart.resources.ResourcesLocator;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
 
+import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.common.Slf4jNotifier;
+import com.github.tomakehurst.wiremock.core.Options;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 
 import io.quarkus.test.junit.QuarkusTest;
-import io.quarkus.test.junit.mockito.InjectMock;
 import io.restassured.http.ContentType;
 
 @QuarkusTest
 public class ServiceExecutorResourceIT {
 
     private static final int SERVERLESS_PLATFORM_PORT = 8586;
+    private static final int MACHINE_RESOURCES_PORT = 8597;
+
     private static final long DELAY_NONE = 0;
     private static final long DELAY_TWO_SECONDS = 2;
 
-    @RegisterExtension
-    static WireMockExtension wmServerless = WireMockExtension.newInstance()
-        .options(
-            WireMockConfiguration.wireMockConfig()
-            .port(SERVERLESS_PLATFORM_PORT)
-            .notifier(new Slf4jNotifier(true))
-        ).build();
-
-    @InjectMock
-    ResourcesLocator resourcesLocator;
+    MockServer wmServerless;
+    MockServer wmMachineResources;
 
     @Inject
     RunningServicesProvider runningServicesProvider;
 
     @BeforeEach
     public void setUp() {
-        configureFor(SERVERLESS_PLATFORM_PORT);
+        
+        wmServerless = new MockServer(WireMockConfiguration.wireMockConfig()
+            .port(SERVERLESS_PLATFORM_PORT)
+            .notifier(new Slf4jNotifier(true))
+        );
+
+        wmMachineResources = new MockServer(WireMockConfiguration.wireMockConfig()
+            .port(MACHINE_RESOURCES_PORT)
+            .notifier(new Slf4jNotifier(true))
+        );
+
+        wmServerless.start();
+        wmMachineResources.start();
+    }
+    
+    @AfterEach
+    void tearDown() {
+        wmServerless.stop();
+        wmMachineResources.stop();
     }
 
     @Test
     public void testSingleVitalSignIngestionOnLocalMachineWithoutSpecificService() throws Throwable {
-        
+
+
         String[] functions = {"body-temperature-monitor", "bar-function"};
         stubHealthServerlessFunctions(DELAY_NONE, functions);
-        mockUsedCpuPercentage(0);
+
+        configureFor(wmMachineResources.getClient());
+        stubUsedCpuPercentage(0);
         
         given()
             .contentType(ContentType.JSON)
@@ -87,9 +102,13 @@ public class ServiceExecutorResourceIT {
     public void testSingleVitalSignIngestionOnLocalMachineDependingOnHeuristicWithoutSpecificService() throws Throwable {
         
         String[] functions = {"body-temperature-monitor", "bar-function"};
+
+        configureFor(wmServerless.getClient());
         stubHealthServerlessFunctions(DELAY_NONE, functions);
         stubRankingOffloadingFunctionToRunLocally();
-        mockUsedCpuPercentage(85);
+
+        configureFor(wmMachineResources.getClient());
+        stubUsedCpuPercentage(85);
         
         given()
             .contentType(ContentType.JSON)
@@ -107,8 +126,12 @@ public class ServiceExecutorResourceIT {
     public void testSingleVitalSignIngestionOnLocalMachineWithSpecificService() throws Throwable {
         
         String[] functions = {"body-temperature-monitor"};
+
+        configureFor(wmServerless.getClient());
         stubHealthServerlessFunctions(DELAY_NONE, functions);
-        mockUsedCpuPercentage(0);
+
+        configureFor(wmMachineResources.getClient());
+        stubUsedCpuPercentage(0);
         
         given()
             .contentType(ContentType.JSON)
@@ -126,10 +149,14 @@ public class ServiceExecutorResourceIT {
     public void shouldRunLocallyAfterBothRankingAndDurationHeuristics() throws Throwable{
         
         String[] functions = {"body-temperature-monitor"};
+
+        configureFor(wmServerless.getClient());
         stubHealthServerlessFunctions(DELAY_NONE, functions);
         stubRankingOffloadingFunctionToUnknown();
         stubDurationOffloadingFunctionToRunLocally();
-        mockUsedCpuPercentage(85);
+
+        configureFor(wmMachineResources.getClient());
+        stubUsedCpuPercentage(85);
         
         given()
             .contentType(ContentType.JSON)
@@ -147,8 +174,12 @@ public class ServiceExecutorResourceIT {
     public void testSingleVitalSignIngestionOnLocalMachineWithDurationVerification() throws Throwable {
         
         String[] functions = {"specific-health-service"};
+
+        configureFor(wmServerless.getClient());
         stubHealthServerlessFunctions(DELAY_TWO_SECONDS, functions);
-        mockUsedCpuPercentage(0);
+
+        configureFor(wmMachineResources.getClient());
+        stubUsedCpuPercentage(0);
         
         given()
             .contentType(ContentType.JSON)
@@ -174,8 +205,11 @@ public class ServiceExecutorResourceIT {
     @Test
     public void testSingleVitalSignIngestionOnRemoteMachineWithoutSpecificService() throws Throwable {
         
+        configureFor(wmServerless.getClient());
         stubServiceExecutor();
-        mockUsedCpuPercentage(99);
+
+        configureFor(wmMachineResources.getClient());
+        stubUsedCpuPercentage(99);
         
         given()
             .contentType(ContentType.JSON)
@@ -186,6 +220,7 @@ public class ServiceExecutorResourceIT {
             .statusCode(202)
             .body(is(""));
 
+        configureFor(wmServerless.getClient());
         verify(1,
             postRequestedFor(urlEqualTo("/function/service-executor"))
                 .withRequestBody(equalToJson(jsonFromResource("vital-sign-with-foo-service-and-user-priority.json")))
@@ -198,6 +233,7 @@ public class ServiceExecutorResourceIT {
     }
 
     private void stubHealthServerlessFunctions(long delay, String... functions) {
+        configureFor(wmServerless.getClient());
         for (var function : functions) {
             stubFor(
                 post("/function/" + function)
@@ -208,6 +244,7 @@ public class ServiceExecutorResourceIT {
     }
 
     private void stubRankingOffloadingFunctionToRunLocally() throws IOException {
+        configureFor(wmServerless.getClient());
         stubFor(
             post("/function/ranking-offloading")
                 .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-7.json")))
@@ -221,6 +258,7 @@ public class ServiceExecutorResourceIT {
     }
 
     private void stubRankingOffloadingFunctionToUnknown() throws IOException {
+        configureFor(wmServerless.getClient());
         stubFor(
             post("/function/ranking-offloading")
                 .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-7.json")))
@@ -234,6 +272,7 @@ public class ServiceExecutorResourceIT {
     }
 
     private void stubDurationOffloadingFunctionToRunLocally() throws IOException {
+        configureFor(wmServerless.getClient());
         stubFor(
             post("/function/duration-offloading")
                 .withRequestBody(equalToJson(jsonFromResource("input-duration-heuristic-without-any-duration-and-target-service-body-temperature-monitor.json")))
@@ -247,6 +286,7 @@ public class ServiceExecutorResourceIT {
     }
 
     private void stubServiceExecutor() throws IOException {
+        configureFor(wmServerless.getClient());
         stubFor(
             post("/function/service-executor")
             .withRequestBody(equalToJson(jsonFromResource("input-vertical-offloading-body-temperature-monitor.json")))
@@ -257,12 +297,16 @@ public class ServiceExecutorResourceIT {
         );
     }
 
-    private void mockUsedCpuPercentage(int cpuPercentage) {
-        when(resourcesLocator.getUsedCpuPercentage())
-            .thenReturn(cpuPercentage);
+    private void stubUsedCpuPercentage(int cpuPercentage) {
+        configureFor(wmMachineResources.getClient());
+        stubFor(
+            get("/machine-resources")
+            .willReturn(okJson("{\"cpu\": "  + cpuPercentage + "}"))
+        );            
     }
 
     private void verifyFunctionsWereInvokedOnlyOnce(String[] functions) {
+        configureFor(wmServerless.getClient());
         for (var function : functions) {
             verify(1, postRequestedFor(urlEqualTo("/function/" + function)));
         }
@@ -272,6 +316,16 @@ public class ServiceExecutorResourceIT {
         String fullResourcePath = Path.of("/service-executor", resourcePath).toString();
         InputStream resourceStream = Objects.requireNonNull(this.getClass().getResourceAsStream(fullResourcePath));
         return new String(resourceStream.readAllBytes(), Charset.defaultCharset());
+    }
+
+    public static class MockServer extends WireMockServer {
+        public MockServer(Options options) {
+            super(options);
+        }
+    
+        public WireMock getClient() {
+            return client;
+        }
     }
 
 }

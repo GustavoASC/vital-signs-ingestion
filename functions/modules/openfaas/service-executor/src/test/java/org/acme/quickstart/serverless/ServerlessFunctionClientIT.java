@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -86,6 +87,21 @@ public class ServerlessFunctionClientIT {
         );
         assertThat(serverlessFunctionClient.runServiceExecutor("service-executor", input))
             .isNull();
+    }
+
+    @Test
+    void shouldSerializeInputEvenWhenRankingsListIsEmpty() throws IOException {
+        stubFor(
+            post("/function/ranking-offloading")
+            .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-empty-rankings.json")))
+            .willReturn(okJson(jsonFromResource("output-ranking-heuristic.json"))));
+
+        OffloadRankingInputDto input = new OffloadRankingInputDto(
+            Collections.emptyList(),
+            2
+        );
+        assertThat(serverlessFunctionClient.runRankingOffloading("ranking-offloading", input))
+            .isEqualTo(new OffloadRankingOutputDto("OFFLOAD"));
     }
 
     @Test

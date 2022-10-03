@@ -25,6 +25,13 @@ public class RunningServicesProviderTest {
     RunningServicesProviderImpl runningServicesProvider;
 
     @Test
+    public void shouldReturnEmptyListWhenNoServiceIsRunning() {
+
+        assertThat(runningServicesProvider.getRankingsForRunningServices())
+                .isEmpty();
+    }
+
+    @Test
     public void shouldRemoveNonExistingExecutionId() {
 
         runningServicesProvider.executionFinished(UUID.randomUUID());

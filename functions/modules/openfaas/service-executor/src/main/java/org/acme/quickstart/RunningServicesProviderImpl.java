@@ -71,8 +71,8 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
 
     private class ExecutionWithDuration {
 
-        private ServiceExecution execution;
-        private Instant executionStart;
+        private final ServiceExecution execution;
+        private final Instant executionStart;
 
         public ExecutionWithDuration(ServiceExecution execution, Instant executionStart) {
             this.execution = execution;

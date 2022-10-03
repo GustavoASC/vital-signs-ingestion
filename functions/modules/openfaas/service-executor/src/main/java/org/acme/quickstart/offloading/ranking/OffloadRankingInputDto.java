@@ -3,6 +3,9 @@ package org.acme.quickstart.offloading.ranking;
 import java.util.List;
 import java.util.Objects;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class OffloadRankingInputDto {
 
     private final List<Integer> allRankings;

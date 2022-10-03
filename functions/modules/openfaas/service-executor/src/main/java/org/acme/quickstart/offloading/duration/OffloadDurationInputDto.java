@@ -3,6 +3,9 @@ package org.acme.quickstart.offloading.duration;
 import java.util.List;
 import java.util.Objects;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class OffloadDurationInputDto {
 
     private final List<PreviousDurationInputDto> previousDurations;

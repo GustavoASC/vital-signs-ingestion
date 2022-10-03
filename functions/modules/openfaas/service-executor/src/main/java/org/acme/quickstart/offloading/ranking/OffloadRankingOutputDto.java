@@ -6,6 +6,9 @@ import org.acme.quickstart.offloading.shared.OffloadingDecision;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class OffloadRankingOutputDto {
 
     private final String offloadingDecision;

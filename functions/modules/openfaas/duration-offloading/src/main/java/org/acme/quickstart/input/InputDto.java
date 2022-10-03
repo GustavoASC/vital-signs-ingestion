@@ -5,7 +5,10 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
+@RegisterForReflection
 public class InputDto {
 
     private final List<PreviousServiceDuration> previousDurations;

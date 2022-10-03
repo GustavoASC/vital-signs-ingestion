@@ -2,7 +2,10 @@ package org.acme.quickstart;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
 @JsonInclude(JsonInclude.Include.NON_ABSENT)
+@RegisterForReflection
 public class OutputDto {
 
     private final OffloadingDecision offloadingDecision;

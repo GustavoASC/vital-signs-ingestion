@@ -66,7 +66,7 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
             durationsForService = new ArrayList<>();
             durations.put(service, durationsForService);
         }
-        return durationsForService;
+        return new ArrayList<>(durationsForService);
     }
 
     private class ExecutionWithDuration {

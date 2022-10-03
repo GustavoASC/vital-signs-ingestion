@@ -25,8 +25,12 @@ public class OffloadingHeuristicByRankingImpl implements OffloadingHeuristicByRa
 
     public boolean shouldOffloadVitalSigns(int calculatedRanking) throws CouldNotDetermineException {
 
+        OffloadRankingInputDto input = createFunctionInput(calculatedRanking);
+        System.out.println("Current input DTO");
+        System.out.println(input);
+
         OffloadingDecision decision = serverlessFunctionClient.runRankingOffloading(
-            FUNCTION_NAME, createFunctionInput(calculatedRanking)
+            FUNCTION_NAME, input
         ).getOffloadingDecision();
 
         if (decision == OffloadingDecision.UNKNOWN) {

@@ -1,3 +1,5 @@
+FN_NAME ?=$
+
 start-pc:
 	./scripts/start-pc.sh
 	make collect-cpu
@@ -22,3 +24,6 @@ collect-cpu:
 
 eval:
 	@python3 scripts/evaluation.py &
+
+logs:
+	@journalctl -t openfaas-fn:$$FN_NAME

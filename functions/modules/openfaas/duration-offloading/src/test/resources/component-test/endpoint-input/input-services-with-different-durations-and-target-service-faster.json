@@ -1,12 +1,10 @@
 {
     "previous_durations": [
         {
-            "name": "bar",
             "durations": [4, 5, 6]
         }
     ],
     "target_service": {
-        "name": "foo",
         "durations": [1, 2, 3]
     }
 }

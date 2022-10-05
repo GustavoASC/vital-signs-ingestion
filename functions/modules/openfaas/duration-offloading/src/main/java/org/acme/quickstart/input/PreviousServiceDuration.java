@@ -3,18 +3,15 @@ package org.acme.quickstart.input;
 import java.util.List;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+
 public class PreviousServiceDuration {
 
-    private final String name;
     private final List<Long> durations;
 
-    public PreviousServiceDuration(String name, List<Long> durations) {
-        this.name = name;
+    @JsonCreator
+    public PreviousServiceDuration(List<Long> durations) {
         this.durations = durations;
-    }
-
-    public String getName() {
-        return this.name;
     }
 
     public List<Long> getDurations() {
@@ -24,8 +21,7 @@ public class PreviousServiceDuration {
     @Override
     public String toString() {
         return "{" +
-                " name='" + getName() + "'" +
-                ", durations='" + getDurations() + "'" +
+                " durations='" + getDurations() + "'" +
                 "}";
     }
 
@@ -37,13 +33,12 @@ public class PreviousServiceDuration {
             return false;
         }
         PreviousServiceDuration previousServiceDuration = (PreviousServiceDuration) o;
-        return Objects.equals(name, previousServiceDuration.name)
-                && Objects.equals(durations, previousServiceDuration.durations);
+        return Objects.equals(durations, previousServiceDuration.durations);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, durations);
+        return Objects.hashCode(durations);
     }
 
 }

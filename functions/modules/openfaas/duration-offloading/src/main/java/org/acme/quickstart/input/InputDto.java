@@ -12,9 +12,9 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 public class InputDto {
 
     private final List<PreviousServiceDuration> previousDurations;
-    private final String targetService;
+    private final PreviousServiceDuration targetService;
 
-    public InputDto(List<PreviousServiceDuration> previousDurations, String targetService) {
+    public InputDto(List<PreviousServiceDuration> previousDurations, PreviousServiceDuration targetService) {
         this.previousDurations = previousDurations;
         this.targetService = targetService;
     }
@@ -23,7 +23,7 @@ public class InputDto {
         return this.previousDurations;
     }
 
-    public String getTargetService() {
+    public PreviousServiceDuration getTargetService() {
         return this.targetService;
     }
 

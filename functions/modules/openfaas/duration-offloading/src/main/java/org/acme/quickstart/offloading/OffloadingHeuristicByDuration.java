@@ -6,6 +6,7 @@ import org.acme.quickstart.input.PreviousServiceDuration;
 
 public interface OffloadingHeuristicByDuration {
 
-    boolean shouldOffloadVitalSigns(List<PreviousServiceDuration> previousDurations, String targetService)
-            throws CouldNotDetermineException;
+    boolean shouldOffloadVitalSigns(
+        List<PreviousServiceDuration> previousDurationsForOtherServices,
+        PreviousServiceDuration previousDurationsForTargetService) throws CouldNotDetermineException;
 }

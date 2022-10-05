@@ -20,14 +20,14 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
     }
 
     @Override
-    public boolean shouldOffloadVitalSigns(List<PreviousServiceDuration> previousDurations, String targetService) throws CouldNotDetermineException {
+    public boolean shouldOffloadVitalSigns(
+        List<PreviousServiceDuration> previousDurationsForOtherServices,
+        PreviousServiceDuration previousDurationsForTargetService
+    ) throws CouldNotDetermineException {
 
-        List<Long> executionDurations = previousDurations
+        List<Long> executionDurations = previousDurationsForOtherServices
                 .stream()
-                .filter(previousDuration -> !previousDuration.getName().equals(targetService))
-                .map(PreviousServiceDuration::getName)
-                .distinct()
-                .map(name -> predictDurationIgnoringException(previousDurations, name))
+                .map(this::predictDurationIgnoringException)
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .sorted()
@@ -38,7 +38,7 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
 
             try {
 
-                long predictedDuration = predictDuration(previousDurations, targetService);
+                long predictedDuration = predictDuration(previousDurationsForTargetService);
                 long intermediateDuration = intermediateDuration(executionDurations);
 
                 if (predictedDuration == intermediateDuration) {
@@ -55,21 +55,14 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
         return false;
     }
 
-    private long predictDuration(List<PreviousServiceDuration> previousDurations, String service) throws CouldNotPredictDurationException {
-
-        List<Long> durationsForService = null;
-        for (var current : previousDurations) {
-            if (current.getName().equals(service)) {
-                durationsForService = current.getDurations();
-            }
-        }
-
+    private long predictDuration(PreviousServiceDuration current) throws CouldNotPredictDurationException {
+        List<Long> durationsForService = current.getDurations();
         return durationPredictor.predictDurationInMillis(durationsForService);
     }
 
-    private Optional<Long> predictDurationIgnoringException(List<PreviousServiceDuration> previousDurations, String service) {
+    private Optional<Long> predictDurationIgnoringException(PreviousServiceDuration previousDurations) {
         try {
-            return Optional.of(predictDuration(previousDurations, service));
+            return Optional.of(predictDuration(previousDurations));
         } catch (CouldNotPredictDurationException e) {
             return Optional.empty();
         }

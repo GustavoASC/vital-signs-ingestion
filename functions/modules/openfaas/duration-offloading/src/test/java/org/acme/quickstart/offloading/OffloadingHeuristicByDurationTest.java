@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 import java.util.Collections;
 import java.util.List;
 
-import org.acme.quickstart.input.PreviousServiceDuration;
 import org.acme.quickstart.prediction.CouldNotPredictDurationException;
 import org.acme.quickstart.prediction.DurationPredictor;
 import org.junit.jupiter.api.AfterEach;
@@ -41,15 +40,15 @@ public class OffloadingHeuristicByDurationTest {
                 .thenReturn(150l);
 
         assertThatThrownBy(() -> offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
-            new PreviousServiceDuration(List.of(8l))
-        ), new PreviousServiceDuration(List.of(7l))))
+            List.of(8l)
+        ), List.of(7l)))
         .isInstanceOf(CouldNotDetermineException.class);
     }
 
     @Test
     public void shouldNotOffloadWhenNoOtherServiceIsRunning() throws Throwable {
 
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(Collections.emptyList(), new PreviousServiceDuration(Collections.emptyList())))
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(Collections.emptyList(), Collections.emptyList()))
                 .isFalse();
     }
 
@@ -66,10 +65,10 @@ public class OffloadingHeuristicByDurationTest {
                 .thenReturn(149l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
-                new PreviousServiceDuration(List.of(7l)),
-                new PreviousServiceDuration(List.of(8l)),
-                new PreviousServiceDuration(List.of(9l))
-        ), new PreviousServiceDuration(List.of(10l))))
+                List.of(7l),
+                List.of(8l),
+                List.of(9l)
+        ), List.of(10l)))
         .isFalse();
     }
 
@@ -86,10 +85,10 @@ public class OffloadingHeuristicByDurationTest {
                 .thenReturn(151l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
-                new PreviousServiceDuration(List.of(7l)),
-                new PreviousServiceDuration(List.of(8l)),
-                new PreviousServiceDuration(List.of(9l))
-        ), new PreviousServiceDuration(List.of(10l))))
+                List.of(7l),
+                List.of(8l),
+                List.of(9l)
+        ), List.of(10l)))
         .isTrue();
     }
 
@@ -106,10 +105,10 @@ public class OffloadingHeuristicByDurationTest {
                 .thenReturn(151l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
-                new PreviousServiceDuration(List.of(7l)),
-                new PreviousServiceDuration(List.of(8l)),
-                new PreviousServiceDuration(List.of(9l))
-        ), new PreviousServiceDuration(List.of(10l))))
+                List.of(7l),
+                List.of(8l),
+                List.of(9l)
+        ), List.of(10l)))
         .isFalse();
     }
 
@@ -120,8 +119,8 @@ public class OffloadingHeuristicByDurationTest {
                 .thenThrow(new CouldNotPredictDurationException());
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
-            new PreviousServiceDuration(List.of(7l))
-        ), new PreviousServiceDuration(List.of(8l))))
+            List.of(7l)
+        ), List.of(8l)))
         .isFalse();
     }
 
@@ -138,10 +137,10 @@ public class OffloadingHeuristicByDurationTest {
                 .thenReturn(151l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
-                new PreviousServiceDuration(List.of(7l)),
-                new PreviousServiceDuration(List.of(8l)),
-                new PreviousServiceDuration(List.of(9l))
-        ), new PreviousServiceDuration(List.of(10l))))
+                List.of(7l),
+                List.of(8l),
+                List.of(9l)
+        ), List.of(10l)))
         .isTrue();
     }
 
@@ -162,12 +161,12 @@ public class OffloadingHeuristicByDurationTest {
                 .thenReturn(149l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
-                new PreviousServiceDuration(List.of(10l)),
-                new PreviousServiceDuration(List.of(15l)),
-                new PreviousServiceDuration(List.of(20l)),
-                new PreviousServiceDuration(List.of(25l)),
-                new PreviousServiceDuration(List.of(30l))
-        ), new PreviousServiceDuration(List.of(35l))))
+                List.of(10l),
+                List.of(15l),
+                List.of(20l),
+                List.of(25l),
+                List.of(30l)
+        ), List.of(35l)))
         .isFalse();
     }
 
@@ -180,8 +179,8 @@ public class OffloadingHeuristicByDurationTest {
                 .thenReturn(151l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
-                new PreviousServiceDuration(List.of(10l))
-        ), new PreviousServiceDuration(List.of(15l))))
+                List.of(10l)
+        ), List.of(15l)))
         .isTrue();
     }
 
@@ -190,7 +189,7 @@ public class OffloadingHeuristicByDurationTest {
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(
                 Collections.emptyList(),
-                new PreviousServiceDuration(List.of(7l))
+                List.of(7l)
         )).isFalse();
     }
 

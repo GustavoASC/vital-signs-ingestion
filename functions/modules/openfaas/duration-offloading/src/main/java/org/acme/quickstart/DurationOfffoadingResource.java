@@ -34,8 +34,8 @@ public class DurationOfffoadingResource {
             logger.info("Input: " + input);
  
             boolean shouldOffload = offloadingHeuristic.shouldOffloadVitalSigns(
-                    input.getPreviousDurations(),
-                    input.getTargetService());
+                    input.getDurationsRunningServices(),
+                    input.getDurationsTargetService());
 
             logger.info("Should offload: " + shouldOffload);
             return new OutputDto(shouldOffload ? OffloadingDecision.OFFLOAD : OffloadingDecision.RUN_LOCALLY);

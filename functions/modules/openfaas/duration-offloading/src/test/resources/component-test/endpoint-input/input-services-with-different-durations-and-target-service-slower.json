@@ -1,11 +1,6 @@
 {
-    "previous_durations": [
-        {
-            "durations": [1, 2, 3]
-        }
+    "durations_running_services": [
+        [1, 2, 3]
     ],
-    "target_service": {
-        "durations": [4, 5, 6]
-    }
-
+    "durations_target_service": [4, 5, 6]
 }

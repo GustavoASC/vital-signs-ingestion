@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 
-import org.acme.quickstart.input.PreviousServiceDuration;
 import org.acme.quickstart.prediction.CouldNotPredictDurationException;
 import org.acme.quickstart.prediction.DurationPredictor;
 
@@ -21,8 +20,8 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
 
     @Override
     public boolean shouldOffloadVitalSigns(
-        List<PreviousServiceDuration> previousDurationsForOtherServices,
-        PreviousServiceDuration previousDurationsForTargetService
+        List<List<Long>> previousDurationsForOtherServices,
+        List<Long> previousDurationsForTargetService
     ) throws CouldNotDetermineException {
 
         List<Long> executionDurations = previousDurationsForOtherServices
@@ -55,14 +54,13 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
         return false;
     }
 
-    private long predictDuration(PreviousServiceDuration current) throws CouldNotPredictDurationException {
-        List<Long> durationsForService = current.getDurations();
+    private long predictDuration(List<Long> durationsForService) throws CouldNotPredictDurationException {
         return durationPredictor.predictDurationInMillis(durationsForService);
     }
 
-    private Optional<Long> predictDurationIgnoringException(PreviousServiceDuration previousDurations) {
+    private Optional<Long> predictDurationIgnoringException(List<Long> durationsForService) {
         try {
-            return Optional.of(predictDuration(previousDurations));
+            return Optional.of(predictDuration(durationsForService));
         } catch (CouldNotPredictDurationException e) {
             return Optional.empty();
         }

@@ -35,6 +35,7 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
                 .stream()
                 .filter(execution -> execution.ranking() == filterRanking)
                 .map(ServiceExecution::serviceName)
+                .distinct()
                 .map(this::getPreviousDurationForService)
                 .collect(Collectors.toList());
 

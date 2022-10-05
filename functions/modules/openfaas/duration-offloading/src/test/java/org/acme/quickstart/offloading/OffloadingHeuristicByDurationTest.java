@@ -37,9 +37,9 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldThrowExceptionWhenCannotPredictDurationForServiceInInterest() throws Throwable {
 
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "foo-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(7l)))
                 .thenThrow(new CouldNotPredictDurationException());
-        when(durationPredictor.predictDurationInMillis(List.of(8l), "bar-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(8l)))
                 .thenReturn(150l);
 
         assertThatThrownBy(() -> offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
@@ -59,13 +59,13 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldNotOffloadWhenDurationIsLowerThanHalfOfServicesButAllHaveSameRanking() throws Throwable {
 
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "abc-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(7l)))
                 .thenReturn(100l);
-        when(durationPredictor.predictDurationInMillis(List.of(8l), "def-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(8l)))
                 .thenReturn(150l);
-        when(durationPredictor.predictDurationInMillis(List.of(9l), "ghi-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(9l)))
                 .thenReturn(200l);
-        when(durationPredictor.predictDurationInMillis(List.of(10l), "foo-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(10l)))
                 .thenReturn(149l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
@@ -80,13 +80,13 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldOffloadWhenDurationIsHigherThanHalfOfServicesButAllHaveSameRanking() throws Throwable {
 
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "abc-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(7l)))
                 .thenReturn(100l);
-        when(durationPredictor.predictDurationInMillis(List.of(8l), "def-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(8l)))
                 .thenReturn(150l);
-        when(durationPredictor.predictDurationInMillis(List.of(9l), "ghi-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(9l)))
                 .thenReturn(200l);
-        when(durationPredictor.predictDurationInMillis(List.of(10l), "foo-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(10l)))
                 .thenReturn(151l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
@@ -101,13 +101,13 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldIgnoreServiceWhenCannotPredictItsDuration() throws Throwable {
 
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "abc-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(7l)))
                 .thenThrow(new CouldNotPredictDurationException());
-        when(durationPredictor.predictDurationInMillis(List.of(8l), "def-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(8l)))
                 .thenReturn(150l);
-        when(durationPredictor.predictDurationInMillis(List.of(9l), "ghi-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(9l)))
                 .thenReturn(200l);
-        when(durationPredictor.predictDurationInMillis(List.of(10l), "foo-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(10l)))
                 .thenReturn(151l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
@@ -122,7 +122,7 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldIgnoreSingleServiceWhenCannotPredictItsDuration() throws Throwable {
 
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "abc-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(7l)))
                 .thenThrow(new CouldNotPredictDurationException());
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
@@ -135,20 +135,20 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldOffloadWhenDurationIsHigherThanHalfOfServices() throws Throwable {
 
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "abc-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(7l)))
                 .thenReturn(100l);
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "def-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(8l)))
                 .thenReturn(200l);
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "ghi-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(9l)))
                 .thenReturn(150l);
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "foo-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(10l)))
                 .thenReturn(151l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
                 new PreviousServiceDuration("abc-service", List.of(7l)),
-                new PreviousServiceDuration("def-service", List.of(7l)),
-                new PreviousServiceDuration("ghi-service", List.of(7l)),
-                new PreviousServiceDuration("foo-service", List.of(7l))
+                new PreviousServiceDuration("def-service", List.of(8l)),
+                new PreviousServiceDuration("ghi-service", List.of(9l)),
+                new PreviousServiceDuration("foo-service", List.of(10l))
         ), "foo-service"))
         .isTrue();
     }
@@ -156,17 +156,17 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldOffloadWhenDurationIsHigherThanHalfOfServicesButRemovingDuplicatePredictions() throws Throwable {
 
-        when(durationPredictor.predictDurationInMillis(List.of(10l), "abc-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(10l)))
                 .thenReturn(100l);
-        when(durationPredictor.predictDurationInMillis(List.of(15l), "def-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(15l)))
                 .thenReturn(100l);
-        when(durationPredictor.predictDurationInMillis(List.of(20l), "ghi-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(20l)))
                 .thenReturn(100l);
-        when(durationPredictor.predictDurationInMillis(List.of(25l), "jkl-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(25l)))
                 .thenReturn(150l);
-        when(durationPredictor.predictDurationInMillis(List.of(30l), "mno-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(30l)))
                 .thenReturn(200l);
-        when(durationPredictor.predictDurationInMillis(List.of(35l), "foo-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(35l)))
                 .thenReturn(149l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
@@ -183,9 +183,9 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldOffloadWhenDurationIsHigherThanSingleRunningServiceWithSameRanking() throws Throwable {
 
-        when(durationPredictor.predictDurationInMillis(List.of(10l), "abc-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(10l)))
                 .thenReturn(100l);
-        when(durationPredictor.predictDurationInMillis(List.of(15l), "foo-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(15l)))
                 .thenReturn(151l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
@@ -207,9 +207,9 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldCalculatePredictionOnceEvenWhenServiceHasMultipleRunningInstances() throws Throwable {
 
-        when(durationPredictor.predictDurationInMillis(List.of(7l), "abc-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(7l)))
                 .thenReturn(100l);
-        when(durationPredictor.predictDurationInMillis(List.of(15l), "foo-service"))
+        when(durationPredictor.predictDurationInMillis(List.of(15l)))
                 .thenReturn(151l);
 
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(List.of(
@@ -221,9 +221,9 @@ public class OffloadingHeuristicByDurationTest {
         .isTrue();
 
         verify(durationPredictor, times(1))
-                .predictDurationInMillis(List.of(7l), "abc-service");
+                .predictDurationInMillis(List.of(7l));
         verify(durationPredictor, times(1))
-                .predictDurationInMillis(List.of(15l), "foo-service");
+                .predictDurationInMillis(List.of(15l));
     }
 
 }

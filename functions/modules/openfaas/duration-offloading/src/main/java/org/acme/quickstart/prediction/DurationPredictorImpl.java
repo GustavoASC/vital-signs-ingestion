@@ -27,7 +27,7 @@ public class DurationPredictorImpl implements DurationPredictor {
     }
 
     @Override
-    public long predictDurationInMillis(List<Long> durationsForService, String service)
+    public long predictDurationInMillis(List<Long> durationsForService)
             throws CouldNotPredictDurationException {
 
         if (durationsForService.size() < MIN_HISTORICAL_DURATIONS) {

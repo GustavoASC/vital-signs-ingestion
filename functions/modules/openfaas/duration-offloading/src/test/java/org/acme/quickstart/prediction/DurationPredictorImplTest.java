@@ -39,14 +39,14 @@ public class DurationPredictorImplTest {
     @Test
     public void shouldThrowExceptionWithSingleHistoricalDuration() {
 
-        assertThatThrownBy(() -> predictorImpl.predictDurationInMillis(List.of(17l), "foo"))
+        assertThatThrownBy(() -> predictorImpl.predictDurationInMillis(List.of(17l)))
                 .isInstanceOf(CouldNotPredictDurationException.class);
     }
 
     @Test
     public void shouldThrowExceptionWithNoHistoricalDuration() {
 
-        assertThatThrownBy(() -> predictorImpl.predictDurationInMillis(Collections.emptyList(), "foo"))
+        assertThatThrownBy(() -> predictorImpl.predictDurationInMillis(Collections.emptyList()))
                 .isInstanceOf(CouldNotPredictDurationException.class);
     }
 
@@ -60,7 +60,7 @@ public class DurationPredictorImplTest {
         when(serverlessFunctionClient.runFunction(fnName, payload))
                 .thenReturn(response);
 
-        assertThat(predictorImpl.predictDurationInMillis(List.of(17l, 21l, 23l, 26l, 26l, 28l, 30l, 30l, 30l, 31l, 32l, 33l, 39l, 41l, 41l), "foo"))
+        assertThat(predictorImpl.predictDurationInMillis(List.of(17l, 21l, 23l, 26l, 26l, 28l, 30l, 30l, 30l, 31l, 32l, 33l, 39l, 41l, 41l)))
                 .isEqualTo(43);
     }
 

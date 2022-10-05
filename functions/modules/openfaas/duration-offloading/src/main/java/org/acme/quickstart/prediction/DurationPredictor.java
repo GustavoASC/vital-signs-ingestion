@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface DurationPredictor {
 
-    long predictDurationInMillis(List<Long> durationsForService, String service)
+    long predictDurationInMillis(List<Long> durationsForService)
             throws CouldNotPredictDurationException;
 
 }

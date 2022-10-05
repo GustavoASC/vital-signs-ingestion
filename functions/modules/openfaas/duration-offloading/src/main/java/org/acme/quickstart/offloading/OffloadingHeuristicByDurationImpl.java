@@ -64,7 +64,7 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
             }
         }
 
-        return durationPredictor.predictDurationInMillis(durationsForService, service);
+        return durationPredictor.predictDurationInMillis(durationsForService);
     }
 
     private Optional<Long> predictDurationIgnoringException(List<PreviousServiceDuration> previousDurations, String service) {

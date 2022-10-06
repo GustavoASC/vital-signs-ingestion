@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -125,6 +126,48 @@ public class OffloadingHeuristicByDurationImplTest {
         
         assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
             .isFalse();    
+    }
+
+    @Test
+    public void shouldInvokeDurationHeuristicWithEmptyListsWhenNoServiceIsRunning() throws Throwable {
+        
+        OffloadDurationInputDto inputForMultipleServices = new OffloadDurationInputDto(
+            Collections.emptyList(),
+            Collections.emptyList()
+        );
+
+        when(servicesProvider.getRunningServices())
+            .thenReturn(Collections.emptyList());
+
+        when(servicesProvider.getDurationsForService(FOO_SERVICE))
+            .thenReturn(Collections.emptyList());
+
+        when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForMultipleServices))
+            .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
+        
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+            .isFalse();
+    }
+
+    @Test
+    public void shouldInvokeDurationHeuristicWithSingleEmptyListWhenSingleServiceIsRunningWithoutDurations() throws Throwable {
+        
+        OffloadDurationInputDto inputForMultipleServices = new OffloadDurationInputDto(
+            List.of(Collections.emptyList()),
+            Collections.emptyList()
+        );
+
+        when(servicesProvider.getRunningServices())
+            .thenReturn(List.of(new ServiceExecution(BAR_SERVICE, RANKING_A)));
+
+        when(servicesProvider.getDurationsForService(BAR_SERVICE))
+            .thenReturn(Collections.emptyList());
+
+        when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForMultipleServices))
+            .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
+        
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+            .isFalse();
     }
 
 }

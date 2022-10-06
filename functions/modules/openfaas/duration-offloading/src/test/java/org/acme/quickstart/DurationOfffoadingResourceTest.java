@@ -91,7 +91,33 @@ public class DurationOfffoadingResourceTest {
     }
 
     @Test
-    public void shouldNotBeAbleToDetect() throws Throwable {
+    public void shouldNotDetectOffloadingByIgnoringEmptyPreviousDurationsArrays() throws Throwable {
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(jsonFromResource("/endpoint-input/input-empty-durations-for-running-services.json"))
+        .when()
+            .post("/")
+        .then()
+             .statusCode(200)
+             .body(is("{\"offloading_decision\":\"RUN_LOCALLY\"}"));
+    }
+
+    @Test
+    public void shouldRunLocallyByIgnoringArrayWithLessAmountOfDurationsThanMinimum() throws Throwable {
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(jsonFromResource("/endpoint-input/input-less-durations-than-minimum-for-running-services.json"))
+        .when()
+            .post("/")
+        .then()
+             .statusCode(200)
+             .body(is("{\"offloading_decision\":\"RUN_LOCALLY\"}"));
+    }
+
+    @Test
+    public void shouldNotBeAbleToDetectBecauseAllDurationsHaveTheSameInput() throws Throwable {
 
         stubPredictorFunctionForGivenPayloadAndResponse(
             "/duration-predictor/input-one-two-three.json",
@@ -101,6 +127,24 @@ public class DurationOfffoadingResourceTest {
         given()
             .contentType(ContentType.JSON)
             .body(jsonFromResource("/endpoint-input/input-all-services-same-durations.json"))
+        .when()
+            .post("/")
+        .then()
+             .statusCode(200)
+             .body(is("{\"offloading_decision\":\"UNKNOWN\"}"));
+    }
+
+    @Test
+    public void shouldNotBeAbleToDetectBecauseAmountOfTargetDurationsIsLessThanMinimum() throws Throwable {
+
+        stubPredictorFunctionForGivenPayloadAndResponse(
+            "/duration-predictor/input-one-two-three.json",
+            "/duration-predictor/output-forecast-two.json"
+        );
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(jsonFromResource("/endpoint-input/input-less-durations-than-minimum-for-target-service.json"))
         .when()
             .post("/")
         .then()

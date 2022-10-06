@@ -1,13 +1,6 @@
 {
-    "previous_durations": [
-        {
-            "name": "foo",
-            "durations": [1, 2, 3]
-        },
-        {
-            "name": "bar",
-            "durations": [4, 5, 6]
-        }
+    "durations_running_services": [
+        [4, 5, 6]
     ],
-    "target_service": "foo"
+    "durations_target_service": [1, 2, 3]
 }

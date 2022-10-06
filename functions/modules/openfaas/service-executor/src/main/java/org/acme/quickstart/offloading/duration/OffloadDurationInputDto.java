@@ -8,27 +8,27 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 @RegisterForReflection
 public class OffloadDurationInputDto {
 
-    private final List<PreviousDurationInputDto> previousDurations;
-    private final String targetService;
+    private final List<List<Long>> durationsRunningServices;
+    private final List<Long> durationsTargetService;
 
-    public OffloadDurationInputDto(List<PreviousDurationInputDto> previousDurations, String targetService) {
-        this.previousDurations = previousDurations;
-        this.targetService = targetService;
+    public OffloadDurationInputDto(List<List<Long>> durationsRunningServices, List<Long> durationsTargetService) {
+        this.durationsRunningServices = durationsRunningServices;
+        this.durationsTargetService = durationsTargetService;
     }
 
-    public List<PreviousDurationInputDto> getPreviousDurations() {
-        return this.previousDurations;
+    public List<List<Long>> getDurationsRunningServices() {
+        return this.durationsRunningServices;
     }
 
-    public String getTargetService() {
-        return this.targetService;
+    public List<Long> getDurationsTargetService() {
+        return this.durationsTargetService;
     }
 
     @Override
     public String toString() {
         return "{" +
-                " previousDurations='" + getPreviousDurations() + "'" +
-                ", targetService='" + getTargetService() + "'" +
+                " durationsRunningServices='" + getDurationsRunningServices() + "'" +
+                ", durationsTargetService='" + getDurationsTargetService() + "'" +
                 "}";
     }
 
@@ -40,13 +40,13 @@ public class OffloadDurationInputDto {
             return false;
         }
         OffloadDurationInputDto offloadDurationInputDto = (OffloadDurationInputDto) o;
-        return Objects.equals(previousDurations, offloadDurationInputDto.previousDurations)
-                && Objects.equals(targetService, offloadDurationInputDto.targetService);
+        return Objects.equals(durationsRunningServices, offloadDurationInputDto.durationsRunningServices)
+                && Objects.equals(durationsTargetService, offloadDurationInputDto.durationsTargetService);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(previousDurations, targetService);
+        return Objects.hash(durationsRunningServices, durationsTargetService);
     }
 
 }

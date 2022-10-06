@@ -1,0 +1,5 @@
+{
+    "service_name" : "different-health-service",
+    "vital_sign" : "{\"heartbeat\": 100}",
+    "user_priority" : 2
+  }

@@ -148,7 +148,7 @@ public class ServiceExecutorResourceIT {
     @Test
     public void shouldRunLocallyAfterBothRankingAndDurationHeuristics() throws Throwable{
         
-        String[] functions = {"body-temperature-monitor"};
+        String[] functions = {"different-health-service"};
 
         configureFor(wmServerless.getClient());
         stubHealthServerlessFunctions(DELAY_NONE, functions);
@@ -160,7 +160,7 @@ public class ServiceExecutorResourceIT {
         
         given()
             .contentType(ContentType.JSON)
-            .body(jsonFromResource("vital-sign-with-foo-service-and-user-priority.json"))
+            .body(jsonFromResource("vital-sign-with-different-health-service-and-user-priority.json"))
         .when()
             .post("/")
         .then()
@@ -275,12 +275,7 @@ public class ServiceExecutorResourceIT {
         configureFor(wmServerless.getClient());
         stubFor(
             post("/function/duration-offloading")
-                .withRequestBody(equalToJson(jsonFromResource("input-duration-heuristic-without-any-duration-and-target-service-body-temperature-monitor.json")))
-                .willReturn(okJson(jsonFromResource("output-run-locally.json")))
-        );
-        stubFor(
-            post("/function/duration-offloading")
-                .withRequestBody(equalToJson(jsonFromResource("input-duration-heuristic-without-any-duration-and-target-service-bar-function.json")))
+                .withRequestBody(equalToJson(jsonFromResource("input-duration-heuristic-without-any-duration.json")))
                 .willReturn(okJson(jsonFromResource("output-run-locally.json")))
         );
     }

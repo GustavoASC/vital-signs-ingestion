@@ -42,7 +42,7 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
                 .ifPresent(service -> {
 
                     var now = clock.instant();
-                    getDurationsForService(service.execution().serviceName())
+                    getDurationsWithoutCloning(service.execution().serviceName())
                             .add(Duration.between(service.executionStart(), now));
 
                 });
@@ -61,12 +61,16 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
 
     @Override
     public List<Duration> getDurationsForService(String service) {
+        return new ArrayList<>(getDurationsWithoutCloning(service));
+    }
+
+    private List<Duration> getDurationsWithoutCloning(String service) {
         List<Duration> durationsForService = durations.get(service);
         if (durationsForService == null) {
             durationsForService = new ArrayList<>();
             durations.put(service, durationsForService);
         }
-        return new ArrayList<>(durationsForService);
+        return durationsForService;
     }
 
     private class ExecutionWithDuration {

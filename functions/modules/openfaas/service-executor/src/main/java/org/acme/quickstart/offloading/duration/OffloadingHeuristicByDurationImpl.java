@@ -31,19 +31,20 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
     @Override
     public boolean shouldOffloadVitalSigns(int filterRanking, String service) throws CouldNotDetermineException {
 
-        List<PreviousDurationInputDto> previousDurations = servicesProvider.getRunningServices()
+        List<List<Long>> previousDurations = servicesProvider.getRunningServices()
                 .stream()
                 .filter(execution -> execution.ranking() == filterRanking)
                 .map(ServiceExecution::serviceName)
                 .distinct()
-                .map(this::getPreviousDurationForService)
+                .map(this::getPreviousDurations)
                 .collect(Collectors.toList());
 
         OffloadDurationOutputDto output = serverlessFunctionClient.runOffloadingDuration(
                 FUNCTION_NAME,
                 new OffloadDurationInputDto(
                         previousDurations,
-                        service));
+                        getPreviousDurations(service)
+        ));
 
         if (output.getOffloadingDecision() == OffloadingDecision.UNKNOWN) {
             throw new CouldNotDetermineException();
@@ -51,11 +52,7 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
         return output.getOffloadingDecision() == OffloadingDecision.OFFLOAD;
     }
 
-    private PreviousDurationInputDto getPreviousDurationForService(String service) {
-        return new PreviousDurationInputDto(service, getDurations(service));
-    }
-
-    private List<Long> getDurations(String service) {
+    private List<Long> getPreviousDurations(String service) {
         return servicesProvider.getDurationsForService(service)
                 .stream()
                 .map(Duration::toMillis)

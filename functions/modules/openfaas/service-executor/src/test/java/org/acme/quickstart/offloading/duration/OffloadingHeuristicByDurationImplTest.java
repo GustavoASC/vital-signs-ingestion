@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 import org.acme.quickstart.RunningServicesProvider;
 import org.acme.quickstart.RunningServicesProvider.ServiceExecution;
 import org.acme.quickstart.serverless.ServerlessFunctionClient;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -21,9 +22,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class OffloadingHeuristicByDurationImplTest {
     private static final String FOO_SERVICE = "foo";
-    private static final int RANKING = 7;
-    private static final List<Duration> DURATIONS_OBJECT = List.of(Duration.ofMillis(235));
-    private static final List<Long> DURATIONS_MILLIS = List.of(235l);
+    private static final String BAR_SERVICE = "bar";
+    private static final int RANKING_A = 7;
+    private static final int RANKING_B = 14;
+    private static final long DURATION_FOO_SERVICE = 235l;
+    private static final long DURATION_BAR_SERVICE = 173l;
 
     @Mock
     RunningServicesProvider servicesProvider;
@@ -36,40 +39,92 @@ public class OffloadingHeuristicByDurationImplTest {
 
     @ParameterizedTest
     @MethodSource({"singleExecutionForService", "multipleExecutionsSameService"})
-    public void shouldInvokeDurationHeuristic(List<ServiceExecution> executions) throws Throwable {
+    public void shouldInvokeDurationHeuristicForSingleService(List<ServiceExecution> executions) throws Throwable {
+
+        OffloadDurationInputDto inputForSingleService = new OffloadDurationInputDto(
+            List.of(List.of(DURATION_FOO_SERVICE)),
+            List.of(DURATION_FOO_SERVICE)
+        );
 
         when(servicesProvider.getRunningServices())
             .thenReturn(executions);
 
         when(servicesProvider.getDurationsForService(FOO_SERVICE))
-            .thenReturn(DURATIONS_OBJECT);
+            .thenReturn(List.of(Duration.ofMillis(DURATION_FOO_SERVICE)));
 
-        when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", anInputForSingleService()))
+        when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForSingleService))
             .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
         
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING, FOO_SERVICE))
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
             .isFalse();    
-    }
-
-    private OffloadDurationInputDto anInputForSingleService() {
-        List<PreviousDurationInputDto> previousDurations = List.of(
-                new PreviousDurationInputDto(FOO_SERVICE, DURATIONS_MILLIS));
-
-        return new OffloadDurationInputDto(
-                previousDurations,
-                FOO_SERVICE);
     }
 
     private static Stream<Arguments> singleExecutionForService() {
         return Stream.of(Arguments.of(
-                List.of(new ServiceExecution(FOO_SERVICE, RANKING))));
+                List.of(new ServiceExecution(FOO_SERVICE, RANKING_A))));
     }
 
     private static Stream<Arguments> multipleExecutionsSameService() {
         return Stream.of(Arguments.of(
                 List.of(
-                        new ServiceExecution(FOO_SERVICE, RANKING),
-                        new ServiceExecution(FOO_SERVICE, RANKING))));
+                        new ServiceExecution(FOO_SERVICE, RANKING_A),
+                        new ServiceExecution(FOO_SERVICE, RANKING_A))));
+    }
+
+    @Test
+    public void shouldInvokeDurationHeuristicForMultipleServicesWithDifferentRankings() throws Throwable {
+
+        OffloadDurationInputDto inputForMultipleServices = new OffloadDurationInputDto(
+            List.of(List.of(DURATION_FOO_SERVICE)),
+            List.of(DURATION_FOO_SERVICE)
+        );
+
+        when(servicesProvider.getRunningServices())
+            .thenReturn(List.of(
+                new ServiceExecution(FOO_SERVICE, RANKING_A),
+                new ServiceExecution(FOO_SERVICE, RANKING_A),
+                new ServiceExecution(BAR_SERVICE, RANKING_B)
+        ));
+
+        when(servicesProvider.getDurationsForService(FOO_SERVICE))
+            .thenReturn(List.of(Duration.ofMillis(DURATION_FOO_SERVICE)));
+
+        when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForMultipleServices))
+            .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
+        
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+            .isFalse();    
+    }
+
+    @Test
+    public void shouldInvokeDurationHeuristicForMultipleServicesWithSameRankings() throws Throwable {
+
+        OffloadDurationInputDto inputForMultipleServices = new OffloadDurationInputDto(
+            List.of(
+                List.of(DURATION_FOO_SERVICE),
+                List.of(DURATION_BAR_SERVICE)
+            ),
+            List.of(DURATION_FOO_SERVICE)
+        );
+
+        when(servicesProvider.getRunningServices())
+            .thenReturn(List.of(
+                new ServiceExecution(FOO_SERVICE, RANKING_A),
+                new ServiceExecution(FOO_SERVICE, RANKING_A),
+                new ServiceExecution(BAR_SERVICE, RANKING_A)
+        ));
+
+        when(servicesProvider.getDurationsForService(FOO_SERVICE))
+            .thenReturn(List.of(Duration.ofMillis(DURATION_FOO_SERVICE)));
+
+            when(servicesProvider.getDurationsForService(BAR_SERVICE))
+            .thenReturn(List.of(Duration.ofMillis(DURATION_BAR_SERVICE)));
+
+        when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForMultipleServices))
+            .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
+        
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+            .isFalse();    
     }
 
 }

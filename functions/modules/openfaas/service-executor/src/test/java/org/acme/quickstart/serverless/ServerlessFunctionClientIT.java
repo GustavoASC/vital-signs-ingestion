@@ -21,7 +21,6 @@ import javax.inject.Inject;
 import org.acme.quickstart.input.ServiceExecutorInputDto;
 import org.acme.quickstart.offloading.duration.OffloadDurationInputDto;
 import org.acme.quickstart.offloading.duration.OffloadDurationOutputDto;
-import org.acme.quickstart.offloading.duration.PreviousDurationInputDto;
 import org.acme.quickstart.offloading.ranking.OffloadRankingInputDto;
 import org.acme.quickstart.offloading.ranking.OffloadRankingOutputDto;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -128,10 +127,9 @@ public class ServerlessFunctionClientIT {
 
         OffloadDurationInputDto input = new OffloadDurationInputDto(
             List.of(
-                new PreviousDurationInputDto("foo", List.of(1l, 2l, 3l)),
-                new PreviousDurationInputDto("bar", List.of(4l, 5l, 6l))
+                List.of(4l, 5l, 6l)
             ),
-            "foo"
+            List.of(1l, 2l, 3l)
         );
         assertThat(serverlessFunctionClient.runOffloadingDuration("duration-offloading", input))
             .isEqualTo(new OffloadDurationOutputDto("OFFLOAD"));

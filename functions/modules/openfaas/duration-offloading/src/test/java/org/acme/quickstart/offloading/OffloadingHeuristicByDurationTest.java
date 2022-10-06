@@ -48,8 +48,31 @@ public class OffloadingHeuristicByDurationTest {
     @Test
     public void shouldNotOffloadWhenNoOtherServiceIsRunning() throws Throwable {
 
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(Collections.emptyList(), Collections.emptyList()))
-                .isFalse();
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(
+                Collections.emptyList(),
+                Collections.emptyList()
+        )).isFalse();
+    }
+
+    @Test
+    public void shouldNotCalculatePredictionForTargetServiceWhenNoOtherIsRunning() throws Throwable {
+
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(
+                Collections.emptyList(),
+                List.of(7l)
+        )).isFalse();
+    }
+
+    @Test
+    public void shouldNotCalculatePredictionForTargetServiceWhenOtherServicesRunButDoNotHaveHistoricalDuration() throws Throwable {
+
+        when(durationPredictor.predictDurationInMillis(Collections.emptyList()))
+            .thenThrow(new CouldNotPredictDurationException());
+
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(
+                List.of(Collections.emptyList(), Collections.emptyList(), Collections.emptyList()),
+                List.of(7l)
+        )).isFalse();
     }
 
     @Test
@@ -182,15 +205,6 @@ public class OffloadingHeuristicByDurationTest {
                 List.of(10l)
         ), List.of(15l)))
         .isTrue();
-    }
-
-    @Test
-    public void shouldIgnoreSameServiceFromListOfRunningServices() throws Throwable {
-
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(
-                Collections.emptyList(),
-                List.of(7l)
-        )).isFalse();
     }
 
 }

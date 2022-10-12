@@ -12,18 +12,18 @@ import org.acme.quickstart.offloading.ranking.OffloadingHeuristicByRanking;
 import org.acme.quickstart.offloading.shared.CouldNotDetermineException;
 import org.acme.quickstart.resources.ResourcesLocator;
 import org.acme.quickstart.serverless.ServerlessFunctionClient;
+import org.acme.quickstart.serverless.ServiceExecutorClient;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 @ApplicationScoped
 public class VitalSignServiceImpl implements VitalSignService {
-    
-    private static final String SERVICE_EXECUTOR_FN = "service-executor";
     
     private static final List<String> FUNCTIONS = List.of("body-temperature-monitor", "bar-function");
     private static final int CRITICAL_CPU_USAGE = 90;
     private static final int WARNING_CPU_USAGE = 75;
 
     private final ServerlessFunctionClient serverlessFunctionClient;
+    private final ServiceExecutorClient serviceExecutorClient;
     private final ResourcesLocator resourcesLocator;
     private final OffloadingHeuristicByRanking offloadingHeuristicByRanking;
     private final OffloadingHeuristicByDuration offloadingHeuristicByDuration;
@@ -32,12 +32,14 @@ public class VitalSignServiceImpl implements VitalSignService {
 
     public VitalSignServiceImpl(
             @RestClient ServerlessFunctionClient serverlessFunctionClient,
+            @RestClient ServiceExecutorClient serviceExecutorClient,
             ResourcesLocator resourcesLocator,
             OffloadingHeuristicByRanking offloadingHeuristicByRanking,
             OffloadingHeuristicByDuration offloadingHeuristicByDuration,
             RankingCalculator rankingCalculator,
             RunningServicesProvider runningServicesProvider) {
         this.serverlessFunctionClient = serverlessFunctionClient;
+        this.serviceExecutorClient = serviceExecutorClient;
         this.resourcesLocator = resourcesLocator;
         this.offloadingHeuristicByRanking = offloadingHeuristicByRanking;
         this.offloadingHeuristicByDuration = offloadingHeuristicByDuration;
@@ -58,9 +60,9 @@ public class VitalSignServiceImpl implements VitalSignService {
                     int ranking = rankingCalculator.calculate(userPriority, fn);
                     if (shouldOffloadToParent(ranking, fn)) {
 
-                        // Executes on a remote machine
+                        // Vertical offloading to process vital signs on the parent node within the hierarchy
                         ServiceExecutorInputDto input = new ServiceExecutorInputDto(fn, vitalSign, userPriority);
-                        serverlessFunctionClient.runServiceExecutor(SERVICE_EXECUTOR_FN, input);
+                        serviceExecutorClient.runServiceExecutor(input);
                         
                     } else {
 

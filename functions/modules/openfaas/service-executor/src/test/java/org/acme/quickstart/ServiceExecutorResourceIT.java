@@ -41,12 +41,14 @@ import io.restassured.http.ContentType;
 @QuarkusTest
 public class ServiceExecutorResourceIT {
 
+    private static final int SERVICE_EXECUTOR_PORT = 8595;
     private static final int SERVERLESS_PLATFORM_PORT = 8586;
     private static final int MACHINE_RESOURCES_PORT = 8597;
 
     private static final long DELAY_NONE = 0;
     private static final long DELAY_TWO_SECONDS = 2;
 
+    MockServer wmServiceExecutor;
     MockServer wmServerless;
     MockServer wmMachineResources;
 
@@ -61,19 +63,92 @@ public class ServiceExecutorResourceIT {
             .notifier(new Slf4jNotifier(true))
         );
 
+        wmServiceExecutor = new MockServer(WireMockConfiguration.wireMockConfig()
+            .port(SERVICE_EXECUTOR_PORT)
+            .notifier(new Slf4jNotifier(true))
+        );
+
         wmMachineResources = new MockServer(WireMockConfiguration.wireMockConfig()
             .port(MACHINE_RESOURCES_PORT)
             .notifier(new Slf4jNotifier(true))
         );
 
         wmServerless.start();
+        wmServiceExecutor.start();
         wmMachineResources.start();
+
+        runningServicesProvider.clearDataForTests();
     }
     
     @AfterEach
     void tearDown() {
         wmServerless.stop();
+        wmServiceExecutor.stop();
         wmMachineResources.stop();
+    }
+
+    @Test
+    public void testOffloadingOperationAfterRankingHeuristic() throws Throwable {
+        
+        stubRankingOffloadingFunctionToOffload();
+        stubUsedCpuPercentage(85);
+        stubServiceExecutor();
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(jsonFromResource("vital-sign-with-user-priority.json"))
+        .when()
+            .post("/")
+        .then()
+            .statusCode(202)
+            .body(is(""));
+
+        configureFor(wmServiceExecutor.getClient());
+        verify(1,
+            postRequestedFor(urlEqualTo("/function/service-executor"))
+                .withRequestBody(equalToJson(jsonFromResource("vital-sign-with-foo-service-and-user-priority.json")))
+        );
+        verify(1,
+            postRequestedFor(urlEqualTo("/function/service-executor"))
+                .withRequestBody(equalToJson(jsonFromResource("vital-sign-with-bar-service-and-user-priority.json")))
+        );
+        verify(2, postRequestedFor(urlEqualTo("/function/service-executor")));
+
+        configureFor(wmServerless.getClient());
+        verify(2, postRequestedFor(urlEqualTo("/function/ranking-offloading")));
+    }
+
+    @Test
+    public void testOffloadingOperationAfterBothOffloadingHeuristics() throws Throwable {
+        
+        stubRankingOffloadingFunctionToUnknown();
+        stubDurationOffloadingFunctionToOffload();
+        stubUsedCpuPercentage(85);
+        stubServiceExecutor();
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(jsonFromResource("vital-sign-with-user-priority.json"))
+        .when()
+            .post("/")
+        .then()
+            .statusCode(202)
+            .body(is(""));
+
+        configureFor(wmServiceExecutor.getClient());
+        verify(1,
+            postRequestedFor(urlEqualTo("/function/service-executor"))
+                .withRequestBody(equalToJson(jsonFromResource("vital-sign-with-foo-service-and-user-priority.json")))
+        );
+        verify(1,
+            postRequestedFor(urlEqualTo("/function/service-executor"))
+                .withRequestBody(equalToJson(jsonFromResource("vital-sign-with-bar-service-and-user-priority.json")))
+        );
+        verify(2, postRequestedFor(urlEqualTo("/function/service-executor")));
+
+        configureFor(wmServerless.getClient());
+        verify(2, postRequestedFor(urlEqualTo("/function/ranking-offloading")));
+        verify(2, postRequestedFor(urlEqualTo("/function/duration-offloading")));
     }
 
     @Test
@@ -82,8 +157,6 @@ public class ServiceExecutorResourceIT {
 
         String[] functions = {"body-temperature-monitor", "bar-function"};
         stubHealthServerlessFunctions(DELAY_NONE, functions);
-
-        configureFor(wmMachineResources.getClient());
         stubUsedCpuPercentage(0);
         
         given()
@@ -103,11 +176,8 @@ public class ServiceExecutorResourceIT {
         
         String[] functions = {"body-temperature-monitor", "bar-function"};
 
-        configureFor(wmServerless.getClient());
         stubHealthServerlessFunctions(DELAY_NONE, functions);
         stubRankingOffloadingFunctionToRunLocally();
-
-        configureFor(wmMachineResources.getClient());
         stubUsedCpuPercentage(85);
         
         given()
@@ -127,10 +197,7 @@ public class ServiceExecutorResourceIT {
         
         String[] functions = {"body-temperature-monitor"};
 
-        configureFor(wmServerless.getClient());
         stubHealthServerlessFunctions(DELAY_NONE, functions);
-
-        configureFor(wmMachineResources.getClient());
         stubUsedCpuPercentage(0);
         
         given()
@@ -150,12 +217,9 @@ public class ServiceExecutorResourceIT {
         
         String[] functions = {"different-health-service"};
 
-        configureFor(wmServerless.getClient());
         stubHealthServerlessFunctions(DELAY_NONE, functions);
         stubRankingOffloadingFunctionToUnknown();
         stubDurationOffloadingFunctionToRunLocally();
-
-        configureFor(wmMachineResources.getClient());
         stubUsedCpuPercentage(85);
         
         given()
@@ -175,10 +239,7 @@ public class ServiceExecutorResourceIT {
         
         String[] functions = {"specific-health-service"};
 
-        configureFor(wmServerless.getClient());
         stubHealthServerlessFunctions(DELAY_TWO_SECONDS, functions);
-
-        configureFor(wmMachineResources.getClient());
         stubUsedCpuPercentage(0);
         
         given()
@@ -205,11 +266,8 @@ public class ServiceExecutorResourceIT {
     @Test
     public void testSingleVitalSignIngestionOnRemoteMachineWithoutSpecificService() throws Throwable {
         
-        configureFor(wmServerless.getClient());
-        stubServiceExecutor();
-
-        configureFor(wmMachineResources.getClient());
         stubUsedCpuPercentage(99);
+        stubServiceExecutor();
         
         given()
             .contentType(ContentType.JSON)
@@ -220,7 +278,7 @@ public class ServiceExecutorResourceIT {
             .statusCode(202)
             .body(is(""));
 
-        configureFor(wmServerless.getClient());
+        configureFor(wmServiceExecutor.getClient());
         verify(1,
             postRequestedFor(urlEqualTo("/function/service-executor"))
                 .withRequestBody(equalToJson(jsonFromResource("vital-sign-with-foo-service-and-user-priority.json")))
@@ -271,6 +329,20 @@ public class ServiceExecutorResourceIT {
         );
     }
 
+    private void stubRankingOffloadingFunctionToOffload() throws IOException {
+        configureFor(wmServerless.getClient());
+        stubFor(
+            post("/function/ranking-offloading")
+                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-7.json")))
+                .willReturn(okJson(jsonFromResource("output-offload.json")))
+        );
+        stubFor(
+            post("/function/ranking-offloading")
+                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-9.json")))
+                .willReturn(okJson(jsonFromResource("output-offload.json")))
+        );
+    }
+
     private void stubDurationOffloadingFunctionToRunLocally() throws IOException {
         configureFor(wmServerless.getClient());
         stubFor(
@@ -280,8 +352,17 @@ public class ServiceExecutorResourceIT {
         );
     }
 
-    private void stubServiceExecutor() throws IOException {
+    private void stubDurationOffloadingFunctionToOffload() throws IOException {
         configureFor(wmServerless.getClient());
+        stubFor(
+            post("/function/duration-offloading")
+                .withRequestBody(equalToJson(jsonFromResource("input-duration-heuristic-without-any-duration.json")))
+                .willReturn(okJson(jsonFromResource("output-offload.json")))
+        );
+    }
+
+    private void stubServiceExecutor() throws IOException {
+        configureFor(wmServiceExecutor.getClient());
         stubFor(
             post("/function/service-executor")
             .withRequestBody(equalToJson(jsonFromResource("input-vertical-offloading-body-temperature-monitor.json")))

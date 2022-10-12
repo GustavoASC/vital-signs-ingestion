@@ -72,6 +72,12 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
         }
         return durationsForService;
     }
+    
+    @Override
+    public void clearDataForTests() {
+        services.clear();
+        durations.clear();
+    }
 
     private class ExecutionWithDuration {
 

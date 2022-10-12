@@ -16,6 +16,7 @@ import org.acme.quickstart.offloading.ranking.OffloadingHeuristicByRanking;
 import org.acme.quickstart.offloading.shared.CouldNotDetermineException;
 import org.acme.quickstart.resources.ResourcesLocator;
 import org.acme.quickstart.serverless.ServerlessFunctionClient;
+import org.acme.quickstart.serverless.ServiceExecutorClient;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,11 @@ public class VitalSignServiceImplTest {
 
         @InjectMocks
         VitalSignServiceImpl vitalSignService;
+
+        @RestClient
+        @Inject
+        @Mock
+        ServiceExecutorClient serviceExecutorClient;
 
         @RestClient
         @Inject
@@ -113,10 +119,10 @@ public class VitalSignServiceImplTest {
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
-                verify(serverlessFunctionClient, times(1))
-                                .runServiceExecutor("service-executor", new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY));
-                verify(serverlessFunctionClient, times(1))
-                                .runServiceExecutor("service-executor", new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
+                verify(serviceExecutorClient, times(1))
+                                .runServiceExecutor(new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY));
+                verify(serviceExecutorClient, times(1))
+                                .runServiceExecutor(new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
                 verify(resourcesLocator, times(2))
                                 .getUsedCpuPercentage();
         }
@@ -136,10 +142,10 @@ public class VitalSignServiceImplTest {
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
-                verify(serverlessFunctionClient, times(1))
-                                .runServiceExecutor("service-executor", new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY));
-                verify(serverlessFunctionClient, times(1))
-                                .runServiceExecutor("service-executor", new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
+                verify(serviceExecutorClient, times(1))
+                                .runServiceExecutor(new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY));
+                verify(serviceExecutorClient, times(1))
+                                .runServiceExecutor(new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
                 verify(resourcesLocator, times(2))
                                 .getUsedCpuPercentage();
                 verify(offloadingHeuristicByRanking, times(1))

@@ -5,7 +5,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 
-import org.acme.quickstart.input.ServiceExecutorInputDto;
 import org.acme.quickstart.offloading.duration.OffloadDurationInputDto;
 import org.acme.quickstart.offloading.duration.OffloadDurationOutputDto;
 import org.acme.quickstart.offloading.ranking.OffloadRankingInputDto;
@@ -19,9 +18,6 @@ public interface ServerlessFunctionClient {
 
     @POST
     String runFunction(@PathParam("fn_name") String fnName, String payload);
-
-    @POST
-    Void runServiceExecutor(@PathParam("fn_name") String fnName, ServiceExecutorInputDto payload);
 
     @POST
     OffloadRankingOutputDto runRankingOffloading(@PathParam("fn_name") String fnName, OffloadRankingInputDto payload);

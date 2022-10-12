@@ -18,7 +18,6 @@ import java.util.Objects;
 
 import javax.inject.Inject;
 
-import org.acme.quickstart.input.ServiceExecutorInputDto;
 import org.acme.quickstart.offloading.duration.OffloadDurationInputDto;
 import org.acme.quickstart.offloading.duration.OffloadDurationOutputDto;
 import org.acme.quickstart.offloading.ranking.OffloadRankingInputDto;
@@ -71,21 +70,6 @@ public class ServerlessFunctionClientIT {
 
         assertThat(serverlessFunctionClient.runFunction("foo-fn", jsonFromResource("input-sample-fn-response.json")))
             .isEqualTo(jsonFromResource("output-sample-fn-response.json"));
-    }
-
-    @Test
-    void shouldSendAppropriatePayloadForVerticalOffloading() throws IOException {
-        stubFor(
-            post("/function/service-executor")
-            .withRequestBody(equalToJson(jsonFromResource("input-service-executor.json"))));
-
-        ServiceExecutorInputDto input = new ServiceExecutorInputDto(
-            "bar-function",
-            "{\"heartbeat\": 100}",
-            3
-        );
-        assertThat(serverlessFunctionClient.runServiceExecutor("service-executor", input))
-            .isNull();
     }
 
     @Test

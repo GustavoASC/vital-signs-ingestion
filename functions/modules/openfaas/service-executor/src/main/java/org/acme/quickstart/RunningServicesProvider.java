@@ -12,6 +12,7 @@ public interface RunningServicesProvider {
     void executionFinished(UUID id);
     List<ServiceExecution> getRunningServices();
     List<Duration> getDurationsForService(String service);
+    void clearDataForTests();
 
     default List<Integer> getRankingsForRunningServices() {
         return getRunningServices()

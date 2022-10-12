@@ -28,7 +28,7 @@ run:
 	@./mvnw -Dquarkus.http.port=8097 quarkus:dev &
 
 collect-cpu:
-	@python3 scripts/collect-machine-resources-usage.py &
+	@python3 scripts/cpu-provider/cpu-provider.py &
 
 eval:
 	@python3 scripts/evaluation.py &

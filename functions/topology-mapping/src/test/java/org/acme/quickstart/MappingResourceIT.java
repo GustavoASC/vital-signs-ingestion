@@ -1,14 +1,12 @@
-package org.acme.quickstart.restclient;
-
-import javax.inject.Inject;
+package org.acme.quickstart;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.okForContentType;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static org.assertj.core.api.Assertions.assertThat;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.ok;
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.is;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +14,9 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Objects;
 
+import javax.inject.Inject;
+
+import org.acme.quickstart.restclient.MappingProviderClient;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -25,9 +26,10 @@ import com.github.tomakehurst.wiremock.common.Slf4jNotifier;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
 
 @QuarkusTest
-public class MappingProviderClientIT {
+public class MappingResourceIT {
 
     private static final int STUBBED_MAPPING_PROVIDER = 9234;
 
@@ -49,19 +51,23 @@ public class MappingProviderClientIT {
     }
 
     @Test
-    public void shouldReturnMappingPropertiesContent() throws Throwable {
+    public void shouldReturnMappingForConfiuredAlias() throws Throwable {
 
         stubFor(
-                get("/nodes-mappings.properties")
-                        .withHost(equalTo("localhost"))
-                        .willReturn(okForContentType("text/plain", textFromResource("nodes-mappings.properties"))));
+            get("/nodes-mappings.properties")
+            .willReturn(ok(textFromResource("nodes-mappings.properties")))
+        );
 
-        assertThat(mappingProviderClient.getMappingProperties())
-                .isEqualTo(textFromResource("nodes-mappings.properties"));
+        given().when()
+            .get("/")
+        .then()
+            .statusCode(200)
+            .contentType(ContentType.JSON)
+            .body(is(textFromResource("response-with-mapping.json")));
     }
 
     private String textFromResource(String resourcePath) throws IOException {
-        String fullResourcePath = Path.of("/mapping-provider", resourcePath).toString();
+        String fullResourcePath = Path.of("/component-test", resourcePath).toString();
         InputStream resourceStream = Objects.requireNonNull(this.getClass().getResourceAsStream(fullResourcePath));
         return new String(resourceStream.readAllBytes(), Charset.defaultCharset());
     }

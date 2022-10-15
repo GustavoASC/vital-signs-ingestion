@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.configureFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,6 +23,7 @@ import org.acme.quickstart.offloading.duration.OffloadDurationInputDto;
 import org.acme.quickstart.offloading.duration.OffloadDurationOutputDto;
 import org.acme.quickstart.offloading.ranking.OffloadRankingInputDto;
 import org.acme.quickstart.offloading.ranking.OffloadRankingOutputDto;
+import org.acme.quickstart.topology.TopologyMappingOutputDto;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -117,6 +119,16 @@ public class ServerlessFunctionClientIT {
         );
         assertThat(serverlessFunctionClient.runOffloadingDuration("duration-offloading", input))
             .isEqualTo(new OffloadDurationOutputDto("OFFLOAD"));
+    }
+
+    @Test
+    void shouldReturnTopologyMapping() throws IOException {
+        stubFor(
+            get("/function/topology-mapping")
+            .willReturn(okJson(jsonFromResource("output-topology-mapping.json"))));
+
+        assertThat(serverlessFunctionClient.getOffloadingDestination("topology-mapping"))
+            .isEqualTo(new TopologyMappingOutputDto("19.212.193.202"));
     }
 
     private String jsonFromResource(String resourcePath) throws IOException {

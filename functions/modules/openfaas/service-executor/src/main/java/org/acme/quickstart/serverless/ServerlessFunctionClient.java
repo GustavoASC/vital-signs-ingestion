@@ -1,6 +1,7 @@
 package org.acme.quickstart.serverless;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -9,6 +10,7 @@ import org.acme.quickstart.offloading.duration.OffloadDurationInputDto;
 import org.acme.quickstart.offloading.duration.OffloadDurationOutputDto;
 import org.acme.quickstart.offloading.ranking.OffloadRankingInputDto;
 import org.acme.quickstart.offloading.ranking.OffloadRankingOutputDto;
+import org.acme.quickstart.topology.TopologyMappingOutputDto;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 @RegisterRestClient(configKey = "serverless-function")
@@ -24,5 +26,8 @@ public interface ServerlessFunctionClient {
 
     @POST
     OffloadDurationOutputDto runOffloadingDuration(@PathParam("fn_name") String fnName, OffloadDurationInputDto payload);
+
+    @GET
+    TopologyMappingOutputDto getOffloadingDestination(@PathParam("fn_name") String fnName);
 
 }

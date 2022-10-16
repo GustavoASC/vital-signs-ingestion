@@ -9,15 +9,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Objects;
 
-import javax.inject.Inject;
-
 import org.acme.quickstart.input.ServiceExecutorInputDto;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -31,8 +31,6 @@ public class ServiceExecutorClientIT {
 
     private static final int STUBBED_SERVICE_EXECUTOR_PORT = 8595;
 
-    @Inject
-    @RestClient
     ServiceExecutorClient serviceExecutorClient;
 
     @RegisterExtension
@@ -46,6 +44,13 @@ public class ServiceExecutorClientIT {
     @BeforeAll
     static void beforeAll() {
         configureFor(STUBBED_SERVICE_EXECUTOR_PORT);
+    }
+
+    @BeforeEach
+    public void beforeEach() {
+        serviceExecutorClient = RestClientBuilder.newBuilder()
+                .baseUri(URI.create("http://localhost:8595"))
+                .build(ServiceExecutorClient.class);
     }
 
     @Test

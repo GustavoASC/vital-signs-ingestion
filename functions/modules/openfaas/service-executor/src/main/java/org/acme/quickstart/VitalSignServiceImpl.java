@@ -32,7 +32,7 @@ public class VitalSignServiceImpl implements VitalSignService {
 
     public VitalSignServiceImpl(
             @RestClient ServerlessFunctionClient serverlessFunctionClient,
-            @RestClient ServiceExecutorClient serviceExecutorClient,
+            ServiceExecutorClient serviceExecutorClient,
             ResourcesLocator resourcesLocator,
             OffloadingHeuristicByRanking offloadingHeuristicByRanking,
             OffloadingHeuristicByDuration offloadingHeuristicByDuration,

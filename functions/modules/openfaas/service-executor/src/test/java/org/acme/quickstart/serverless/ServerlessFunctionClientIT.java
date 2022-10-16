@@ -128,7 +128,7 @@ public class ServerlessFunctionClientIT {
             .willReturn(okJson(jsonFromResource("output-topology-mapping.json"))));
 
         assertThat(serverlessFunctionClient.getOffloadingDestination("topology-mapping"))
-            .isEqualTo(new TopologyMappingOutputDto("19.212.193.202"));
+            .isEqualTo(new TopologyMappingOutputDto("http://19.212.193.202:8080"));
     }
 
     private String jsonFromResource(String resourcePath) throws IOException {

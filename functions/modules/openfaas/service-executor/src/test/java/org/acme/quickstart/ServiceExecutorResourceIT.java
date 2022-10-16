@@ -56,7 +56,7 @@ public class ServiceExecutorResourceIT {
     RunningServicesProvider runningServicesProvider;
 
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws IOException {
         
         wmServerless = new MockServer(WireMockConfiguration.wireMockConfig()
             .port(SERVERLESS_PLATFORM_PORT)
@@ -78,6 +78,8 @@ public class ServiceExecutorResourceIT {
         wmMachineResources.start();
 
         runningServicesProvider.clearDataForTests();
+
+        stubTopologyMappingFunctionForLocalServiceExecutor();
     }
     
     @AfterEach
@@ -89,7 +91,6 @@ public class ServiceExecutorResourceIT {
 
     @Test
     public void testOffloadingOperationAfterRankingHeuristic() throws Throwable {
-        
         stubRankingOffloadingFunctionToOffload();
         stubUsedCpuPercentage(85);
         stubServiceExecutor();
@@ -288,6 +289,14 @@ public class ServiceExecutorResourceIT {
                 .withRequestBody(equalToJson(jsonFromResource("vital-sign-with-bar-service-and-user-priority.json")))
         );
         verify(2, postRequestedFor(urlEqualTo("/function/service-executor")));
+    }
+
+    private void stubTopologyMappingFunctionForLocalServiceExecutor() throws IOException {
+        configureFor(wmServerless.getClient());
+        stubFor(
+            get("/function/topology-mapping")
+                .willReturn(okJson(jsonFromResource("output-topology-mapping.json")))
+        );
     }
 
     private void stubHealthServerlessFunctions(long delay, String... functions) {

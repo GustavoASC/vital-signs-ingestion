@@ -10,7 +10,6 @@ start-note:
 
 build-and-deployfn:
 	cd functions && faas-cli up -f body-temperature-monitor.yml --build-arg TEST_ENABLED=false
-	cd functions && faas-cli up -f cpu-provider.yml --build-arg TEST_ENABLED=false
 	cd functions && faas-cli up -f duration-offloading.yml --build-arg TEST_ENABLED=false
 	cd functions && faas-cli up -f predictor.yml --build-arg TEST_ENABLED=false
 	cd functions && faas-cli up -f ranking-offloading.yml --build-arg TEST_ENABLED=false
@@ -18,7 +17,6 @@ build-and-deployfn:
 
 deployfn:
 	cd functions && faas-cli deploy -f body-temperature-monitor.yml
-	cd functions && faas-cli deploy -f cpu-provider.yml
 	cd functions && faas-cli deploy -f duration-offloading.yml
 	cd functions && faas-cli deploy -f predictor.yml
 	cd functions && faas-cli deploy -f ranking-offloading.yml

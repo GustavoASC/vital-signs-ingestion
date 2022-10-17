@@ -5,6 +5,6 @@ provider:
 functions:
   topology-mapping:
     lang: quarkus-native
-    handler: ./topology-mapping
-    image: topology-mapping:latest
+    handler: ./modules/openfaas/topology-mapping
+    image: gustavoasc/topology-mapping:latest
 

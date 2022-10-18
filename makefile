@@ -34,4 +34,4 @@ eval:
 	@python3 scripts/evaluation.py &
 
 logs:
-	@journalctl -t openfaas-fn:$$FN_NAME
+	@journalctl -t openfaas-fn:$$FN_NAME -f

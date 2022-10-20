@@ -101,7 +101,7 @@ public class ServiceExecutorResourceIT {
         .when()
             .post("/")
         .then()
-            .statusCode(202)
+            .statusCode(200)
             .body(is(""));
 
         configureFor(wmServiceExecutor.getClient());
@@ -133,7 +133,7 @@ public class ServiceExecutorResourceIT {
         .when()
             .post("/")
         .then()
-            .statusCode(202)
+            .statusCode(200)
             .body(is(""));
 
         configureFor(wmServiceExecutor.getClient());
@@ -166,7 +166,7 @@ public class ServiceExecutorResourceIT {
         .when()
             .post("/")
         .then()
-            .statusCode(202)
+            .statusCode(200)
             .body(is(""));
 
         verifyFunctionsWereInvokedOnlyOnce(functions);
@@ -187,7 +187,7 @@ public class ServiceExecutorResourceIT {
         .when()
             .post("/")
         .then()
-            .statusCode(202)
+            .statusCode(200)
             .body(is(""));
 
         verifyFunctionsWereInvokedOnlyOnce(functions);
@@ -207,7 +207,7 @@ public class ServiceExecutorResourceIT {
         .when()
             .post("/")
         .then()
-            .statusCode(202)
+            .statusCode(200)
             .body(is(""));
 
         verifyFunctionsWereInvokedOnlyOnce(functions);
@@ -229,7 +229,7 @@ public class ServiceExecutorResourceIT {
         .when()
             .post("/")
         .then()
-            .statusCode(202)
+            .statusCode(200)
             .body(is(""));
 
         verifyFunctionsWereInvokedOnlyOnce(functions);
@@ -249,7 +249,7 @@ public class ServiceExecutorResourceIT {
         .when()
             .post("/")
         .then()
-            .statusCode(202)
+            .statusCode(200)
             .body(is(""));
 
         verifyFunctionsWereInvokedOnlyOnce(functions);
@@ -276,7 +276,7 @@ public class ServiceExecutorResourceIT {
         .when()
             .post("/")
         .then()
-            .statusCode(202)
+            .statusCode(200)
             .body(is(""));
 
         configureFor(wmServiceExecutor.getClient());

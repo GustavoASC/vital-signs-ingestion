@@ -7,8 +7,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import javax.inject.Inject;
-
 import org.acme.quickstart.calculator.RankingCalculator;
 import org.acme.quickstart.input.ServiceExecutorInputDto;
 import org.acme.quickstart.offloading.duration.OffloadingHeuristicByDuration;
@@ -17,7 +15,6 @@ import org.acme.quickstart.offloading.shared.CouldNotDetermineException;
 import org.acme.quickstart.resources.ResourcesLocator;
 import org.acme.quickstart.serverless.ServerlessFunctionClient;
 import org.acme.quickstart.serverless.ServiceExecutorClient;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,13 +32,9 @@ public class VitalSignServiceImplTest {
         @InjectMocks
         VitalSignServiceImpl vitalSignService;
 
-        @RestClient
-        @Inject
         @Mock
         ServiceExecutorClient serviceExecutorClient;
 
-        @RestClient
-        @Inject
         @Mock
         ServerlessFunctionClient serverlessFunctionClient;
 

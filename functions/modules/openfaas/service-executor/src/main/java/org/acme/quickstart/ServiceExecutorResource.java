@@ -30,7 +30,7 @@ public class ServiceExecutorResource {
         } else {
             vitalSignService.ingestVitalSign(List.of(service), inputDto.getVitalSign(), inputDto.getUserPriority());
         }
-        return Response.accepted().build();
+        return Response.ok().build();
     }
 
 }

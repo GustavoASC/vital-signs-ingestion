@@ -10,6 +10,7 @@ cpu_percent = 0.0
 class Serv(BaseHTTPRequestHandler):
     def do_GET(self):
         global cpu_percent
+        print("Current amount of cpu: " + str(cpu_percent))
         response_bytes = json.dumps({"cpu": cpu_percent}).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-type", "application/json")

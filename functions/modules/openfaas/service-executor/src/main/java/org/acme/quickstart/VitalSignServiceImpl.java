@@ -14,9 +14,13 @@ import org.acme.quickstart.resources.ResourcesLocator;
 import org.acme.quickstart.serverless.ServerlessFunctionClient;
 import org.acme.quickstart.serverless.ServiceExecutorClient;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class VitalSignServiceImpl implements VitalSignService {
+    
+    private final Logger logger = LoggerFactory.getLogger(VitalSignServiceImpl.class);
     
     private static final List<String> FUNCTIONS = List.of("body-temperature-monitor", "bar-function");
     private static final int CRITICAL_CPU_USAGE = 90;
@@ -61,12 +65,14 @@ public class VitalSignServiceImpl implements VitalSignService {
                     if (shouldOffloadToParent(ranking, fn)) {
 
                         // Vertical offloading to process vital signs on the parent node within the hierarchy
+                        logger.info("Making vertical offloading...");
                         ServiceExecutorInputDto input = new ServiceExecutorInputDto(fn, vitalSign, userPriority);
                         serviceExecutorClient.runServiceExecutor(input);
                         
                     } else {
 
                         // Runs on the local machine
+                        logger.info("Running health service locally...");
                         UUID id = runningServicesProvider.executionStarted(fn, ranking);
                         serverlessFunctionClient.runFunction(fn, vitalSign);
                         runningServicesProvider.executionFinished(id);
@@ -82,14 +88,17 @@ public class VitalSignServiceImpl implements VitalSignService {
 
         if (usedCpu >= WARNING_CPU_USAGE) {
             try {
+                logger.info("Triggering offloading heuristic by ranking...");
                 return offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);
             } catch (CouldNotDetermineException e) {
                 try {
+                    logger.info("Triggering offloading heuristic by duration...");
                     return offloadingHeuristicByDuration.shouldOffloadVitalSigns(ranking, fn);
                 } catch (CouldNotDetermineException e1) {
                     // Run locally because it is a match and we could not detect which request is
                     // more important. Therefore, we assume that running locally is the best approach
                     // because it does not incur the overhead of performing an offloading operation.
+                    logger.info("Assuming fallback to execute health service locally...");
                     return false;
                 }
             }

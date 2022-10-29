@@ -13,6 +13,7 @@ import org.acme.quickstart.offloading.shared.CouldNotDetermineException;
 import org.acme.quickstart.resources.ResourcesLocator;
 import org.acme.quickstart.serverless.ServerlessFunctionClient;
 import org.acme.quickstart.serverless.ServiceExecutorClient;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +24,9 @@ public class VitalSignServiceImpl implements VitalSignService {
     private final Logger logger = LoggerFactory.getLogger(VitalSignServiceImpl.class);
     
     private static final List<String> FUNCTIONS = List.of("body-temperature-monitor", "bar-function");
-    private static final int CRITICAL_CPU_USAGE = 90;
-    private static final int WARNING_CPU_USAGE = 75;
 
+    private final int criticalCpuUsage;
+    private final int warningCpuUsage;
     private final ServerlessFunctionClient serverlessFunctionClient;
     private final ServiceExecutorClient serviceExecutorClient;
     private final ResourcesLocator resourcesLocator;
@@ -35,6 +36,8 @@ public class VitalSignServiceImpl implements VitalSignService {
     private final RunningServicesProvider runningServicesProvider;
 
     public VitalSignServiceImpl(
+            @ConfigProperty(name = "offloading.threshold.critical-cpu-usage") int criticalCpuUsage,
+            @ConfigProperty(name = "offloading.threshold.warning-cpu-usage") int warningCpuUsage,
             @RestClient ServerlessFunctionClient serverlessFunctionClient,
             ServiceExecutorClient serviceExecutorClient,
             ResourcesLocator resourcesLocator,
@@ -42,6 +45,8 @@ public class VitalSignServiceImpl implements VitalSignService {
             OffloadingHeuristicByDuration offloadingHeuristicByDuration,
             RankingCalculator rankingCalculator,
             RunningServicesProvider runningServicesProvider) {
+        this.criticalCpuUsage = criticalCpuUsage;
+        this.warningCpuUsage = warningCpuUsage;
         this.serverlessFunctionClient = serverlessFunctionClient;
         this.serviceExecutorClient = serviceExecutorClient;
         this.resourcesLocator = resourcesLocator;
@@ -82,11 +87,11 @@ public class VitalSignServiceImpl implements VitalSignService {
 
     private boolean shouldOffloadToParent(int ranking, String fn) {
         int usedCpu = resourcesLocator.getUsedCpuPercentage();
-        if (usedCpu >= CRITICAL_CPU_USAGE) {
+        if (usedCpu >= criticalCpuUsage) {
             return true;
         }
 
-        if (usedCpu >= WARNING_CPU_USAGE) {
+        if (usedCpu >= warningCpuUsage) {
             try {
                 logger.info("Triggering offloading heuristic by ranking...");
                 return offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);

@@ -16,10 +16,10 @@ import org.acme.quickstart.resources.ResourcesLocator;
 import org.acme.quickstart.serverless.ServerlessFunctionClient;
 import org.acme.quickstart.serverless.ServiceExecutorClient;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -29,7 +29,9 @@ public class VitalSignServiceImplTest {
         private static final String VITAL_SIGN = "{ \"heartbeat\": 100}";
         private static final int USER_PRIORITY = 7;
 
-        @InjectMocks
+        private static final int CRITICAL_CPU_USAGE = 90;
+        private static final int WARNING_CPU_USAGE = 75;
+
         VitalSignServiceImpl vitalSignService;
 
         @Mock
@@ -52,6 +54,13 @@ public class VitalSignServiceImplTest {
 
         @Mock
         RunningServicesProvider runningServicesProvider;
+
+        @BeforeEach
+        public void beforeEach() {
+            this.vitalSignService = new VitalSignServiceImpl(CRITICAL_CPU_USAGE, WARNING_CPU_USAGE,
+                    serverlessFunctionClient, serviceExecutorClient, resourcesLocator, offloadingHeuristicByRanking,
+                    offloadingHeuristicByDuration, rankingCalculator, runningServicesProvider);
+        }
 
         @AfterEach
         public void afterEach() {

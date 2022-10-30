@@ -1,208 +1,123 @@
-import urllib.request, json, traceback
+import os, subprocess
+import numpy as np
+import pandas as pd
+import datetime as dt
 
-URL = "http://localhost:8080/function/service-executor"
+import matplotlib.pyplot as plt
 
-MANCHESTER_NOT_URGENT = 1
-MANCHESTER_LITTLE_URGENT = 2
-MANCHESTER_URGENT = 3
-MANCHESTER_VERY_URGENT = 4
-MANCHESTER_EMERGENCY = 5
+FOG_NODE_IP = "ec2-18-230-113-236.sa-east-1.compute.amazonaws.com"
+RESULTS_FILE = "result-requests.csv"
 
-def ingest_vital_sign(payload):
+ELAPSED_NAME = "elapsed"
+THREAD_NAME = "threadName"
+TIMESTAMP_NAME = "timeStamp"
+
+DATETIME = "datetime"
+PERCENTILE_99 = "percentile99"
+PERCENTILE_95 = "percentile95"
+AVERAGE = "average"
+THROUGHPUT_SECONDS = "throughput_seconds"
+
+
+def run_test_scenario(test_file):
+    invoke_jmeter_test(test_file)
+
+    df = pd.read_csv(wrap_dir(RESULTS_FILE), delimiter=",")
+
+    all_data = {}
+    for index, row in df.iterrows():
+
+        data_for_thread = all_data.get(row[THREAD_NAME])
+        if data_for_thread is None:
+            data_for_thread = {}
+            all_data[row[THREAD_NAME]] = data_for_thread
+
+        get_array_from_thread_dict(data_for_thread, ELAPSED_NAME).append(
+            row[ELAPSED_NAME]
+        )
+        get_array_from_thread_dict(data_for_thread, TIMESTAMP_NAME).append(
+            row[TIMESTAMP_NAME]
+        )
+        get_array_from_thread_dict(data_for_thread, DATETIME).append(
+            dt.datetime.fromtimestamp(row[TIMESTAMP_NAME] / 1e3)
+        )
+
+    for key, data_for_thread in all_data.items():
+        data_for_thread[THROUGHPUT_SECONDS] = throughput_seconds(
+            data_for_thread[DATETIME]
+        )
+        data_for_thread[PERCENTILE_99] = np.percentile(
+            data_for_thread[TIMESTAMP_NAME], 99
+        )
+        data_for_thread[PERCENTILE_95] = np.percentile(
+            data_for_thread[TIMESTAMP_NAME], 95
+        )
+        data_for_thread[AVERAGE] = np.average(data_for_thread[TIMESTAMP_NAME])
+
+    plot_chart(all_data)
+
+
+def wrap_dir(file):
+    return "./scripts/evaluation/" + file
+
+
+def invoke_jmeter_test(test_file):
+
     try:
-        headers = {"content-type": "application/json"}
-        data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(URL, data=data, headers=headers)
-        with urllib.request.urlopen(req) as response:
-            print(f"Response: {str(response.read())}")
-    except Exception as e:
-        print(f"Unexpected problem happened: {traceback.format_exc()}")
+        os.remove(wrap_dir("jmeter.log"))
+    except OSError:
+        pass
+
+    try:
+        os.remove(wrap_dir(RESULTS_FILE))
+    except OSError:
+        pass
+
+    subprocess.call(
+        [
+            "jmeter",
+            "-n",
+            "-t",
+            wrap_dir(test_file),
+            "-Jhost={}".format(FOG_NODE_IP),
+            "-l",
+            wrap_dir(RESULTS_FILE),
+            "-L",
+            "DEBUG",
+        ]
+    )
 
 
-def scenario_one():
-    """
-    Large amount of both critical and non-critical requests
-    """
-    for i in range(10000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_EMERGENCY,
-            }
-        )
-    for i in range(10000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_VERY_URGENT,
-            }
-        )
-    for i in range(10000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_URGENT,
-            }
-        )
-    for i in range(10000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_LITTLE_URGENT,
-            }
-        )
-    for i in range(10000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_NOT_URGENT,
-            }
-        )
-
-def scenario_two():
-    """
-    Large amount of critical requests and few non-critical requests
-    """
-    for i in range(10000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_EMERGENCY,
-            }
-        )
-    for i in range(1000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_VERY_URGENT,
-            }
-        )
-    for i in range(100):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_URGENT,
-            }
-        )
-    for i in range(10):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_LITTLE_URGENT,
-            }
-        )
-    for i in range(1):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_NOT_URGENT,
-            }
-        )
+def throughput_seconds(datetime_for_thread):
+    min_datetime = min(datetime_for_thread)
+    max_datetime = max(datetime_for_thread)
+    total_requests = len(datetime_for_thread)
+    duration_seconds = (max_datetime - min_datetime).total_seconds()
+    return total_requests / duration_seconds
 
 
-def scenario_three():
-    """
-    Few amount of critical requests and large amount of non-critical
-    """
-    for i in range(10000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_NOT_URGENT,
-            }
-        )
-    for i in range(1000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_LITTLE_URGENT,
-            }
-        )
-    for i in range(100):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_URGENT,
-            }
-        )
-    for i in range(10):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_VERY_URGENT,
-            }
-        )
-    for i in range(1):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_EMERGENCY,
-            }
-        )
+def get_array_from_thread_dict(data_for_thread, field_name):
+    list_for_thread = data_for_thread.get(field_name)
+    if list_for_thread is None:
+        list_for_thread = []
+        data_for_thread[field_name] = list_for_thread
+
+    return list_for_thread
 
 
-def scenario_four():
-    """
-    Small amount of both critical and non-critical request
-    """
-    for i in range(100):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_NOT_URGENT,
-            }
-        )
-    for i in range(100):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_EMERGENCY,
-            }
-        )
+def plot_chart(all_data):
+    legend = []
+    for key, data_for_thread in sorted(all_data.items()):
+        legend.append(key)
+        plt.plot(data_for_thread[DATETIME], data_for_thread[ELAPSED_NAME])
 
-
-def scenario_five():
-    """
-    Requests with the same priority for different services
-    """
-    for i in range(10000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "body-temperature-monitor",
-                "user_priority": MANCHESTER_NOT_URGENT,
-            }
-        )
-    for i in range(10000):
-        ingest_vital_sign(
-            {
-                "vital_sign": '{"temperature": 100}',
-                "service_name": "cardiac-insufficiency-predictor",
-                "user_priority": MANCHESTER_NOT_URGENT,
-            }
-        )
+    plt.title("Response time for all threads")
+    plt.xlabel("Timestamp")
+    plt.ylabel("Response time")
+    plt.legend(legend)
+    plt.show()
 
 
 if __name__ == "__main__":
-    scenario_one()
-    scenario_two()
-    scenario_three()
-    scenario_four()
-    scenario_five()
+
+    run_test_scenario(test_file="scenario-1.jmx")

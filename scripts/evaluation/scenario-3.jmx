@@ -16,7 +16,7 @@
         <collectionProp name="Arguments.arguments">
           <elementProp name="host" elementType="Argument">
             <stringProp name="Argument.name">host</stringProp>
-            <stringProp name="Argument.value">bpeluawns3ncanjznhvjbp43va0uxrnr.lambda-url.eu-west-2.on.aws</stringProp>
+            <stringProp name="Argument.value">${__P(host)}</stringProp>
             <stringProp name="Argument.metadata">=</stringProp>
           </elementProp>
           <elementProp name="threadsNumber" elementType="Argument">

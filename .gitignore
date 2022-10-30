@@ -27,3 +27,6 @@ target/
 
 # Vscode
 .vscode/
+
+# Secrets file
+.env

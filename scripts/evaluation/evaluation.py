@@ -1,11 +1,12 @@
+from dotenv import load_dotenv
 import os, subprocess
 import numpy as np
 import pandas as pd
 import datetime as dt
 
 import matplotlib.pyplot as plt
+import boto3
 
-FOG_NODE_IP = "ec2-18-230-113-236.sa-east-1.compute.amazonaws.com"
 RESULTS_FILE = "result-requests.csv"
 
 ELAPSED_NAME = "elapsed"
@@ -17,6 +18,33 @@ PERCENTILE_99 = "percentile99"
 PERCENTILE_95 = "percentile95"
 AVERAGE = "average"
 THROUGHPUT_SECONDS = "throughput_seconds"
+
+all_fog_nodes = []
+
+
+def locate_vm_ips():
+
+    dotenv_path = wrap_dir(".env")
+    load_dotenv(dotenv_path)
+
+    client = boto3.client(
+        "ec2",
+        aws_access_key_id=os.environ.get("ACCESS_KEY"),
+        aws_secret_access_key=os.environ.get("SECRET_KEY"),
+        region_name="sa-east-1",
+    )
+    custom_filter = [{"Name": "tag:Name", "Values": ["fog_node_a"]}]
+    response = client.describe_instances(Filters=custom_filter)
+    for r in response["Reservations"]:
+        for i in r["Instances"]:
+            print(i["PublicDnsName"])
+            all_fog_nodes.append(i["PublicDnsName"])
+
+
+def update_thresholds_for_virtual_machine(
+    cpu_interval, warning_threshold, critical_threshold
+):
+    pass
 
 
 def run_test_scenario(test_file):
@@ -79,7 +107,7 @@ def invoke_jmeter_test(test_file):
             "-n",
             "-t",
             wrap_dir(test_file),
-            "-Jhost={}".format(FOG_NODE_IP),
+            "-Jhost={}".format(all_fog_nodes[0]),
             "-l",
             wrap_dir(RESULTS_FILE),
             "-L",
@@ -120,4 +148,5 @@ def plot_chart(all_data):
 
 if __name__ == "__main__":
 
+    locate_vm_ips()
     run_test_scenario(test_file="scenario-1.jmx")

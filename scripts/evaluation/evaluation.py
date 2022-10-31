@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-import os, subprocess
+import os, subprocess, urllib3, json
 import numpy as np
 import pandas as pd
 import datetime as dt
@@ -44,7 +44,52 @@ def locate_vm_ips():
 def update_thresholds_for_virtual_machine(
     cpu_interval, warning_threshold, critical_threshold
 ):
-    pass
+
+    http = urllib3.PoolManager()
+
+    # Updates settings on every fog node
+    for fog_node in all_fog_nodes:
+
+        # Updates the CPU collection interval
+        r = http.request(
+            "POST",
+            "http://{}:8099/machine-resources".format(fog_node),
+            headers={"Content-Type": "application/json"},
+            body=json.dumps({"update_interval": cpu_interval}).encode("utf-8"),
+        )
+
+        if r.status != 200:
+            print("Error updating the CPU interval")
+            exit(1)
+
+        # Authenticates on OpenFaaS
+        subprocess.call(
+            [
+                "faas-cli",
+                "login",
+                "--gateway",
+                fog_node + ":8080",
+                "--password",
+                os.environ.get("OPENFAAS_SECRET"),
+            ]
+        )
+
+        # Re-deploys service executor with given thresholds
+        subprocess.call(
+            [
+                "faas-cli",
+                "--gateway",
+                fog_node + ":8080",
+                "deploy",
+                "-f",
+                "service-executor.yml",
+                "-e",
+                "THRESHOLD_CRITICAL_CPU_USAGE={}".format(critical_threshold),
+                "-e",
+                "THRESHOLD_WARNING_CPU_USAGE={}".format(warning_threshold),
+            ],
+            cwd="./functions",
+        )
 
 
 def run_test_scenario(test_file):
@@ -149,4 +194,7 @@ def plot_chart(all_data):
 if __name__ == "__main__":
 
     locate_vm_ips()
+    update_thresholds_for_virtual_machine(
+        cpu_interval=5, warning_threshold=30, critical_threshold=95
+    )
     run_test_scenario(test_file="scenario-1.jmx")

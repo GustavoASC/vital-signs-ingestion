@@ -29,6 +29,7 @@ run:
 
 collect-cpu:
 	@python3 scripts/cpu-provider/cpu-provider.py &
+	@python3 scripts/metrics-provider/metrics-provider.py &
 
 eval:
 	@python3 scripts/evaluation.py &

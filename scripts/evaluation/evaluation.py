@@ -1,3 +1,4 @@
+from urllib import response
 from dotenv import load_dotenv
 import os, subprocess, urllib3, json
 import numpy as np
@@ -19,6 +20,7 @@ PERCENTILE_95 = "percentile95"
 AVERAGE = "average"
 THROUGHPUT_SECONDS = "throughput_seconds"
 
+http = urllib3.PoolManager()
 all_fog_nodes = []
 
 
@@ -44,8 +46,6 @@ def locate_vm_ips():
 def update_thresholds_for_virtual_machine(
     cpu_interval, warning_threshold, critical_threshold
 ):
-
-    http = urllib3.PoolManager()
 
     # Updates settings on every fog node
     for fog_node in all_fog_nodes:
@@ -93,6 +93,9 @@ def update_thresholds_for_virtual_machine(
 
 
 def run_test_scenario(test_file):
+
+    start_date_time = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     invoke_jmeter_test(test_file)
 
     df = pd.read_csv(wrap_dir(RESULTS_FILE), delimiter=",")
@@ -127,7 +130,8 @@ def run_test_scenario(test_file):
         )
         data_for_thread[AVERAGE] = np.average(data_for_thread[TIMESTAMP_NAME])
 
-    plot_chart(all_data)
+    plot_chart_response_time(all_data)
+    plot_chart_cpu_usage(start_date_time)
 
 
 def wrap_dir(file):
@@ -178,7 +182,7 @@ def get_array_from_thread_dict(data_for_thread, field_name):
     return list_for_thread
 
 
-def plot_chart(all_data):
+def plot_chart_response_time(all_data):
     legend = []
     for key, data_for_thread in sorted(all_data.items()):
         legend.append(key)
@@ -191,10 +195,40 @@ def plot_chart(all_data):
     plt.show()
 
 
+def plot_chart_cpu_usage(start_date_time):
+
+    # Collects CPU usage during tests
+    r = http.request(
+        "GET",
+        "http://{}:9001/metrics/cpu?since={}".format(all_fog_nodes[0], start_date_time),
+        headers={"Content-Type": "application/json"},
+    )
+
+    if r.status != 200:
+        print("Error collecting CPU usage during tests")
+        exit(1)
+
+    response_json = json.loads(r.data)["response"]
+
+    all_datetimes = []
+    all_cpus = []
+    for index in range(len(response_json)):
+        current_json = response_json[index]
+        all_datetimes.append(current_json["datetime"])
+        all_cpus.append(current_json["cpu"])
+
+    plt.plot(all_datetimes, all_cpus)
+
+    plt.title("CPU Usage during tests")
+    plt.xlabel("Timestamp")
+    plt.ylabel("CPU Usage")
+    plt.show()
+
+
 if __name__ == "__main__":
 
     locate_vm_ips()
     update_thresholds_for_virtual_machine(
-        cpu_interval=5, warning_threshold=30, critical_threshold=95
+        cpu_interval=2, warning_threshold=30, critical_threshold=95
     )
     run_test_scenario(test_file="scenario-1.jmx")

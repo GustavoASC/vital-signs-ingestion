@@ -70,14 +70,14 @@ public class VitalSignServiceImpl implements VitalSignService {
                     if (shouldOffloadToParent(ranking, fn)) {
 
                         // Vertical offloading to process vital signs on the parent node within the hierarchy
-                        logger.info("Making vertical offloading...");
+                        logger.info("Making vertical offloading for ranking {} and function {}...", ranking, fn);
                         ServiceExecutorInputDto input = new ServiceExecutorInputDto(fn, vitalSign, userPriority);
                         serviceExecutorClient.runServiceExecutor(input);
                         
                     } else {
 
                         // Runs on the local machine
-                        logger.info("Running health service locally...");
+                        logger.info("Running health service locally for ranking {} and function {}...", ranking, fn);
                         UUID id = runningServicesProvider.executionStarted(fn, ranking);
                         serverlessFunctionClient.runFunction(fn, vitalSign);
                         runningServicesProvider.executionFinished(id);
@@ -87,23 +87,28 @@ public class VitalSignServiceImpl implements VitalSignService {
 
     private boolean shouldOffloadToParent(int ranking, String fn) {
         int usedCpu = resourcesLocator.getUsedCpuPercentage();
-        if (usedCpu >= criticalCpuUsage) {
+        if (usedCpu > criticalCpuUsage) {
+            logger.info("Used CPU {} exceeded critical limit of {} for ranking {} and function {}", usedCpu, criticalCpuUsage, ranking, fn);
             return true;
         }
 
-        if (usedCpu >= warningCpuUsage) {
+        if (usedCpu > warningCpuUsage) {
             try {
-                logger.info("Triggering offloading heuristic by ranking...");
-                return offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);
+                logger.info("Triggering offloading heuristic by ranking for ranking {} and function {}...", ranking, fn);
+                boolean result = offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);
+                logger.info("Result of offloading heuristic by ranking for ranking {} and function {}: {}", ranking, fn, result);
+                return result;
             } catch (CouldNotDetermineException e) {
                 try {
-                    logger.info("Triggering offloading heuristic by duration...");
-                    return offloadingHeuristicByDuration.shouldOffloadVitalSigns(ranking, fn);
+                    logger.info("Triggering offloading heuristic by duration for ranking {} and function {}...", ranking, fn);
+                    boolean result = offloadingHeuristicByDuration.shouldOffloadVitalSigns(ranking, fn);
+                    logger.info("Result of offloading heuristic by duration for ranking {} and function {}: {}", ranking, fn, result);
+                    return result;
                 } catch (CouldNotDetermineException e1) {
                     // Run locally because it is a match and we could not detect which request is
                     // more important. Therefore, we assume that running locally is the best approach
                     // because it does not incur the overhead of performing an offloading operation.
-                    logger.info("Assuming fallback to execute health service locally...");
+                    logger.info("Assuming fallback to execute health service locally for ranking {} and function {}...", ranking, fn);
                     return false;
                 }
             }

@@ -117,7 +117,7 @@ public class VitalSignServiceImplTest {
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
                                 .thenReturn(14);
                 when(resourcesLocator.getUsedCpuPercentage())
-                                .thenReturn(90);
+                                .thenReturn(91);
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 

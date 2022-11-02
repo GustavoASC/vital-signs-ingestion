@@ -7,6 +7,9 @@ import re
 VERTICAL_OFFLOADING_GREP_FILTER = "Making vertical offloading"
 VERTICAL_OFFLOADING_REGEX = ".*stdout.*(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d).*"
 
+LOCAL_EXECUTION_GREP_FILTER = "Running health service locally"
+LOCAL_EXECUTION_REGEX = ".*stdout.*(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d).*"
+
 CPU_GREP_FILTER = 'stdout: {"cpu'
 CPU_REGEX = ".*(\d\d\d\d\/\d\d\/\d\d\s\d\d:\d\d:\d\d).*({.*cpu.*}).*"
 
@@ -44,16 +47,25 @@ class Serv(BaseHTTPRequestHandler):
 
         return wrap_response(occurences)
 
-    def fetch_offloading_metrics(self, since):
-
-        lines = get_lines_from_journalctl(since, VERTICAL_OFFLOADING_GREP_FILTER)
+    def fetch_generic_datetime(self, since, grep_filter, regex):
+        lines = get_lines_from_journalctl(since, grep_filter)
 
         occurences = []
         for current in lines:
-            date_time = re.findall(VERTICAL_OFFLOADING_REGEX, current)[0]
+            date_time = re.findall(regex, current)[0]
             occurences.append({"datetime": date_time})
 
         return wrap_response(occurences)
+
+    def fetch_offloading_metrics(self, since):
+        return self.fetch_generic_datetime(
+            since, VERTICAL_OFFLOADING_GREP_FILTER, VERTICAL_OFFLOADING_REGEX
+        )
+
+    def fetch_local_execution_metrics(self, since):
+        return self.fetch_generic_datetime(
+            since, LOCAL_EXECUTION_GREP_FILTER, LOCAL_EXECUTION_REGEX
+        )
 
     def do_GET(self):
 
@@ -65,6 +77,9 @@ class Serv(BaseHTTPRequestHandler):
             self.send_response(200)
         elif self.path.startswith("/metrics/offloading"):
             response_bytes = self.fetch_offloading_metrics(since)
+            self.send_response(200)
+        elif self.path.startswith("/metrics/local-execution"):
+            response_bytes = self.fetch_local_execution_metrics(since)
             self.send_response(200)
         else:
             json.dumps({"error": "not found"}).encode("utf-8")

@@ -4,21 +4,32 @@ import os, subprocess, urllib3, json
 import numpy as np
 import pandas as pd
 import datetime as dt
+import logging
 
 import matplotlib.pyplot as plt
 import boto3
 
 RESULTS_FILE = "result-requests.csv"
 
-ELAPSED_NAME = "elapsed"
+ELAPSED = "elapsed"
 THREAD_NAME = "threadName"
-TIMESTAMP_NAME = "timeStamp"
+TIMESTAMP = "timeStamp"
 
-DATETIME = "datetime"
+START_DATETIME = "start_datetime"
+END_DATETIME = "end_datetime"
+MINIMUM = "minimum"
+MAXIMUM = "maximum"
 PERCENTILE_99 = "percentile99"
 PERCENTILE_95 = "percentile95"
+PERCENTILE_90 = "percentile90"
 AVERAGE = "average"
 THROUGHPUT_SECONDS = "throughput_seconds"
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 
 http = urllib3.PoolManager()
 all_fog_nodes = []
@@ -39,8 +50,9 @@ def locate_vm_ips():
     response = client.describe_instances(Filters=custom_filter)
     for r in response["Reservations"]:
         for i in r["Instances"]:
-            print(i["PublicDnsName"])
             all_fog_nodes.append(i["PublicDnsName"])
+
+    logging.info("IPs for running fog nodes: {}".format(all_fog_nodes))
 
 
 def update_thresholds_for_virtual_machine(
@@ -50,7 +62,9 @@ def update_thresholds_for_virtual_machine(
     # Updates settings on every fog node
     for fog_node in all_fog_nodes:
 
-        # Updates the CPU collection interval
+        logging.info(
+            "Updating the CPU collection interval to {}...".format(cpu_interval)
+        )
         r = http.request(
             "POST",
             "http://{}:8099/machine-resources".format(fog_node),
@@ -59,10 +73,10 @@ def update_thresholds_for_virtual_machine(
         )
 
         if r.status != 200:
-            print("Error updating the CPU interval")
+            logging.info("Error updating the CPU interval")
             exit(1)
 
-        # Authenticates on OpenFaaS
+        logging.info("Authenticating on remote OpenFaaS running on the fog node...\n\n")
         subprocess.call(
             [
                 "faas-cli",
@@ -74,7 +88,12 @@ def update_thresholds_for_virtual_machine(
             ]
         )
 
-        # Re-deploys service executor with given thresholds
+        print("\n\n")
+        logging.info(
+            "Re-deploying service-executor module on remote fog nod with {} warning threshold and {} critical threshold...".format(
+                warning_threshold, critical_threshold
+            )
+        )
         subprocess.call(
             [
                 "faas-cli",
@@ -92,15 +111,11 @@ def update_thresholds_for_virtual_machine(
         )
 
 
-def run_test_scenario(test_file):
-
-    start_date_time = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    invoke_jmeter_test(test_file)
-
-    df = pd.read_csv(wrap_dir(RESULTS_FILE), delimiter=",")
+def analyze_dataset():
 
     all_data = {}
+
+    df = pd.read_csv(wrap_dir(RESULTS_FILE), delimiter=",")
     for index, row in df.iterrows():
 
         data_for_thread = all_data.get(row[THREAD_NAME])
@@ -108,28 +123,41 @@ def run_test_scenario(test_file):
             data_for_thread = {}
             all_data[row[THREAD_NAME]] = data_for_thread
 
-        get_array_from_thread_dict(data_for_thread, ELAPSED_NAME).append(
-            row[ELAPSED_NAME]
+        get_array_from_thread_dict(data_for_thread, ELAPSED).append(row[ELAPSED])
+        get_array_from_thread_dict(data_for_thread, TIMESTAMP).append(row[TIMESTAMP])
+        get_array_from_thread_dict(data_for_thread, START_DATETIME).append(
+            dt.datetime.fromtimestamp(row[TIMESTAMP] / 1e3)
         )
-        get_array_from_thread_dict(data_for_thread, TIMESTAMP_NAME).append(
-            row[TIMESTAMP_NAME]
-        )
-        get_array_from_thread_dict(data_for_thread, DATETIME).append(
-            dt.datetime.fromtimestamp(row[TIMESTAMP_NAME] / 1e3)
+        get_array_from_thread_dict(data_for_thread, END_DATETIME).append(
+            dt.datetime.fromtimestamp((row[TIMESTAMP] + row[ELAPSED]) / 1e3)
         )
 
+    return all_data
+
+
+def update_with_summary(all_data):
     for key, data_for_thread in all_data.items():
         data_for_thread[THROUGHPUT_SECONDS] = throughput_seconds(
-            data_for_thread[DATETIME]
+            data_for_thread[START_DATETIME], data_for_thread[END_DATETIME]
         )
-        data_for_thread[PERCENTILE_99] = np.percentile(
-            data_for_thread[TIMESTAMP_NAME], 99
-        )
-        data_for_thread[PERCENTILE_95] = np.percentile(
-            data_for_thread[TIMESTAMP_NAME], 95
-        )
-        data_for_thread[AVERAGE] = np.average(data_for_thread[TIMESTAMP_NAME])
+        data_for_thread[MINIMUM] = np.amin(data_for_thread[ELAPSED])
+        data_for_thread[MAXIMUM] = np.amax(data_for_thread[ELAPSED])
+        data_for_thread[PERCENTILE_99] = np.percentile(data_for_thread[ELAPSED], 99)
+        data_for_thread[PERCENTILE_95] = np.percentile(data_for_thread[ELAPSED], 95)
+        data_for_thread[PERCENTILE_90] = np.percentile(data_for_thread[ELAPSED], 90)
+        data_for_thread[AVERAGE] = np.average(data_for_thread[ELAPSED])
 
+
+def run_test_scenario(test_file):
+
+    start_date_time = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    invoke_jmeter_test(test_file)
+
+    all_data = analyze_dataset()
+    update_with_summary(all_data)
+
+    print_summary(all_data)
     plot_chart_response_time(all_data)
     plot_chart_cpu_usage(start_date_time)
 
@@ -150,6 +178,8 @@ def invoke_jmeter_test(test_file):
     except OSError:
         pass
 
+    print("\n\n")
+    logging.info("Invoking JMeter...")
     subprocess.call(
         [
             "jmeter",
@@ -165,10 +195,10 @@ def invoke_jmeter_test(test_file):
     )
 
 
-def throughput_seconds(datetime_for_thread):
-    min_datetime = min(datetime_for_thread)
-    max_datetime = max(datetime_for_thread)
-    total_requests = len(datetime_for_thread)
+def throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
+    min_datetime = min(start_datetime_for_thread)
+    max_datetime = max(end_datetime_for_thread)
+    total_requests = len(start_datetime_for_thread)
     duration_seconds = (max_datetime - min_datetime).total_seconds()
     return total_requests / duration_seconds
 
@@ -182,11 +212,28 @@ def get_array_from_thread_dict(data_for_thread, field_name):
     return list_for_thread
 
 
+def print_summary(all_data):
+    logging.info("Test summary")
+    for key, data_for_thread in sorted(all_data.items()):
+        logging.info("-----------")
+        logging.info("# Thread: {}".format(key))
+        logging.info(
+            "##  Throughput/sec: {}".format(data_for_thread[THROUGHPUT_SECONDS])
+        )
+        logging.info("##         Minimum: {}".format(data_for_thread[MINIMUM]))
+        logging.info("##         Maximum: {}".format(data_for_thread[MAXIMUM]))
+        logging.info("## 99th percentile: {}".format(data_for_thread[PERCENTILE_99]))
+        logging.info("## 95th percentile: {}".format(data_for_thread[PERCENTILE_95]))
+        logging.info("## 90th percentile: {}".format(data_for_thread[PERCENTILE_90]))
+        logging.info("##         Average: {}".format(data_for_thread[AVERAGE]))
+        logging.info("")
+
+
 def plot_chart_response_time(all_data):
     legend = []
     for key, data_for_thread in sorted(all_data.items()):
         legend.append(key)
-        plt.plot(data_for_thread[DATETIME], data_for_thread[ELAPSED_NAME])
+        plt.plot(data_for_thread[START_DATETIME], data_for_thread[ELAPSED])
 
     plt.title("Response time for all threads")
     plt.xlabel("Timestamp")
@@ -205,7 +252,7 @@ def plot_chart_cpu_usage(start_date_time):
     )
 
     if r.status != 200:
-        print("Error collecting CPU usage during tests")
+        logging.info("Error collecting CPU usage during tests")
         exit(1)
 
     response_json = json.loads(r.data)["response"]

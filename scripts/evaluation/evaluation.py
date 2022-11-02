@@ -1,10 +1,10 @@
-from urllib import response
 from dotenv import load_dotenv
 import os, subprocess, urllib3, json
 import numpy as np
 import pandas as pd
 import datetime as dt
 import logging
+import re
 
 import matplotlib.pyplot as plt
 import boto3
@@ -23,6 +23,7 @@ PERCENTILE_99 = "percentile99"
 PERCENTILE_95 = "percentile95"
 PERCENTILE_90 = "percentile90"
 AVERAGE = "average"
+OFFLOADING_OPERATIONS = "offloading_operations"
 THROUGHPUT_SECONDS = "throughput_seconds"
 
 logging.basicConfig(
@@ -111,6 +112,23 @@ def update_thresholds_for_virtual_machine(
         )
 
 
+# The user priority configured on JMeter is always the same as the group number
+def group_name_from_thread(thread_name):
+    group_id = re.findall("Thread\sGroup\s(\d).*", thread_name)[0]
+    return "User priority {}".format(group_id)
+
+
+def group_name_from_user_priority(user_priority):
+    association = {
+        "1": "5",
+        "2": "4",
+        "3": "3",
+        "4": "2",
+        "5": "1"
+    }
+    return "User priority {}".format(association[user_priority])
+
+
 def analyze_dataset():
 
     all_data = {}
@@ -118,10 +136,12 @@ def analyze_dataset():
     df = pd.read_csv(wrap_dir(RESULTS_FILE), delimiter=",")
     for index, row in df.iterrows():
 
-        data_for_thread = all_data.get(row[THREAD_NAME])
+        group_name = group_name_from_thread(row[THREAD_NAME])
+
+        data_for_thread = all_data.get(group_name)
         if data_for_thread is None:
             data_for_thread = {}
-            all_data[row[THREAD_NAME]] = data_for_thread
+            all_data[group_name] = data_for_thread
 
         get_array_from_thread_dict(data_for_thread, ELAPSED).append(row[ELAPSED])
         get_array_from_thread_dict(data_for_thread, TIMESTAMP).append(row[TIMESTAMP])
@@ -133,6 +153,43 @@ def analyze_dataset():
         )
 
     return all_data
+
+
+def update_with_offloading_operations(all_data, start_date_time):
+
+    # The request used for testing purposes uses a health service with priority of '4',
+    # therefore we map the user priority with the ranking found in the metrics
+    raking_association_with_user_priority = {
+        "5": "1",
+        "6": "2",
+        "7": "3",
+        "8": "4",
+        "9": "5",
+    }
+
+    r = http.request(
+        "GET",
+        "http://{}:9001/metrics/offloading?since={}".format(
+            all_fog_nodes[0], start_date_time
+        ),
+        headers={"Content-Type": "application/json"},
+    )
+
+    if r.status != 200:
+        logging.info("Error collecting offloading metrics during tests")
+        exit(1)
+
+    response_json = json.loads(r.data)["response"]
+
+    for index in range(len(response_json)):
+        current_json = response_json[index]
+        ranking = current_json["ranking"]
+        user_priority = raking_association_with_user_priority[ranking]
+
+        data_for_thread = all_data[group_name_from_user_priority(user_priority)]
+        get_array_from_thread_dict(data_for_thread, OFFLOADING_OPERATIONS).append(
+            current_json["datetime"]
+        )
 
 
 def update_with_summary(all_data):
@@ -155,6 +212,7 @@ def run_test_scenario(test_file):
     invoke_jmeter_test(test_file)
 
     all_data = analyze_dataset()
+    update_with_offloading_operations(all_data, start_date_time)
     update_with_summary(all_data)
 
     print_summary(all_data)
@@ -217,15 +275,14 @@ def print_summary(all_data):
     for key, data_for_thread in sorted(all_data.items()):
         logging.info("-----------")
         logging.info("# Thread: {}".format(key))
-        logging.info(
-            "##  Throughput/sec: {}".format(data_for_thread[THROUGHPUT_SECONDS])
-        )
-        logging.info("##         Minimum: {}".format(data_for_thread[MINIMUM]))
-        logging.info("##         Maximum: {}".format(data_for_thread[MAXIMUM]))
-        logging.info("## 99th percentile: {}".format(data_for_thread[PERCENTILE_99]))
-        logging.info("## 95th percentile: {}".format(data_for_thread[PERCENTILE_95]))
-        logging.info("## 90th percentile: {}".format(data_for_thread[PERCENTILE_90]))
-        logging.info("##         Average: {}".format(data_for_thread[AVERAGE]))
+        logging.info("##              Throughput/sec: {}".format(data_for_thread[THROUGHPUT_SECONDS]))
+        logging.info("##                     Minimum: {}".format(data_for_thread[MINIMUM]))
+        logging.info("##                     Maximum: {}".format(data_for_thread[MAXIMUM]))
+        logging.info("##             99th percentile: {}".format(data_for_thread[PERCENTILE_99]))
+        logging.info("##             95th percentile: {}".format(data_for_thread[PERCENTILE_95]))
+        logging.info("##             90th percentile: {}".format(data_for_thread[PERCENTILE_90]))
+        logging.info("##                     Average: {}".format(data_for_thread[AVERAGE]))
+        logging.info("## Total offloading operations: {}".format(len(data_for_thread[OFFLOADING_OPERATIONS])))
         logging.info("")
 
 

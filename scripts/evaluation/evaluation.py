@@ -5,6 +5,7 @@ import pandas as pd
 import datetime as dt
 import logging
 import re
+import time
 
 import matplotlib.pyplot as plt
 import boto3
@@ -24,6 +25,7 @@ PERCENTILE_95 = "percentile95"
 PERCENTILE_90 = "percentile90"
 AVERAGE = "average"
 OFFLOADING_OPERATIONS = "offloading_operations"
+LOCAL_EXECUTIONS = "local_executions"
 THROUGHPUT_SECONDS = "throughput_seconds"
 
 logging.basicConfig(
@@ -138,25 +140,24 @@ def analyze_dataset():
 
         group_name = group_name_from_thread(row[THREAD_NAME])
 
-        data_for_thread = all_data.get(group_name)
-        if data_for_thread is None:
-            data_for_thread = {}
-            all_data[group_name] = data_for_thread
+        thread_data = all_data.get(group_name)
+        if thread_data is None:
+            thread_data = {}
+            all_data[group_name] = thread_data
 
-        get_array_from_thread_dict(data_for_thread, ELAPSED).append(row[ELAPSED])
-        get_array_from_thread_dict(data_for_thread, TIMESTAMP).append(row[TIMESTAMP])
-        get_array_from_thread_dict(data_for_thread, START_DATETIME).append(
+        get_array_from_thread_dict(thread_data, ELAPSED).append(row[ELAPSED])
+        get_array_from_thread_dict(thread_data, TIMESTAMP).append(row[TIMESTAMP])
+        get_array_from_thread_dict(thread_data, START_DATETIME).append(
             dt.datetime.fromtimestamp(row[TIMESTAMP] / 1e3)
         )
-        get_array_from_thread_dict(data_for_thread, END_DATETIME).append(
+        get_array_from_thread_dict(thread_data, END_DATETIME).append(
             dt.datetime.fromtimestamp((row[TIMESTAMP] + row[ELAPSED]) / 1e3)
         )
 
     return all_data
 
 
-def update_with_offloading_operations(all_data, start_date_time):
-
+def update_metric(all_data, start_date_time, metric_name, field_name):
     # The request used for testing purposes uses a health service with priority of '4',
     # therefore we map the user priority with the ranking found in the metrics
     raking_association_with_user_priority = {
@@ -169,8 +170,8 @@ def update_with_offloading_operations(all_data, start_date_time):
 
     r = http.request(
         "GET",
-        "http://{}:9001/metrics/offloading?since={}".format(
-            all_fog_nodes[0], start_date_time
+        "http://{}:9001/metrics/{}?since={}".format(
+            all_fog_nodes[0], metric_name, start_date_time
         ),
         headers={"Content-Type": "application/json"},
     )
@@ -186,33 +187,43 @@ def update_with_offloading_operations(all_data, start_date_time):
         ranking = current_json["ranking"]
         user_priority = raking_association_with_user_priority[ranking]
 
-        data_for_thread = all_data[group_name_from_user_priority(user_priority)]
-        get_array_from_thread_dict(data_for_thread, OFFLOADING_OPERATIONS).append(
+        thread_data = all_data[group_name_from_user_priority(user_priority)]
+        get_array_from_thread_dict(thread_data, field_name).append(
             current_json["datetime"]
         )
 
 
+def update_with_offloading_operations(all_data, start_date_time):
+    return update_metric(all_data, start_date_time, "offloading", OFFLOADING_OPERATIONS)
+
+
+def update_with_local_executions(all_data, start_date_time):
+    return update_metric(all_data, start_date_time, "local-execution", LOCAL_EXECUTIONS)
+
+
 def update_with_summary(all_data):
-    for key, data_for_thread in all_data.items():
-        data_for_thread[THROUGHPUT_SECONDS] = throughput_seconds(
-            data_for_thread[START_DATETIME], data_for_thread[END_DATETIME]
+    for key, thread_data in all_data.items():
+        thread_data[THROUGHPUT_SECONDS] = throughput_seconds(
+            thread_data[START_DATETIME], thread_data[END_DATETIME]
         )
-        data_for_thread[MINIMUM] = np.amin(data_for_thread[ELAPSED])
-        data_for_thread[MAXIMUM] = np.amax(data_for_thread[ELAPSED])
-        data_for_thread[PERCENTILE_99] = np.percentile(data_for_thread[ELAPSED], 99)
-        data_for_thread[PERCENTILE_95] = np.percentile(data_for_thread[ELAPSED], 95)
-        data_for_thread[PERCENTILE_90] = np.percentile(data_for_thread[ELAPSED], 90)
-        data_for_thread[AVERAGE] = np.average(data_for_thread[ELAPSED])
+        thread_data[MINIMUM] = np.amin(thread_data[ELAPSED])
+        thread_data[MAXIMUM] = np.amax(thread_data[ELAPSED])
+        thread_data[PERCENTILE_99] = np.percentile(thread_data[ELAPSED], 99)
+        thread_data[PERCENTILE_95] = np.percentile(thread_data[ELAPSED], 95)
+        thread_data[PERCENTILE_90] = np.percentile(thread_data[ELAPSED], 90)
+        thread_data[AVERAGE] = np.average(thread_data[ELAPSED])
 
 
 def run_test_scenario(test_file):
 
     start_date_time = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    logging.info("Start date time: {}".format(start_date_time))
 
     invoke_jmeter_test(test_file)
 
     all_data = analyze_dataset()
     update_with_offloading_operations(all_data, start_date_time)
+    update_with_local_executions(all_data, start_date_time)
     update_with_summary(all_data)
 
     print_summary(all_data)
@@ -261,36 +272,39 @@ def throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
     return total_requests / duration_seconds
 
 
-def get_array_from_thread_dict(data_for_thread, field_name):
-    list_for_thread = data_for_thread.get(field_name)
+def get_array_from_thread_dict(thread_data, field_name):
+    list_for_thread = thread_data.get(field_name)
     if list_for_thread is None:
         list_for_thread = []
-        data_for_thread[field_name] = list_for_thread
+        thread_data[field_name] = list_for_thread
 
     return list_for_thread
 
 
 def print_summary(all_data):
     logging.info("Test summary")
-    for key, data_for_thread in sorted(all_data.items()):
+    for key, thread_data in sorted(all_data.items()):
         logging.info("-----------")
         logging.info("# Thread: {}".format(key))
-        logging.info("##              Throughput/sec: {}".format(data_for_thread[THROUGHPUT_SECONDS]))
-        logging.info("##                     Minimum: {}".format(data_for_thread[MINIMUM]))
-        logging.info("##                     Maximum: {}".format(data_for_thread[MAXIMUM]))
-        logging.info("##             99th percentile: {}".format(data_for_thread[PERCENTILE_99]))
-        logging.info("##             95th percentile: {}".format(data_for_thread[PERCENTILE_95]))
-        logging.info("##             90th percentile: {}".format(data_for_thread[PERCENTILE_90]))
-        logging.info("##                     Average: {}".format(data_for_thread[AVERAGE]))
-        logging.info("## Total offloading operations: {}".format(len(data_for_thread[OFFLOADING_OPERATIONS])))
+        logging.info("##  Throughput/sec: {}".format(thread_data[THROUGHPUT_SECONDS]))
+        logging.info("##         Minimum: {}".format(thread_data[MINIMUM]))
+        logging.info("##         Maximum: {}".format(thread_data[MAXIMUM]))
+        logging.info("## 99th percentile: {}".format(thread_data[PERCENTILE_99]))
+        logging.info("## 95th percentile: {}".format(thread_data[PERCENTILE_95]))
+        logging.info("## 90th percentile: {}".format(thread_data[PERCENTILE_90]))
+        logging.info("##         Average: {}".format(thread_data[AVERAGE]))
+        logging.info(
+            "## Tot.offloadings: {}".format(len(thread_data[OFFLOADING_OPERATIONS]))
+        )
+        logging.info("## Tot.local exec: {}".format(len(thread_data[LOCAL_EXECUTIONS])))
         logging.info("")
 
 
 def plot_chart_response_time(all_data):
     legend = []
-    for key, data_for_thread in sorted(all_data.items()):
+    for key, thread_data in sorted(all_data.items()):
         legend.append(key)
-        plt.plot(data_for_thread[START_DATETIME], data_for_thread[ELAPSED])
+        plt.plot(thread_data[START_DATETIME], thread_data[ELAPSED])
 
     plt.title("Response time for all threads")
     plt.xlabel("Timestamp")

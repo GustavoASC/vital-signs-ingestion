@@ -116,11 +116,6 @@ def update_thresholds_for_virtual_machine(
 
 # The user priority configured on JMeter is always the same as the group number
 def group_name_from_thread(thread_name):
-    group_id = re.findall("Thread\sGroup\s(\d).*", thread_name)[0]
-    return "User priority {}".format(group_id)
-
-
-def group_name_from_user_priority(user_priority):
     association = {
         "1": "5",
         "2": "4",
@@ -128,7 +123,13 @@ def group_name_from_user_priority(user_priority):
         "4": "2",
         "5": "1"
     }
-    return "User priority {}".format(association[user_priority])
+    group_id = re.findall("Thread\sGroup\s(\d).*", thread_name)[0]
+    associated_priority = association[group_id]
+    return "User priority {}".format(associated_priority)
+
+
+def group_name_from_user_priority(user_priority):
+    return "User priority {}".format(user_priority)
 
 
 def analyze_dataset():
@@ -222,6 +223,10 @@ def run_test_scenario(test_file):
     invoke_jmeter_test(test_file)
 
     all_data = analyze_dataset()
+
+
+    # time.sleep(5)
+
     update_with_offloading_operations(all_data, start_date_time)
     update_with_local_executions(all_data, start_date_time)
     update_with_summary(all_data)
@@ -285,7 +290,7 @@ def print_summary(all_data):
     logging.info("Test summary")
     for key, thread_data in sorted(all_data.items()):
         logging.info("-----------")
-        logging.info("# Thread: {}".format(key))
+        logging.info("# Group: {}".format(key))
         logging.info("##  Throughput/sec: {}".format(thread_data[THROUGHPUT_SECONDS]))
         logging.info("##         Minimum: {}".format(thread_data[MINIMUM]))
         logging.info("##         Maximum: {}".format(thread_data[MAXIMUM]))
@@ -294,9 +299,9 @@ def print_summary(all_data):
         logging.info("## 90th percentile: {}".format(thread_data[PERCENTILE_90]))
         logging.info("##         Average: {}".format(thread_data[AVERAGE]))
         logging.info(
-            "## Tot.offloadings: {}".format(len(thread_data[OFFLOADING_OPERATIONS]))
+            "## Tot.offloadings: {}".format(len(get_array_from_thread_dict(thread_data, OFFLOADING_OPERATIONS)))
         )
-        logging.info("## Tot.local exec: {}".format(len(thread_data[LOCAL_EXECUTIONS])))
+        logging.info("## Tot.local exec: {}".format(len(get_array_from_thread_dict(thread_data, LOCAL_EXECUTIONS))))
         logging.info("")
 
 

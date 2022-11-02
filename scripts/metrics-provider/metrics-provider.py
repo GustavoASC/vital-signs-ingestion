@@ -5,17 +5,15 @@ import urllib.parse
 import re
 
 VERTICAL_OFFLOADING_GREP_FILTER = "Making vertical offloading"
-VERTICAL_OFFLOADING_REGEX = (
-    ".*stdout.*(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d).*for\sranking\s(\d+).*"
-)
-
 LOCAL_EXECUTION_GREP_FILTER = "Running health service locally"
-LOCAL_EXECUTION_REGEX = (
+HEURISTIC_BY_RANKING_GREP_FILTER = "Triggering offloading heuristic by ranking"
+HEURISTIC_BY_DURATION_GREP_FILTER = "Triggering offloading heuristic by duration"
+CPU_GREP_FILTER = 'stdout: {"cpu'
+
+CPU_REGEX = ".*(\d\d\d\d\/\d\d\/\d\d\s\d\d:\d\d:\d\d).*({.*cpu.*}).*"
+DATE_TIME_WITH_RANKING_REGEX = (
     ".*stdout.*(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d).*for\sranking\s(\d+).*"
 )
-
-CPU_GREP_FILTER = 'stdout: {"cpu'
-CPU_REGEX = ".*(\d\d\d\d\/\d\d\/\d\d\s\d\d:\d\d:\d\d).*({.*cpu.*}).*"
 
 
 def get_lines_from_journalctl(since, grep_filter):
@@ -51,12 +49,12 @@ class Serv(BaseHTTPRequestHandler):
 
         return wrap_response(occurences)
 
-    def fetch_generic_datetime(self, since, grep_filter, regex):
+    def fetch_generic_datetime(self, since, grep_filter):
         lines = get_lines_from_journalctl(since, grep_filter)
 
         occurences = []
         for current in lines:
-            result_tuple = re.findall(regex, current)[0]
+            result_tuple = re.findall(DATE_TIME_WITH_RANKING_REGEX, current)[0]
             date_time = result_tuple[0]
             ranking = result_tuple[1]
             occurences.append({"datetime": date_time, "ranking": ranking})
@@ -64,14 +62,16 @@ class Serv(BaseHTTPRequestHandler):
         return wrap_response(occurences)
 
     def fetch_offloading_metrics(self, since):
-        return self.fetch_generic_datetime(
-            since, VERTICAL_OFFLOADING_GREP_FILTER, VERTICAL_OFFLOADING_REGEX
-        )
+        return self.fetch_generic_datetime(since, VERTICAL_OFFLOADING_GREP_FILTER)
 
     def fetch_local_execution_metrics(self, since):
-        return self.fetch_generic_datetime(
-            since, LOCAL_EXECUTION_GREP_FILTER, LOCAL_EXECUTION_REGEX
-        )
+        return self.fetch_generic_datetime(since, LOCAL_EXECUTION_GREP_FILTER)
+
+    def fetch_heuristic_by_ranking_metrics(self, since):
+        return self.fetch_generic_datetime(since, HEURISTIC_BY_RANKING_GREP_FILTER)
+
+    def fetch_heuristic_by_duration_metrics(self, since):
+        return self.fetch_generic_datetime(since, HEURISTIC_BY_DURATION_GREP_FILTER)
 
     def do_GET(self):
 
@@ -86,6 +86,12 @@ class Serv(BaseHTTPRequestHandler):
             self.send_response(200)
         elif self.path.startswith("/metrics/local-execution"):
             response_bytes = self.fetch_local_execution_metrics(since)
+            self.send_response(200)
+        elif self.path.startswith("/metrics/heuristic-ranking"):
+            response_bytes = self.fetch_heuristic_by_ranking_metrics(since)
+            self.send_response(200)
+        elif self.path.startswith("/metrics/heuristic-duration"):
+            response_bytes = self.fetch_heuristic_by_duration_metrics(since)
             self.send_response(200)
         else:
             json.dumps({"error": "not found"}).encode("utf-8")

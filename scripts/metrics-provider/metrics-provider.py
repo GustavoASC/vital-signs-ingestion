@@ -5,10 +5,14 @@ import urllib.parse
 import re
 
 VERTICAL_OFFLOADING_GREP_FILTER = "Making vertical offloading"
-VERTICAL_OFFLOADING_REGEX = ".*stdout.*(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d).*"
+VERTICAL_OFFLOADING_REGEX = (
+    ".*stdout.*(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d).*for\sranking\s(\d+).*"
+)
 
 LOCAL_EXECUTION_GREP_FILTER = "Running health service locally"
-LOCAL_EXECUTION_REGEX = ".*stdout.*(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d).*"
+LOCAL_EXECUTION_REGEX = (
+    ".*stdout.*(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d).*for\sranking\s(\d+).*"
+)
 
 CPU_GREP_FILTER = 'stdout: {"cpu'
 CPU_REGEX = ".*(\d\d\d\d\/\d\d\/\d\d\s\d\d:\d\d:\d\d).*({.*cpu.*}).*"
@@ -52,8 +56,10 @@ class Serv(BaseHTTPRequestHandler):
 
         occurences = []
         for current in lines:
-            date_time = re.findall(regex, current)[0]
-            occurences.append({"datetime": date_time})
+            result_tuple = re.findall(regex, current)[0]
+            date_time = result_tuple[0]
+            ranking = result_tuple[1]
+            occurences.append({"datetime": date_time, "ranking": ranking})
 
         return wrap_response(occurences)
 

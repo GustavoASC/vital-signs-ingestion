@@ -3,6 +3,9 @@ package org.acme.quickstart.metrics;
 import java.math.BigDecimal;
 import java.util.Objects;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class Metrics {
 
     public int userPriority;

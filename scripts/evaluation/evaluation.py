@@ -24,8 +24,8 @@ PERCENTILE_99 = "percentile99"
 PERCENTILE_95 = "percentile95"
 PERCENTILE_90 = "percentile90"
 AVERAGE = "average"
-OFFLOADING_OPERATIONS = "offloading_operations"
-LOCAL_EXECUTIONS = "local_executions"
+TOTAL_OFFLOADING = "total_offloading"
+TOTAL_LOCAL_EXECUTION = "total_local_execution"
 THROUGHPUT_SECONDS = "throughput_seconds"
 
 logging.basicConfig(
@@ -124,12 +124,7 @@ def group_name_from_thread(thread_name):
         "5": "1"
     }
     group_id = re.findall("Thread\sGroup\s(\d).*", thread_name)[0]
-    associated_priority = association[group_id]
-    return "User priority {}".format(associated_priority)
-
-
-def group_name_from_user_priority(user_priority):
-    return "User priority {}".format(user_priority)
+    return association[group_id]
 
 
 def analyze_dataset():
@@ -139,12 +134,12 @@ def analyze_dataset():
     df = pd.read_csv(wrap_dir(RESULTS_FILE), delimiter=",")
     for index, row in df.iterrows():
 
-        group_name = group_name_from_thread(row[THREAD_NAME])
+        user_priority = group_name_from_thread(row[THREAD_NAME])
 
-        thread_data = all_data.get(group_name)
+        thread_data = all_data.get(user_priority)
         if thread_data is None:
             thread_data = {}
-            all_data[group_name] = thread_data
+            all_data[user_priority] = thread_data
 
         get_array_from_thread_dict(thread_data, ELAPSED).append(row[ELAPSED])
         get_array_from_thread_dict(thread_data, TIMESTAMP).append(row[TIMESTAMP])
@@ -158,21 +153,24 @@ def analyze_dataset():
     return all_data
 
 
-def update_metric(all_data, start_date_time, metric_name, field_name):
-    # The request used for testing purposes uses a health service with priority of '4',
-    # therefore we map the user priority with the ranking found in the metrics
-    raking_association_with_user_priority = {
-        "5": "1",
-        "6": "2",
-        "7": "3",
-        "8": "4",
-        "9": "5",
-    }
+def clear_metrics():
+    logging.info("Clearing metrics...")
+    r = http.request(
+        "POST",
+        "http://{}:9001/clear".format(all_fog_nodes[0]),
+        headers={"Content-Type": "application/json"},
+    )
 
+    if r.status != 200:
+        logging.info("Error collecting offloading metrics during tests")
+        exit(1)
+
+
+def collect_metrics_summary_for_user_priority(user_priority_filter):
     r = http.request(
         "GET",
-        "http://{}:9001/metrics/{}?since={}".format(
-            all_fog_nodes[0], metric_name, start_date_time
+        "http://{}:9001/metrics/summary?user_priority={}".format(
+            all_fog_nodes[0], user_priority_filter
         ),
         headers={"Content-Type": "application/json"},
     )
@@ -181,29 +179,11 @@ def update_metric(all_data, start_date_time, metric_name, field_name):
         logging.info("Error collecting offloading metrics during tests")
         exit(1)
 
-    response_json = json.loads(r.data)["response"]
-
-    for index in range(len(response_json)):
-        current_json = response_json[index]
-        ranking = current_json["ranking"]
-        user_priority = raking_association_with_user_priority[ranking]
-
-        thread_data = all_data[group_name_from_user_priority(user_priority)]
-        get_array_from_thread_dict(thread_data, field_name).append(
-            current_json["datetime"]
-        )
-
-
-def update_with_offloading_operations(all_data, start_date_time):
-    return update_metric(all_data, start_date_time, "offloading", OFFLOADING_OPERATIONS)
-
-
-def update_with_local_executions(all_data, start_date_time):
-    return update_metric(all_data, start_date_time, "local-execution", LOCAL_EXECUTIONS)
+    return json.loads(r.data)["response"]
 
 
 def update_with_summary(all_data):
-    for key, thread_data in all_data.items():
+    for user_priority, thread_data in all_data.items():
         thread_data[THROUGHPUT_SECONDS] = throughput_seconds(
             thread_data[START_DATETIME], thread_data[END_DATETIME]
         )
@@ -214,8 +194,14 @@ def update_with_summary(all_data):
         thread_data[PERCENTILE_90] = np.percentile(thread_data[ELAPSED], 90)
         thread_data[AVERAGE] = np.average(thread_data[ELAPSED])
 
+        metrics_summary = collect_metrics_summary_for_user_priority(user_priority)
+        thread_data[TOTAL_OFFLOADING] = metrics_summary[TOTAL_OFFLOADING]
+        thread_data[TOTAL_LOCAL_EXECUTION] = metrics_summary[TOTAL_LOCAL_EXECUTION]
+
 
 def run_test_scenario(test_file):
+
+    clear_metrics()
 
     start_date_time = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logging.info("Start date time: {}".format(start_date_time))
@@ -223,17 +209,13 @@ def run_test_scenario(test_file):
     invoke_jmeter_test(test_file)
 
     all_data = analyze_dataset()
-
-
-    # time.sleep(5)
-
-    update_with_offloading_operations(all_data, start_date_time)
-    update_with_local_executions(all_data, start_date_time)
     update_with_summary(all_data)
+
+    make_assertions(all_data)
 
     print_summary(all_data)
     plot_chart_response_time(all_data)
-    plot_chart_cpu_usage(start_date_time)
+    # plot_chart_cpu_usage(start_date_time)
 
 
 def wrap_dir(file):
@@ -286,11 +268,28 @@ def get_array_from_thread_dict(thread_data, field_name):
     return list_for_thread
 
 
+EXECUTIONS_PER_THREAD = 100
+
+
+def make_assertions(all_data):
+    print("Making assertions...")
+    for key, thread_data in sorted(all_data.items()):
+
+        total_execution_operations = (
+            thread_data[TOTAL_OFFLOADING] + thread_data[TOTAL_LOCAL_EXECUTION]
+        )
+
+        if total_execution_operations != EXECUTIONS_PER_THREAD:
+            print("Wrong number of executions: {}".format(total_execution_operations))
+        else:
+            print("Number of executions is okay")
+
+
 def print_summary(all_data):
     logging.info("Test summary")
     for key, thread_data in sorted(all_data.items()):
         logging.info("-----------")
-        logging.info("# Group: {}".format(key))
+        logging.info("# User priority: {}".format(key))
         logging.info("##  Throughput/sec: {}".format(thread_data[THROUGHPUT_SECONDS]))
         logging.info("##         Minimum: {}".format(thread_data[MINIMUM]))
         logging.info("##         Maximum: {}".format(thread_data[MAXIMUM]))
@@ -298,10 +297,11 @@ def print_summary(all_data):
         logging.info("## 95th percentile: {}".format(thread_data[PERCENTILE_95]))
         logging.info("## 90th percentile: {}".format(thread_data[PERCENTILE_90]))
         logging.info("##         Average: {}".format(thread_data[AVERAGE]))
+        logging.info("## Tot.offloadings: {}".format(thread_data[TOTAL_OFFLOADING]))
         logging.info(
-            "## Tot.offloadings: {}".format(len(get_array_from_thread_dict(thread_data, OFFLOADING_OPERATIONS)))
+            "##  Tot.local exec: {}".format(thread_data[TOTAL_LOCAL_EXECUTION])
         )
-        logging.info("## Tot.local exec: {}".format(len(get_array_from_thread_dict(thread_data, LOCAL_EXECUTIONS))))
+
         logging.info("")
 
 

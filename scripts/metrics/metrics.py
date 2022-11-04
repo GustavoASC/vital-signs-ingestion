@@ -14,7 +14,8 @@ def wrap_response(occurences):
 
 
 class Serv(BaseHTTPRequestHandler):
-    def fetch_cpu_metrics(self, since):
+    def fetch_cpu_metrics(self):
+        global metrics
         occurences = []
         for current_metric in metrics:
             json_metric = json.loads(current_metric)
@@ -23,6 +24,8 @@ class Serv(BaseHTTPRequestHandler):
         return wrap_response(occurences)
 
     def fetch_metrics_summary(self, user_priority_filter):
+
+        global metrics
 
         total_offloading = 0
         total_local_execution = 0
@@ -77,12 +80,12 @@ class Serv(BaseHTTPRequestHandler):
             response_bytes = self.fetch_cpu_metrics()
             self.send_response(200)
         elif self.path.startswith("/metrics/summary"):
-            
+
             user_priority = urllib.parse.parse_qs(parsed_url.query)["user_priority"][0]
             user_priority = int(user_priority)
             response_bytes = self.fetch_metrics_summary(user_priority)
             self.send_response(200)
-            
+
         else:
             json.dumps({"error": "not found"}).encode("utf-8")
             self.send_response(404)
@@ -93,12 +96,22 @@ class Serv(BaseHTTPRequestHandler):
 
     def do_POST(self):
 
+        global metrics
+
         if self.path.startswith("/metrics"):
+
             content_len = int(self.headers.get("Content-Length"))
             current_metric = self.rfile.read(content_len)
             metrics.append(current_metric)
             response_bytes = json.dumps({}).encode("utf-8")
             self.send_response(200)
+
+        elif self.path.startswith("/clear"):
+
+            metrics = []
+            response_bytes = json.dumps({}).encode("utf-8")
+            self.send_response(200)
+
         else:
             response_bytes = json.dumps({"error": "not found"}).encode("utf-8")
             self.send_response(404)

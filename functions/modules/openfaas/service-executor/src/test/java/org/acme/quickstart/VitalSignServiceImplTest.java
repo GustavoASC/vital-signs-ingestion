@@ -7,8 +7,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
+
 import org.acme.quickstart.calculator.RankingCalculator;
 import org.acme.quickstart.input.ServiceExecutorInputDto;
+import org.acme.quickstart.metrics.Metrics;
+import org.acme.quickstart.metrics.MetricsClient;
 import org.acme.quickstart.offloading.duration.OffloadingHeuristicByDuration;
 import org.acme.quickstart.offloading.ranking.OffloadingHeuristicByRanking;
 import org.acme.quickstart.offloading.shared.CouldNotDetermineException;
@@ -41,6 +45,9 @@ public class VitalSignServiceImplTest {
         ServerlessFunctionClient serverlessFunctionClient;
 
         @Mock
+        MetricsClient metricsClient;
+
+        @Mock
         ResourcesLocator resourcesLocator;
 
         @Mock
@@ -58,7 +65,7 @@ public class VitalSignServiceImplTest {
         @BeforeEach
         public void beforeEach() {
             this.vitalSignService = new VitalSignServiceImpl(CRITICAL_CPU_USAGE, WARNING_CPU_USAGE,
-                    serverlessFunctionClient, serviceExecutorClient, resourcesLocator, offloadingHeuristicByRanking,
+                    serverlessFunctionClient, metricsClient, serviceExecutorClient, resourcesLocator, offloadingHeuristicByRanking,
                     offloadingHeuristicByDuration, rankingCalculator, runningServicesProvider);
         }
 
@@ -71,6 +78,31 @@ public class VitalSignServiceImplTest {
                                 offloadingHeuristicByDuration,
                                 rankingCalculator,
                                 runningServicesProvider);
+        }
+
+        @Test
+        public void shouldGenerateMetrics() {
+
+                when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                                .thenReturn(13);
+                when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                                .thenReturn(17);
+                when(resourcesLocator.getUsedCpuPercentage())
+                                .thenReturn(97);
+
+                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+
+                Metrics metrics;
+                metrics = new Metrics();
+                metrics.userPriority = USER_PRIORITY;
+                metrics.ranking = 13;
+                metrics.usedCpu = BigDecimal.valueOf(97);
+                metrics.function = "body-temperature-monitor";
+                metrics.offloading = true;
+                metrics.exceededCriticalThreshold = true;
+
+                verify(metricsClient, times(1))
+                    .sendMetrics(metrics);
         }
 
         @Test

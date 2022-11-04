@@ -1,5 +1,6 @@
 package org.acme.quickstart;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -7,6 +8,8 @@ import javax.enterprise.context.ApplicationScoped;
 
 import org.acme.quickstart.calculator.RankingCalculator;
 import org.acme.quickstart.input.ServiceExecutorInputDto;
+import org.acme.quickstart.metrics.Metrics;
+import org.acme.quickstart.metrics.MetricsClient;
 import org.acme.quickstart.offloading.duration.OffloadingHeuristicByDuration;
 import org.acme.quickstart.offloading.ranking.OffloadingHeuristicByRanking;
 import org.acme.quickstart.offloading.shared.CouldNotDetermineException;
@@ -15,19 +18,16 @@ import org.acme.quickstart.serverless.ServerlessFunctionClient;
 import org.acme.quickstart.serverless.ServiceExecutorClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class VitalSignServiceImpl implements VitalSignService {
-    
-    private final Logger logger = LoggerFactory.getLogger(VitalSignServiceImpl.class);
-    
+
     private static final List<String> FUNCTIONS = List.of("body-temperature-monitor", "bar-function");
 
     private final int criticalCpuUsage;
     private final int warningCpuUsage;
     private final ServerlessFunctionClient serverlessFunctionClient;
+    private final MetricsClient metricsClient;
     private final ServiceExecutorClient serviceExecutorClient;
     private final ResourcesLocator resourcesLocator;
     private final OffloadingHeuristicByRanking offloadingHeuristicByRanking;
@@ -39,6 +39,7 @@ public class VitalSignServiceImpl implements VitalSignService {
             @ConfigProperty(name = "offloading.threshold.critical-cpu-usage") int criticalCpuUsage,
             @ConfigProperty(name = "offloading.threshold.warning-cpu-usage") int warningCpuUsage,
             @RestClient ServerlessFunctionClient serverlessFunctionClient,
+            @RestClient MetricsClient metricsClient,
             ServiceExecutorClient serviceExecutorClient,
             ResourcesLocator resourcesLocator,
             OffloadingHeuristicByRanking offloadingHeuristicByRanking,
@@ -48,6 +49,7 @@ public class VitalSignServiceImpl implements VitalSignService {
         this.criticalCpuUsage = criticalCpuUsage;
         this.warningCpuUsage = warningCpuUsage;
         this.serverlessFunctionClient = serverlessFunctionClient;
+        this.metricsClient = metricsClient;
         this.serviceExecutorClient = serviceExecutorClient;
         this.resourcesLocator = resourcesLocator;
         this.offloadingHeuristicByRanking = offloadingHeuristicByRanking;
@@ -66,49 +68,57 @@ public class VitalSignServiceImpl implements VitalSignService {
         services.stream()
                 .forEach(fn -> {
 
-                    int ranking = rankingCalculator.calculate(userPriority, fn);
-                    if (shouldOffloadToParent(ranking, fn)) {
+                    Metrics metrics = new Metrics();
+                    metrics.userPriority = userPriority;
+                    metrics.function = fn;
+
+                    metrics.ranking = rankingCalculator.calculate(userPriority, fn);
+                    if (shouldOffloadToParent(metrics, metrics.ranking, fn)) {
 
                         // Vertical offloading to process vital signs on the parent node within the hierarchy
-                        logger.info("Making vertical offloading for ranking {} and function {}...", ranking, fn);
+                        metrics.offloading = true;
                         ServiceExecutorInputDto input = new ServiceExecutorInputDto(fn, vitalSign, userPriority);
                         serviceExecutorClient.runServiceExecutor(input);
-                        
+
                     } else {
 
                         // Runs on the local machine
-                        logger.info("Running health service locally for ranking {} and function {}...", ranking, fn);
-                        UUID id = runningServicesProvider.executionStarted(fn, ranking);
+                        metrics.runningLocally = true;
+                        UUID id = runningServicesProvider.executionStarted(fn, metrics.ranking);
                         serverlessFunctionClient.runFunction(fn, vitalSign);
                         runningServicesProvider.executionFinished(id);
                     }
+
+                    // Sends metrics for further analysis
+                    metricsClient.sendMetrics(metrics);
+                    
                 });
     }
 
-    private boolean shouldOffloadToParent(int ranking, String fn) {
+    private boolean shouldOffloadToParent(Metrics metrics, int ranking, String fn) {
         int usedCpu = resourcesLocator.getUsedCpuPercentage();
+        metrics.usedCpu = BigDecimal.valueOf(usedCpu);
+        
         if (usedCpu > criticalCpuUsage) {
-            logger.info("Used CPU {} exceeded critical limit of {} for ranking {} and function {}", usedCpu, criticalCpuUsage, ranking, fn);
+            metrics.exceededCriticalThreshold = true;
             return true;
         }
 
         if (usedCpu > warningCpuUsage) {
             try {
-                logger.info("Triggering offloading heuristic by ranking for ranking {} and function {}...", ranking, fn);
-                boolean result = offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);
-                logger.info("Result of offloading heuristic by ranking for ranking {} and function {}: {}", ranking, fn, result);
-                return result;
+                metrics.triggeredHeuristicByRanking = true;
+                metrics.resultForHeuristicByRanking = offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);
+                return metrics.resultForHeuristicByRanking;
             } catch (CouldNotDetermineException e) {
                 try {
-                    logger.info("Triggering offloading heuristic by duration for ranking {} and function {}...", ranking, fn);
-                    boolean result = offloadingHeuristicByDuration.shouldOffloadVitalSigns(ranking, fn);
-                    logger.info("Result of offloading heuristic by duration for ranking {} and function {}: {}", ranking, fn, result);
-                    return result;
+                    metrics.triggeredHeuristicByDuration = true;
+                    metrics.resultForHeuristicByDuration = offloadingHeuristicByDuration.shouldOffloadVitalSigns(ranking, fn);
+                    return metrics.resultForHeuristicByDuration;
                 } catch (CouldNotDetermineException e1) {
                     // Run locally because it is a match and we could not detect which request is
                     // more important. Therefore, we assume that running locally is the best approach
                     // because it does not incur the overhead of performing an offloading operation.
-                    logger.info("Assuming fallback to execute health service locally for ranking {} and function {}...", ranking, fn);
+                    metrics.assumingFallbackForHeuristics = true;
                     return false;
                 }
             }

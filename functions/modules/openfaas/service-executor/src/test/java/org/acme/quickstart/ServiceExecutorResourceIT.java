@@ -44,6 +44,7 @@ public class ServiceExecutorResourceIT {
     private static final int SERVICE_EXECUTOR_PORT = 8595;
     private static final int SERVERLESS_PLATFORM_PORT = 8586;
     private static final int MACHINE_RESOURCES_PORT = 8597;
+    private static final int METRICS_PORT = 8674;
 
     private static final long DELAY_NONE = 0;
     private static final long DELAY_TWO_SECONDS = 2;
@@ -51,6 +52,7 @@ public class ServiceExecutorResourceIT {
     MockServer wmServiceExecutor;
     MockServer wmServerless;
     MockServer wmMachineResources;
+    MockServer wmMetrics;
 
     @Inject
     RunningServicesProvider runningServicesProvider;
@@ -73,9 +75,15 @@ public class ServiceExecutorResourceIT {
             .notifier(new Slf4jNotifier(true))
         );
 
+        wmMetrics = new MockServer(WireMockConfiguration.wireMockConfig()
+            .port(METRICS_PORT)
+            .notifier(new Slf4jNotifier(true))
+        );
+
         wmServerless.start();
         wmServiceExecutor.start();
         wmMachineResources.start();
+        wmMetrics.start();
 
         runningServicesProvider.clearDataForTests();
 
@@ -87,6 +95,7 @@ public class ServiceExecutorResourceIT {
         wmServerless.stop();
         wmServiceExecutor.stop();
         wmMachineResources.stop();
+        wmMetrics.stop();
     }
 
     @Test
@@ -94,6 +103,7 @@ public class ServiceExecutorResourceIT {
         stubRankingOffloadingFunctionToOffload();
         stubUsedCpuPercentage(85);
         stubServiceExecutor();
+        stubMetrics();
 
         given()
             .contentType(ContentType.JSON)
@@ -126,6 +136,7 @@ public class ServiceExecutorResourceIT {
         stubDurationOffloadingFunctionToOffload();
         stubUsedCpuPercentage(85);
         stubServiceExecutor();
+        stubMetrics();
 
         given()
             .contentType(ContentType.JSON)
@@ -159,6 +170,7 @@ public class ServiceExecutorResourceIT {
         String[] functions = {"body-temperature-monitor", "bar-function"};
         stubHealthServerlessFunctions(DELAY_NONE, functions);
         stubUsedCpuPercentage(0);
+        stubMetrics();
         
         given()
             .contentType(ContentType.JSON)
@@ -180,6 +192,7 @@ public class ServiceExecutorResourceIT {
         stubHealthServerlessFunctions(DELAY_NONE, functions);
         stubRankingOffloadingFunctionToRunLocally();
         stubUsedCpuPercentage(85);
+        stubMetrics();
         
         given()
             .contentType(ContentType.JSON)
@@ -200,6 +213,7 @@ public class ServiceExecutorResourceIT {
 
         stubHealthServerlessFunctions(DELAY_NONE, functions);
         stubUsedCpuPercentage(0);
+        stubMetrics();
         
         given()
             .contentType(ContentType.JSON)
@@ -222,6 +236,7 @@ public class ServiceExecutorResourceIT {
         stubRankingOffloadingFunctionToUnknown();
         stubDurationOffloadingFunctionToRunLocally();
         stubUsedCpuPercentage(85);
+        stubMetrics();
         
         given()
             .contentType(ContentType.JSON)
@@ -242,6 +257,7 @@ public class ServiceExecutorResourceIT {
 
         stubHealthServerlessFunctions(DELAY_TWO_SECONDS, functions);
         stubUsedCpuPercentage(0);
+        stubMetrics();
         
         given()
             .contentType(ContentType.JSON)
@@ -269,6 +285,7 @@ public class ServiceExecutorResourceIT {
         
         stubUsedCpuPercentage(99);
         stubServiceExecutor();
+        stubMetrics();
         
         given()
             .contentType(ContentType.JSON)
@@ -379,6 +396,13 @@ public class ServiceExecutorResourceIT {
         stubFor(
             post("/function/service-executor")
             .withRequestBody(equalToJson(jsonFromResource("input-vertical-offloading-bar-function.json")))
+        );
+    }
+
+    private void stubMetrics() {
+        configureFor(wmMetrics.getClient());
+        stubFor(
+            post("/metrics")
         );
     }
 

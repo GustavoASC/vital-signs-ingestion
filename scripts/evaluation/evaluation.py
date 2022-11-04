@@ -24,9 +24,16 @@ PERCENTILE_99 = "percentile99"
 PERCENTILE_95 = "percentile95"
 PERCENTILE_90 = "percentile90"
 AVERAGE = "average"
+THROUGHPUT_SECONDS = "throughput_seconds"
 TOTAL_OFFLOADING = "total_offloading"
 TOTAL_LOCAL_EXECUTION = "total_local_execution"
-THROUGHPUT_SECONDS = "throughput_seconds"
+TOTAL_EXCEEDED_CRITICAL_THRESHOLD = "total_exceeded_critical_threshold"
+TOTAL_TRIGGERED_HEURISTIC_BY_RANKINGS = "total_triggered_heuristic_by_rankings"
+TOTAL_RESULT_FOR_HEURISTIC_BY_RANKING = "total_result_for_heuristic_by_ranking"
+TOTAL_TRIGGERED_HEURISTIC_BY_DURATION = "total_triggered_heuristic_by_duration"
+TOTAL_RESULT_FOR_HEURISTIC_BY_DURATION = "total_result_for_heuristic_by_duration"
+TOTAL_ASSUMING_FALLBACK_FOR_HEURISTICS = "total_assuming_fallback_for_heuristics"
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -197,7 +204,12 @@ def update_with_summary(all_data):
         metrics_summary = collect_metrics_summary_for_user_priority(user_priority)
         thread_data[TOTAL_OFFLOADING] = metrics_summary[TOTAL_OFFLOADING]
         thread_data[TOTAL_LOCAL_EXECUTION] = metrics_summary[TOTAL_LOCAL_EXECUTION]
-
+        thread_data[TOTAL_EXCEEDED_CRITICAL_THRESHOLD] = metrics_summary[TOTAL_EXCEEDED_CRITICAL_THRESHOLD]
+        thread_data[TOTAL_TRIGGERED_HEURISTIC_BY_RANKINGS] = metrics_summary[TOTAL_TRIGGERED_HEURISTIC_BY_RANKINGS]
+        thread_data[TOTAL_RESULT_FOR_HEURISTIC_BY_RANKING] = metrics_summary[TOTAL_RESULT_FOR_HEURISTIC_BY_RANKING]
+        thread_data[TOTAL_TRIGGERED_HEURISTIC_BY_DURATION] = metrics_summary[TOTAL_TRIGGERED_HEURISTIC_BY_DURATION]
+        thread_data[TOTAL_RESULT_FOR_HEURISTIC_BY_DURATION] = metrics_summary[TOTAL_RESULT_FOR_HEURISTIC_BY_DURATION]
+        thread_data[TOTAL_ASSUMING_FALLBACK_FOR_HEURISTICS] = metrics_summary[TOTAL_ASSUMING_FALLBACK_FOR_HEURISTICS]
 
 def run_test_scenario(test_file):
 
@@ -290,18 +302,21 @@ def print_summary(all_data):
     for key, thread_data in sorted(all_data.items()):
         logging.info("-----------")
         logging.info("# User priority: {}".format(key))
-        logging.info("##  Throughput/sec: {}".format(thread_data[THROUGHPUT_SECONDS]))
-        logging.info("##         Minimum: {}".format(thread_data[MINIMUM]))
-        logging.info("##         Maximum: {}".format(thread_data[MAXIMUM]))
-        logging.info("## 99th percentile: {}".format(thread_data[PERCENTILE_99]))
-        logging.info("## 95th percentile: {}".format(thread_data[PERCENTILE_95]))
-        logging.info("## 90th percentile: {}".format(thread_data[PERCENTILE_90]))
-        logging.info("##         Average: {}".format(thread_data[AVERAGE]))
-        logging.info("## Tot.offloadings: {}".format(thread_data[TOTAL_OFFLOADING]))
-        logging.info(
-            "##  Tot.local exec: {}".format(thread_data[TOTAL_LOCAL_EXECUTION])
-        )
-
+        logging.info("##                       Throughput/sec: {}".format(thread_data[THROUGHPUT_SECONDS]))
+        logging.info("##                              Minimum: {}".format(thread_data[MINIMUM]))
+        logging.info("##                              Maximum: {}".format(thread_data[MAXIMUM]))
+        logging.info("##                      99th percentile: {}".format(thread_data[PERCENTILE_99]))
+        logging.info("##                      95th percentile: {}".format(thread_data[PERCENTILE_95]))
+        logging.info("##                      90th percentile: {}".format(thread_data[PERCENTILE_90]))
+        logging.info("##                              Average: {}".format(thread_data[AVERAGE]))
+        logging.info("##                      Tot.offloadings: {}".format(thread_data[TOTAL_OFFLOADING]))
+        logging.info("##                       Tot.local exec: {}".format(thread_data[TOTAL_LOCAL_EXECUTION]))
+        logging.info("##      Tot.exceeded critical threshold: {}".format(thread_data[TOTAL_EXCEEDED_CRITICAL_THRESHOLD]))
+        logging.info("##  Tot.triggered heuristic by rankings: {}".format(thread_data[TOTAL_TRIGGERED_HEURISTIC_BY_RANKINGS]))
+        logging.info("##  Tot.result for heuristic by ranking: {}".format(thread_data[TOTAL_RESULT_FOR_HEURISTIC_BY_RANKING]))
+        logging.info("##  Tot.triggered heuristic by duration: {}".format(thread_data[TOTAL_TRIGGERED_HEURISTIC_BY_DURATION]))
+        logging.info("## Tot.result for heuristic by duration: {}".format(thread_data[TOTAL_RESULT_FOR_HEURISTIC_BY_DURATION]))
+        logging.info("##          Tot.fallback for heuristics: {}".format(thread_data[TOTAL_ASSUMING_FALLBACK_FOR_HEURISTICS]))
         logging.info("")
 
 

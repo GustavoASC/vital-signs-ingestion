@@ -4,30 +4,9 @@ import json
 import urllib.parse
 import re
 
-VERTICAL_OFFLOADING_GREP_FILTER = "Making vertical offloading"
-LOCAL_EXECUTION_GREP_FILTER = "Running health service locally"
-HEURISTIC_BY_RANKING_GREP_FILTER = "Triggering offloading heuristic by ranking"
-HEURISTIC_BY_DURATION_GREP_FILTER = "Triggering offloading heuristic by duration"
-CPU_GREP_FILTER = 'stdout: {"cpu'
+## TODO: Collect datetime from metrics
 
-CPU_REGEX = ".*(\d\d\d\d\/\d\d\/\d\d\s\d\d:\d\d:\d\d).*({.*cpu.*}).*"
-DATE_TIME_WITH_RANKING_REGEX = (
-    ".*stdout.*(\d\d\d\d-\d\d-\d\d\s\d\d:\d\d:\d\d).*for\sranking\s(\d+).*"
-)
-
-
-def get_lines_from_journalctl(since, grep_filter):
-    journalctl = subprocess.Popen(
-        ["journalctl", "--since", since, "-t", "openfaas-fn:service-executor"],
-        stdout=subprocess.PIPE,
-    )
-    output = subprocess.check_output(
-        ("grep", "-i", grep_filter), stdin=journalctl.stdout
-    )
-    journalctl.wait()
-
-    lines = output.splitlines()
-    return [x.decode("utf-8") for x in lines]
+metrics = []
 
 
 def wrap_response(occurences):
@@ -36,65 +15,92 @@ def wrap_response(occurences):
 
 class Serv(BaseHTTPRequestHandler):
     def fetch_cpu_metrics(self, since):
-
-        lines = get_lines_from_journalctl(since, CPU_GREP_FILTER)
-
         occurences = []
-        for current in lines:
-            date_time_with_cpu_tuple = re.findall(CPU_REGEX, current)[0]
-            date_time = date_time_with_cpu_tuple[0]
-            current_cpu_text = date_time_with_cpu_tuple[1]
-            current_cpu_json = json.loads(current_cpu_text)
-            occurences.append({"datetime": date_time, "cpu": current_cpu_json["cpu"]})
+        for current_metric in metrics:
+            json_metric = json.loads(current_metric)
+            occurences.append({"cpu": json_metric["used_cpu"]})
 
         return wrap_response(occurences)
 
-    def fetch_generic_datetime(self, since, grep_filter):
-        lines = get_lines_from_journalctl(since, grep_filter)
+    def fetch_metrics_summary(self, user_priority_filter):
 
-        occurences = []
-        for current in lines:
-            result_tuple = re.findall(DATE_TIME_WITH_RANKING_REGEX, current)[0]
-            date_time = result_tuple[0]
-            ranking = result_tuple[1]
-            occurences.append({"datetime": date_time, "ranking": ranking})
+        total_offloading = 0
+        total_local_execution = 0
+        total_exceeded_critical_threshold = 0
+        total_triggered_heuristic_by_rankings = 0
+        total_result_for_heuristic_by_ranking = 0
+        total_triggered_heuristic_by_duration = 0
+        total_result_for_heuristic_by_duration = 0
+        total_assuming_fallback_for_heuristics = 0
 
-        return wrap_response(occurences)
+        print(user_priority_filter)
 
-    def fetch_offloading_metrics(self, since):
-        return self.fetch_generic_datetime(since, VERTICAL_OFFLOADING_GREP_FILTER)
+        for current_text_metric in metrics:
+            json_metric = json.loads(current_text_metric)
 
-    def fetch_local_execution_metrics(self, since):
-        return self.fetch_generic_datetime(since, LOCAL_EXECUTION_GREP_FILTER)
+            if json_metric["user_priority"] == user_priority_filter:
+                if json_metric["offloading"]:
+                    total_offloading += 1
+                if json_metric["running_locally"]:
+                    total_local_execution += 1
+                if json_metric["exceeded_critical_threshold"]:
+                    total_exceeded_critical_threshold += 1
+                if json_metric["triggered_heuristic_by_ranking"]:
+                    total_triggered_heuristic_by_rankings += 1
+                if json_metric["result_for_heuristic_by_ranking"]:
+                    total_result_for_heuristic_by_ranking += 1
+                if json_metric["triggered_heuristic_by_duration"]:
+                    total_triggered_heuristic_by_duration += 1
+                if json_metric["result_for_heuristic_by_duration"]:
+                    total_result_for_heuristic_by_duration += 1
+                if json_metric["assuming_fallback_for_heuristics"]:
+                    total_assuming_fallback_for_heuristics += 1
 
-    def fetch_heuristic_by_ranking_metrics(self, since):
-        return self.fetch_generic_datetime(since, HEURISTIC_BY_RANKING_GREP_FILTER)
-
-    def fetch_heuristic_by_duration_metrics(self, since):
-        return self.fetch_generic_datetime(since, HEURISTIC_BY_DURATION_GREP_FILTER)
+        return wrap_response(
+            {
+                "total_offloading": total_offloading,
+                "total_local_execution": total_local_execution,
+                "total_exceeded_critical_threshold": total_exceeded_critical_threshold,
+                "total_triggered_heuristic_by_rankings": total_triggered_heuristic_by_rankings,
+                "total_result_for_heuristic_by_ranking": total_result_for_heuristic_by_ranking,
+                "total_triggered_heuristic_by_duration": total_triggered_heuristic_by_duration,
+                "total_result_for_heuristic_by_duration": total_result_for_heuristic_by_duration,
+                "total_assuming_fallback_for_heuristics": total_assuming_fallback_for_heuristics,
+            }
+        )
 
     def do_GET(self):
 
         parsed_url = urllib.parse.urlparse(self.path)
-        since = urllib.parse.parse_qs(parsed_url.query)["since"][0]
 
         if self.path.startswith("/metrics/cpu"):
-            response_bytes = self.fetch_cpu_metrics(since)
+            response_bytes = self.fetch_cpu_metrics()
             self.send_response(200)
-        elif self.path.startswith("/metrics/offloading"):
-            response_bytes = self.fetch_offloading_metrics(since)
+        elif self.path.startswith("/metrics/summary"):
+            
+            user_priority = urllib.parse.parse_qs(parsed_url.query)["user_priority"][0]
+            user_priority = int(user_priority)
+            response_bytes = self.fetch_metrics_summary(user_priority)
             self.send_response(200)
-        elif self.path.startswith("/metrics/local-execution"):
-            response_bytes = self.fetch_local_execution_metrics(since)
-            self.send_response(200)
-        elif self.path.startswith("/metrics/heuristic-ranking"):
-            response_bytes = self.fetch_heuristic_by_ranking_metrics(since)
-            self.send_response(200)
-        elif self.path.startswith("/metrics/heuristic-duration"):
-            response_bytes = self.fetch_heuristic_by_duration_metrics(since)
-            self.send_response(200)
+            
         else:
             json.dumps({"error": "not found"}).encode("utf-8")
+            self.send_response(404)
+
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+        self.wfile.write(response_bytes)
+
+    def do_POST(self):
+
+        if self.path.startswith("/metrics"):
+            content_len = int(self.headers.get("Content-Length"))
+            current_metric = self.rfile.read(content_len)
+            metrics.append(current_metric)
+            response_bytes = json.dumps({}).encode("utf-8")
+            self.send_response(200)
+        else:
+            response_bytes = json.dumps({"error": "not found"}).encode("utf-8")
             self.send_response(404)
 
         self.send_header("Content-type", "application/json")

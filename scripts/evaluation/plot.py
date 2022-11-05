@@ -12,6 +12,7 @@ def plot_all_charts(all_data):
     _plot_offloading_histogram(all_data)
     _plot_local_executions_histogram(all_data)
     _plot_stacked_offloading_local_executions(all_data)
+    _plot_throughput(all_data)
 
 
 def _plot_chart_cpu_usage(fog_node_ip, start_date_time):
@@ -95,4 +96,17 @@ def _plot_stacked_offloading_local_executions(all_data):
     plt.xlabel("User priority")
     plt.ylabel("Execution operations")
     plt.legend(loc="lower right")
+    plt.show()
+
+def _plot_throughput(all_data):
+    x = []
+    y = []
+    for key, thread_data in sorted(all_data.items()):
+        x.append(key)
+        y.append(thread_data["throughput_seconds"])
+
+    plt.bar(x, y, color="g", width=0.4)
+    plt.title("Throughput (seconds) according to user priority")
+    plt.xlabel("User priority")
+    plt.ylabel("Throughout (seconds)")
     plt.show()

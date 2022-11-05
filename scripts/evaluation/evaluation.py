@@ -195,7 +195,7 @@ def run_test_scenario(test_file):
     assertions.make_assertions(all_data)
 
     summary.print_summary(all_data)
-    plot.plot_all_charts(all_data)
+    plot.plot_all_charts(all_fog_nodes, all_data)
 
 
 def wrap_dir(file):

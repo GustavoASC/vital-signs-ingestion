@@ -2,13 +2,14 @@ import urllib3
 import matplotlib.pyplot as plt
 import metrics
 import numpy as np
+import datetime as dt
 
 
 http = urllib3.PoolManager()
 
 
-def plot_all_charts(all_data):
-    # plot_chart_cpu_usage(all_fog_nodes[0], start_date_time)
+def plot_all_charts(all_fog_nodes, all_data):
+    _plot_chart_cpu_usage(all_fog_nodes[0])
     _plot_chart_response_time(all_data)
     _plot_offloading_histogram(all_data)
     _plot_local_executions_histogram(all_data)
@@ -18,16 +19,20 @@ def plot_all_charts(all_data):
     _plot_offloading_reasons(all_data)
 
 
-def _plot_chart_cpu_usage(fog_node_ip, start_date_time):
+def _plot_chart_cpu_usage(fog_node_ip):
 
-    response_json = metrics.collect_cpu_usage(fog_node_ip, start_date_time)
+    response_json = metrics.collect_cpu_usage(fog_node_ip)
 
     all_datetimes = []
     all_cpus = []
     for index in range(len(response_json)):
         current_json = response_json[index]
-        all_datetimes.append(current_json["datetime"])
         all_cpus.append(current_json["cpu"])
+        all_datetimes.append(dt.datetime.fromtimestamp(
+            current_json["collection_timestamp"] / 1e3
+        ))
+
+    all_datetimes, all_cpus = zip(*sorted(zip(all_datetimes, all_cpus)))
 
     plt.plot(all_datetimes, all_cpus)
     plt.title("CPU Usage during tests")

@@ -9,10 +9,10 @@ def _check_error(response):
         exit(1)
 
 
-def collect_cpu_usage(fog_node_ip, start_date_time):
+def collect_cpu_usage(fog_node_ip):
     r = http.request(
         "GET",
-        "http://{}:9001/metrics/cpu?since={}".format(fog_node_ip, start_date_time),
+        "http://{}:9001/metrics/cpu".format(fog_node_ip),
         headers={"Content-Type": "application/json"},
     )
 

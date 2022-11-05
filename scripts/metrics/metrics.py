@@ -1,10 +1,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import subprocess
 import json
 import urllib.parse
-import re
-
-## TODO: Collect datetime from metrics
 
 metrics = []
 
@@ -19,7 +15,12 @@ class Serv(BaseHTTPRequestHandler):
         occurences = []
         for current_metric in metrics:
             json_metric = json.loads(current_metric)
-            occurences.append({"cpu": json_metric["used_cpu"]})
+            occurences.append(
+                {
+                    "cpu": json_metric["used_cpu"],
+                    "collection_timestamp": json_metric["cpu_collection_timestamp"],
+                }
+            )
 
         return wrap_response(occurences)
 

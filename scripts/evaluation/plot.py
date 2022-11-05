@@ -15,6 +15,7 @@ def plot_all_charts(all_data):
     _plot_stacked_offloading_local_executions(all_data)
     _plot_throughput(all_data)
     _plot_response_time(all_data)
+    _plot_offloading_reasons(all_data)
 
 
 def _plot_chart_cpu_usage(fog_node_ip, start_date_time):
@@ -147,4 +148,23 @@ def _plot_response_time(all_data):
     plt.xlabel("User priority")
     plt.ylabel("Response time (seconds)")
     plt.legend(loc="upper right")
+    plt.show()
+
+
+def _plot_offloading_reasons(all_data):
+    x = []
+    exceeded_critical_threshold = []
+    heuristic_by_ranking = []
+    for key, thread_data in sorted(all_data.items()):
+        x.append(key)
+        exceeded_critical_threshold.append(thread_data["total_exceeded_critical_threshold"])
+        heuristic_by_ranking.append(thread_data["total_result_for_heuristic_by_ranking"])
+
+    plt.bar(x, exceeded_critical_threshold, color="g", width=0.4, label="Exceeded critical threshold")
+    plt.bar(x, heuristic_by_ranking, bottom = exceeded_critical_threshold, color="r", width=0.4, label="Heuristic by ranking")
+
+    plt.title("Reasons for offloading")
+    plt.xlabel("User priority")
+    plt.ylabel("Offloading operations")
+    plt.legend(loc = "upper right")
     plt.show()

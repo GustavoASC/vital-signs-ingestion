@@ -194,8 +194,7 @@ def run_test_scenario(test_file):
     assertions.make_assertions(all_data)
 
     summary.print_summary(all_data)
-    plot.plot_chart_response_time(all_data)
-    # plot.plot_chart_cpu_usage(all_fog_nodes[0], start_date_time)
+    plot.plot_all_charts(all_data)
 
 
 def wrap_dir(file):

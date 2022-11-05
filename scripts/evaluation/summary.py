@@ -16,6 +16,7 @@ def print_summary_current_key(key, thread_data):
     logging.info("##     99th percentile: {}".format(thread_data["percentile_99"]))
     logging.info("##     95th percentile: {}".format(thread_data["percentile_95"]))
     logging.info("##     90th percentile: {}".format(thread_data["percentile_90"]))
+    logging.info("##     50th percentile: {}".format(thread_data["percentile_50"]))
     logging.info("##             Average: {}".format(thread_data["average"]))
     logging.info("##     Tot.offloadings: {}".format(thread_data["total_offloading"]))
     logging.info(

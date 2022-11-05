@@ -1,6 +1,7 @@
 import urllib3
 import matplotlib.pyplot as plt
 import metrics
+import numpy as np
 
 
 http = urllib3.PoolManager()
@@ -13,6 +14,7 @@ def plot_all_charts(all_data):
     _plot_local_executions_histogram(all_data)
     _plot_stacked_offloading_local_executions(all_data)
     _plot_throughput(all_data)
+    _plot_response_time(all_data)
 
 
 def _plot_chart_cpu_usage(fog_node_ip, start_date_time):
@@ -109,4 +111,40 @@ def _plot_throughput(all_data):
     plt.title("Throughput (seconds) according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Throughout (seconds)")
+    plt.show()
+
+
+def _plot_response_time(all_data):
+    x = []
+    max_response_time = []
+    p99_response_time = []
+    p95_response_time = []
+    p90_response_time = []
+    p50_response_time = []
+    avg_response_time = []
+    min_response_time = []
+    for key, thread_data in sorted(all_data.items()):
+        x.append(key)
+        max_response_time.append(thread_data["maximum"])
+        p99_response_time.append(thread_data["percentile_99"])
+        p95_response_time.append(thread_data["percentile_95"])
+        p90_response_time.append(thread_data["percentile_90"])
+        p50_response_time.append(thread_data["percentile_50"])
+        avg_response_time.append(thread_data["average"])
+        min_response_time.append(thread_data["minimum"])
+
+    x_axis = np.arange(len(x))
+    plt.bar(x_axis - 0.3, max_response_time, color="g", width=0.1, label = "Max response time")
+    plt.bar(x_axis - 0.2, p99_response_time, color="r", width=0.1, label = "99th percentile")
+    plt.bar(x_axis - 0.1, p95_response_time, color="y", width=0.1, label = "95th percentile")
+    plt.bar(x_axis,       p90_response_time, color="m", width=0.1, label = "90th percentile")
+    plt.bar(x_axis + 0.1, p50_response_time, color="gray", width=0.1, label = "50th percentile")
+    plt.bar(x_axis + 0.2, avg_response_time, color="maroon", width=0.1, label = "Avg response time")
+    plt.bar(x_axis + 0.3, min_response_time, color="b", width=0.1, label = "Min response time")
+
+    plt.xticks(x_axis, x)
+    plt.title("Response time (seconds) according to user priority")
+    plt.xlabel("User priority")
+    plt.ylabel("Response time (seconds)")
+    plt.legend(loc="upper right")
     plt.show()

@@ -152,6 +152,7 @@ def update_with_summary(all_data):
         thread_data["percentile_99"] = np.percentile(thread_data["elapsed"], 99)
         thread_data["percentile_95"] = np.percentile(thread_data["elapsed"], 95)
         thread_data["percentile_90"] = np.percentile(thread_data["elapsed"], 90)
+        thread_data["percentile_50"] = np.percentile(thread_data["elapsed"], 50)
         thread_data["average"] = np.average(thread_data["elapsed"])
 
         metrics_summary = metrics.collect_metrics_summary_for_user_priority(

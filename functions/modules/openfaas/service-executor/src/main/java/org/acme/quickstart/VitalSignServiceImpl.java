@@ -1,6 +1,7 @@
 package org.acme.quickstart;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,6 +35,7 @@ public class VitalSignServiceImpl implements VitalSignService {
     private final OffloadingHeuristicByDuration offloadingHeuristicByDuration;
     private final RankingCalculator rankingCalculator;
     private final RunningServicesProvider runningServicesProvider;
+    private final Clock clock;
 
     public VitalSignServiceImpl(
             @ConfigProperty(name = "offloading.threshold.critical-cpu-usage") int criticalCpuUsage,
@@ -45,7 +47,8 @@ public class VitalSignServiceImpl implements VitalSignService {
             OffloadingHeuristicByRanking offloadingHeuristicByRanking,
             OffloadingHeuristicByDuration offloadingHeuristicByDuration,
             RankingCalculator rankingCalculator,
-            RunningServicesProvider runningServicesProvider) {
+            RunningServicesProvider runningServicesProvider,
+            Clock clock) {
         this.criticalCpuUsage = criticalCpuUsage;
         this.warningCpuUsage = warningCpuUsage;
         this.serverlessFunctionClient = serverlessFunctionClient;
@@ -56,6 +59,7 @@ public class VitalSignServiceImpl implements VitalSignService {
         this.offloadingHeuristicByDuration = offloadingHeuristicByDuration;
         this.rankingCalculator = rankingCalculator;
         this.runningServicesProvider = runningServicesProvider;
+        this.clock = clock;
     }
 
     @Override
@@ -97,6 +101,7 @@ public class VitalSignServiceImpl implements VitalSignService {
 
     private boolean shouldOffloadToParent(Metrics metrics, int ranking, String fn) {
         int usedCpu = resourcesLocator.getUsedCpuPercentage();
+        metrics.cpuCollectionTimestamp = clock.instant().toEpochMilli();
         metrics.usedCpu = BigDecimal.valueOf(usedCpu);
         
         if (usedCpu > criticalCpuUsage) {

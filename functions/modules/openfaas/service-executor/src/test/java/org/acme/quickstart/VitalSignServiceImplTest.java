@@ -8,6 +8,9 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 
 import org.acme.quickstart.calculator.RankingCalculator;
 import org.acme.quickstart.input.ServiceExecutorInputDto;
@@ -38,6 +41,8 @@ public class VitalSignServiceImplTest {
 
         VitalSignServiceImpl vitalSignService;
 
+        Clock clock;
+    
         @Mock
         ServiceExecutorClient serviceExecutorClient;
 
@@ -64,9 +69,10 @@ public class VitalSignServiceImplTest {
 
         @BeforeEach
         public void beforeEach() {
+            this.clock = Clock.fixed(Instant.ofEpochMilli(1663527788128l), ZoneId.of("UTC"));
             this.vitalSignService = new VitalSignServiceImpl(CRITICAL_CPU_USAGE, WARNING_CPU_USAGE,
                     serverlessFunctionClient, metricsClient, serviceExecutorClient, resourcesLocator, offloadingHeuristicByRanking,
-                    offloadingHeuristicByDuration, rankingCalculator, runningServicesProvider);
+                    offloadingHeuristicByDuration, rankingCalculator, runningServicesProvider, clock);
         }
 
         @AfterEach
@@ -97,6 +103,7 @@ public class VitalSignServiceImplTest {
                 metrics.userPriority = USER_PRIORITY;
                 metrics.ranking = 13;
                 metrics.usedCpu = BigDecimal.valueOf(97);
+                metrics.cpuCollectionTimestamp = 1663527788128l;
                 metrics.function = "body-temperature-monitor";
                 metrics.offloading = true;
                 metrics.exceededCriticalThreshold = true;

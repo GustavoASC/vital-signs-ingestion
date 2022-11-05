@@ -57,6 +57,7 @@ public class MetricsClientIT {
         Metrics metrics = new Metrics();
         metrics.function = "foo-function";
         metrics.usedCpu = new BigDecimal("96");
+        metrics.cpuCollectionTimestamp = 1663527788128l;
         metrics.userPriority = 5;
         metrics.ranking = 8;
         metrics.offloading = true;

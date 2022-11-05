@@ -2,6 +2,7 @@
     "user_priority": 5,
     "ranking": 8,
     "used_cpu": 96,
+    "cpu_collection_timestamp": 1663527788128,
     "function": "foo-function",
     "offloading": true,
     "running_locally": false,

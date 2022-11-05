@@ -11,6 +11,7 @@ public class Metrics {
     public int userPriority;
     public int ranking;
     public BigDecimal usedCpu;
+    public long cpuCollectionTimestamp;
     public String function;
     public boolean offloading;
     public boolean runningLocally;
@@ -27,6 +28,7 @@ public class Metrics {
                 " userPriority='" + userPriority + "'" +
                 ", ranking='" + ranking + "'" +
                 ", usedCpu='" + usedCpu + "'" +
+                ", cpuCollectionTimestamp='" + cpuCollectionTimestamp + "'" +
                 ", function='" + function + "'" +
                 ", offloading='" + offloading + "'" +
                 ", runningLocally='" + runningLocally + "'" +
@@ -48,8 +50,9 @@ public class Metrics {
         }
         Metrics metrics = (Metrics) o;
         return userPriority == metrics.userPriority && ranking == metrics.ranking
-                && Objects.equals(usedCpu, metrics.usedCpu) && Objects.equals(function, metrics.function)
-                && offloading == metrics.offloading && runningLocally == metrics.runningLocally
+                && Objects.equals(usedCpu, metrics.usedCpu) && cpuCollectionTimestamp == metrics.cpuCollectionTimestamp
+                && Objects.equals(function, metrics.function) && offloading == metrics.offloading
+                && runningLocally == metrics.runningLocally
                 && exceededCriticalThreshold == metrics.exceededCriticalThreshold
                 && triggeredHeuristicByRanking == metrics.triggeredHeuristicByRanking
                 && resultForHeuristicByRanking == metrics.resultForHeuristicByRanking
@@ -60,8 +63,8 @@ public class Metrics {
 
     @Override
     public int hashCode() {
-        return Objects.hash(userPriority, ranking, usedCpu, function, offloading, runningLocally,
-                exceededCriticalThreshold, triggeredHeuristicByRanking, resultForHeuristicByRanking,
+        return Objects.hash(userPriority, ranking, usedCpu, cpuCollectionTimestamp, function, offloading,
+                runningLocally, exceededCriticalThreshold, triggeredHeuristicByRanking, resultForHeuristicByRanking,
                 triggeredHeuristicByDuration, resultForHeuristicByDuration, assumingFallbackForHeuristics);
     }
 

@@ -10,6 +10,7 @@ import aws
 import plot
 import assertions
 import metrics
+from io import StringIO
 
 JMETER_ELAPSED = "elapsed"
 JMETER_THREAD_NAME = "threadName"
@@ -103,7 +104,7 @@ def group_name_from_thread(thread_name):
 
 def analyze_dataset(response_dataset):
     all_data = {}
-    df = pd.read_csv(response_dataset, delimiter=",")
+    df = pd.read_csv(StringIO(response_dataset), delimiter=",")
     for index, row in df.iterrows():
 
         thread_data = get_dict_from_dict(
@@ -212,7 +213,7 @@ def invoke_jmeter_test(test_file):
     )
 
     check_error(r)
-    return r.data
+    return r.data.decode('UTF-8')
 
 
 def throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):

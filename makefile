@@ -31,6 +31,9 @@ collect-cpu:
 	@python3 scripts/cpu-provider/cpu-provider.py &
 	@python3 scripts/metrics/metrics.py &
 
+listen-jmeter:
+	cd scripts/jmeter && python3 jmeter-server.py &
+
 eval:
 	@python3 scripts/evaluation.py &
 

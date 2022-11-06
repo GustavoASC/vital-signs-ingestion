@@ -10,7 +10,10 @@ def locate_vm_ips_with_name(name):
     )
     for r in response["Reservations"]:
         for i in r["Instances"]:
-            all_ips.append(i["PublicDnsName"])
+            current_vm_info = {}
+            current_vm_info["public_ip"] = i["PublicDnsName"]
+            current_vm_info["private_ip"] = i["PrivateDnsName"]
+            all_ips.append(current_vm_info)
 
     logging.info("IPs for running for nodes with name {}: {}".format(name, all_ips))
     return all_ips

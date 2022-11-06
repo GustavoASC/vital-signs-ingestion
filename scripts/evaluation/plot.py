@@ -9,7 +9,7 @@ http = urllib3.PoolManager()
 
 
 def plot_all_charts(all_fog_nodes, all_data):
-    _plot_chart_cpu_usage(all_fog_nodes[0])
+    _plot_chart_cpu_usage(all_fog_nodes[0]["public_ip"])
     _plot_chart_response_time(all_data)
     _plot_offloading_histogram(all_data)
     _plot_local_executions_histogram(all_data)
@@ -126,6 +126,9 @@ def _plot_response_time(all_data):
     p99_response_time = []
     p95_response_time = []
     p90_response_time = []
+    p80_response_time = []
+    p70_response_time = []
+    p60_response_time = []
     p50_response_time = []
     avg_response_time = []
     min_response_time = []
@@ -135,18 +138,24 @@ def _plot_response_time(all_data):
         p99_response_time.append(thread_data["percentile_99"])
         p95_response_time.append(thread_data["percentile_95"])
         p90_response_time.append(thread_data["percentile_90"])
+        p80_response_time.append(thread_data["percentile_80"])
+        p70_response_time.append(thread_data["percentile_70"])
+        p60_response_time.append(thread_data["percentile_60"])
         p50_response_time.append(thread_data["percentile_50"])
         avg_response_time.append(thread_data["average"])
         min_response_time.append(thread_data["minimum"])
 
     x_axis = np.arange(len(x))
-    plt.bar(x_axis - 0.3, max_response_time, color="g", width=0.1, label = "Max response time")
-    plt.bar(x_axis - 0.2, p99_response_time, color="r", width=0.1, label = "99th percentile")
-    plt.bar(x_axis - 0.1, p95_response_time, color="y", width=0.1, label = "95th percentile")
-    plt.bar(x_axis,       p90_response_time, color="m", width=0.1, label = "90th percentile")
-    plt.bar(x_axis + 0.1, p50_response_time, color="gray", width=0.1, label = "50th percentile")
-    plt.bar(x_axis + 0.2, avg_response_time, color="maroon", width=0.1, label = "Avg response time")
-    plt.bar(x_axis + 0.3, min_response_time, color="b", width=0.1, label = "Min response time")
+    plt.bar(x_axis - 0.5, max_response_time, color="g", width=0.1, label = "Max response time")
+    plt.bar(x_axis - 0.4, p99_response_time, color="r", width=0.1, label = "99th percentile")
+    plt.bar(x_axis - 0.3, p95_response_time, color="y", width=0.1, label = "95th percentile")
+    plt.bar(x_axis - 0.2, p90_response_time, color="m", width=0.1, label = "90th percentile")
+    plt.bar(x_axis - 0.1, p80_response_time, color="brown", width=0.1, label = "80th percentile")
+    plt.bar(x_axis,       p70_response_time, color="black", width=0.1, label = "70th percentile")
+    plt.bar(x_axis + 0.1, p60_response_time, color="cyan", width=0.1, label = "60th percentile")
+    plt.bar(x_axis + 0.2, p50_response_time, color="gray", width=0.1, label = "50th percentile")
+    plt.bar(x_axis + 0.3, avg_response_time, color="maroon", width=0.1, label = "Avg response time")
+    plt.bar(x_axis + 0.4, min_response_time, color="b", width=0.1, label = "Min response time")
 
     plt.xticks(x_axis, x)
     plt.title("Response time (seconds) according to user priority")

@@ -153,11 +153,14 @@ def update_with_summary(all_data):
         thread_data["percentile_99"] = np.percentile(thread_data["elapsed"], 99)
         thread_data["percentile_95"] = np.percentile(thread_data["elapsed"], 95)
         thread_data["percentile_90"] = np.percentile(thread_data["elapsed"], 90)
+        thread_data["percentile_80"] = np.percentile(thread_data["elapsed"], 80)
+        thread_data["percentile_70"] = np.percentile(thread_data["elapsed"], 70)
+        thread_data["percentile_60"] = np.percentile(thread_data["elapsed"], 60)
         thread_data["percentile_50"] = np.percentile(thread_data["elapsed"], 50)
         thread_data["average"] = np.average(thread_data["elapsed"])
 
         metrics_summary = metrics.collect_metrics_summary_for_user_priority(
-            all_fog_nodes[0], user_priority
+            all_fog_nodes[0]["public_ip"], user_priority
         )
         thread_data["total_offloading"] = metrics_summary["total_offloading"]
         thread_data["total_local_execution"] = metrics_summary["total_local_execution"]
@@ -183,7 +186,7 @@ def update_with_summary(all_data):
 
 def run_test_scenario(test_file):
 
-    metrics.clear_metrics(all_fog_nodes[0])
+    metrics.clear_metrics(all_fog_nodes[0]["public_ip"])
     response_dataset = invoke_jmeter_test(test_file)
     all_data = analyze_dataset(response_dataset)
     update_with_summary(all_data)
@@ -205,15 +208,15 @@ def invoke_jmeter_test(test_file):
 
     r = http.request(
         "POST",
-        "http://{}:9002/invoke-test-plan".format(all_edge_nodes[0]),
+        "http://{}:9002/invoke-test-plan".format(all_edge_nodes[0]["public_ip"]),
         headers={"Content-Type": "application/json"},
         body=json.dumps(
-            {"target_fog_node": all_fog_nodes[0], "test_plan": test_file}
+            {"target_fog_node": all_fog_nodes[0]["private_ip"], "test_plan": test_file}
         ).encode("utf-8"),
     )
 
     check_error(r)
-    return r.data.decode('UTF-8')
+    return r.data.decode("UTF-8")
 
 
 def throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
@@ -231,6 +234,6 @@ if __name__ == "__main__":
     all_edge_nodes = aws.locate_vm_ips_with_name("edge_node_a")
 
     update_thresholds_for_virtual_machine(
-        cpu_interval=2, warning_threshold=30, critical_threshold=95
+        cpu_interval=2, warning_threshold=20, critical_threshold=99
     )
     run_test_scenario(test_file="scenario-1.jmx")

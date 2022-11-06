@@ -11,7 +11,6 @@ import plot
 import assertions
 import metrics
 
-JMETER_RESULTS_FILE = "result-requests.csv"
 JMETER_ELAPSED = "elapsed"
 JMETER_THREAD_NAME = "threadName"
 JMETER_TIMESTAMP = "timeStamp"
@@ -25,6 +24,7 @@ logging.basicConfig(
 
 http = urllib3.PoolManager()
 all_fog_nodes = []
+all_edge_nodes = []
 
 
 def update_thresholds_for_virtual_machine(
@@ -101,9 +101,9 @@ def group_name_from_thread(thread_name):
     return association[group_id]
 
 
-def analyze_dataset():
+def analyze_dataset(response_dataset):
     all_data = {}
-    df = pd.read_csv(wrap_dir(JMETER_RESULTS_FILE), delimiter=",")
+    df = pd.read_csv(response_dataset, delimiter=",")
     for index, row in df.iterrows():
 
         thread_data = get_dict_from_dict(
@@ -183,13 +183,8 @@ def update_with_summary(all_data):
 def run_test_scenario(test_file):
 
     metrics.clear_metrics(all_fog_nodes[0])
-
-    start_date_time = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    logging.info("Start date time: {}".format(start_date_time))
-
-    invoke_jmeter_test(test_file)
-
-    all_data = analyze_dataset()
+    response_dataset = invoke_jmeter_test(test_file)
+    all_data = analyze_dataset(response_dataset)
     update_with_summary(all_data)
 
     assertions.make_assertions(all_data)
@@ -204,31 +199,20 @@ def wrap_dir(file):
 
 def invoke_jmeter_test(test_file):
 
-    delete("jmeter.log")
-    delete(JMETER_RESULTS_FILE)
-
     print("\n\n")
-    logging.info("Invoking JMeter...")
-    subprocess.call(
-        [
-            "jmeter",
-            "-n",
-            "-t",
-            wrap_dir(test_file),
-            "-Jhost={}".format(all_fog_nodes[0]),
-            "-l",
-            wrap_dir(JMETER_RESULTS_FILE),
-            "-L",
-            "DEBUG",
-        ]
+    logging.info("Invoking JMeter on remote edge node...")
+
+    r = http.request(
+        "POST",
+        "http://{}:9002/invoke-test-plan".format(all_edge_nodes[0]),
+        headers={"Content-Type": "application/json"},
+        body=json.dumps(
+            {"target_fog_node": all_fog_nodes[0], "test_plan": test_file}
+        ).encode("utf-8"),
     )
 
-
-def delete(file):
-    try:
-        os.remove(wrap_dir(file))
-    except OSError:
-        pass
+    check_error(r)
+    return r.data
 
 
 def throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
@@ -242,7 +226,8 @@ def throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
 if __name__ == "__main__":
 
     load_dotenv(wrap_dir(".env"))
-    all_fog_nodes = aws.locate_vm_ips()
+    all_fog_nodes = aws.locate_vm_ips_with_name("fog_node_a")
+    all_edge_nodes = aws.locate_vm_ips_with_name("edge_node_a")
 
     update_thresholds_for_virtual_machine(
         cpu_interval=2, warning_threshold=30, critical_threshold=95

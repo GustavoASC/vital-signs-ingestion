@@ -3,17 +3,17 @@ import boto3
 import os
 
 
-def locate_vm_ips():
-    all_fog_nodes = []
+def locate_vm_ips_with_name(name):
+    all_ips = []
     response = _ec2_client().describe_instances(
-        Filters=[{"Name": "tag:Name", "Values": ["fog_node_a"]}]
+        Filters=[{"Name": "tag:Name", "Values": [name]}]
     )
     for r in response["Reservations"]:
         for i in r["Instances"]:
-            all_fog_nodes.append(i["PublicDnsName"])
+            all_ips.append(i["PublicDnsName"])
 
-    logging.info("IPs for running fog nodes: {}".format(all_fog_nodes))
-    return all_fog_nodes
+    logging.info("IPs for running for nodes with name {}: {}".format(name, all_ips))
+    return all_ips
 
 
 def _ec2_client():

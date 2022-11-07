@@ -6,6 +6,17 @@ import datetime as dt
 
 
 http = urllib3.PoolManager()
+save_chart_as_file = True
+
+def _initialize_chart():
+    plt.figure(figsize=(20,10))
+
+def _finalize_chart(name):
+    if save_chart_as_file:
+        plt.savefig(name, bbox_inches='tight')
+        plt.close()
+    else:
+        plt.show()
 
 
 def plot_all_charts(all_fog_nodes, all_data):
@@ -20,7 +31,7 @@ def plot_all_charts(all_fog_nodes, all_data):
 
 
 def _plot_chart_cpu_usage(fog_node_ip):
-
+    _initialize_chart()
     response_json = metrics.collect_cpu_usage(fog_node_ip)
 
     all_datetimes = []
@@ -38,10 +49,11 @@ def _plot_chart_cpu_usage(fog_node_ip):
     plt.title("CPU Usage during tests")
     plt.xlabel("Timestamp")
     plt.ylabel("CPU Usage")
-    plt.show()
+    _finalize_chart('cpu_usage.png')
 
 
 def _plot_chart_response_time(all_data):
+    _initialize_chart()
     legend = []
     for key, thread_data in sorted(all_data.items()):
         legend.append(key)
@@ -51,10 +63,11 @@ def _plot_chart_response_time(all_data):
     plt.xlabel("Timestamp")
     plt.ylabel("Response time")
     plt.legend(legend)
-    plt.show()
+    _finalize_chart('response_time.png')
 
 
 def _plot_offloading_histogram(all_data):
+    _initialize_chart()
     x = []
     y = []
     for key, thread_data in sorted(all_data.items()):
@@ -65,10 +78,11 @@ def _plot_offloading_histogram(all_data):
     plt.title("Offloading operations according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Offloading operations")
-    plt.show()
+    _finalize_chart('offloading_operations.png')
 
 
 def _plot_local_executions_histogram(all_data):
+    _initialize_chart()
     x = []
     y = []
     for key, thread_data in sorted(all_data.items()):
@@ -79,10 +93,11 @@ def _plot_local_executions_histogram(all_data):
     plt.title("Local executions according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Local executions")
-    plt.show()
+    _finalize_chart('local_executions.png')
 
 
 def _plot_stacked_offloading_local_executions(all_data):
+    _initialize_chart()
     x = []
     local_execution = []
     offloading = []
@@ -104,9 +119,10 @@ def _plot_stacked_offloading_local_executions(all_data):
     plt.xlabel("User priority")
     plt.ylabel("Execution operations")
     plt.legend(loc="lower right")
-    plt.show()
+    _finalize_chart('execution_operations.png')
 
 def _plot_throughput(all_data):
+    _initialize_chart()
     x = []
     y = []
     for key, thread_data in sorted(all_data.items()):
@@ -117,10 +133,11 @@ def _plot_throughput(all_data):
     plt.title("Throughput (seconds) according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Throughout (seconds)")
-    plt.show()
+    _finalize_chart('throughput.png')
 
 
 def _plot_response_time(all_data):
+    _initialize_chart()
     x = []
     max_response_time = []
     p99_response_time = []
@@ -162,10 +179,11 @@ def _plot_response_time(all_data):
     plt.xlabel("User priority")
     plt.ylabel("Response time (seconds)")
     plt.legend(loc="upper right")
-    plt.show()
+    _finalize_chart('response_time_with_priority.png')
 
 
 def _plot_offloading_reasons(all_data):
+    _initialize_chart()
     x = []
     exceeded_critical_threshold = []
     heuristic_by_ranking = []
@@ -181,4 +199,4 @@ def _plot_offloading_reasons(all_data):
     plt.xlabel("User priority")
     plt.ylabel("Offloading operations")
     plt.legend(loc = "upper right")
-    plt.show()
+    _finalize_chart('offloading_reasons.png')

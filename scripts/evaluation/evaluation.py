@@ -32,10 +32,11 @@ def update_thresholds_for_virtual_machine(
     cpu_interval, warning_threshold, critical_threshold
 ):
     for fog_node in all_fog_nodes:
-        update_cpu_interval(cpu_interval, fog_node)
-        authenticate_openfaas(fog_node)
+        public_ip = fog_node["public_ip"]
+        update_cpu_interval(cpu_interval, public_ip)
+        authenticate_openfaas(public_ip)
         deploy_service_executor_openfaas(
-            warning_threshold, critical_threshold, fog_node
+            warning_threshold, critical_threshold, public_ip
         )
 
 

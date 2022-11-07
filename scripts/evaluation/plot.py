@@ -1,6 +1,5 @@
 import urllib3
 import matplotlib.pyplot as plt
-import metrics
 import numpy as np
 import datetime as dt
 
@@ -19,8 +18,8 @@ def _finalize_chart(name):
         plt.show()
 
 
-def plot_all_charts(all_fog_nodes, all_data):
-    _plot_chart_cpu_usage(all_fog_nodes[0]["public_ip"])
+def plot_all_charts(cpu_usage, all_data):
+    _plot_chart_cpu_usage(cpu_usage)
     _plot_chart_response_time(all_data)
     _plot_offloading_histogram(all_data)
     _plot_local_executions_histogram(all_data)
@@ -30,14 +29,13 @@ def plot_all_charts(all_fog_nodes, all_data):
     _plot_offloading_reasons(all_data)
 
 
-def _plot_chart_cpu_usage(fog_node_ip):
+def _plot_chart_cpu_usage(cpu_usage):
     _initialize_chart()
-    response_json = metrics.collect_cpu_usage(fog_node_ip)
 
     all_datetimes = []
     all_cpus = []
-    for index in range(len(response_json)):
-        current_json = response_json[index]
+    for index in range(len(cpu_usage)):
+        current_json = cpu_usage[index]
         all_cpus.append(current_json["cpu"])
         all_datetimes.append(dt.datetime.fromtimestamp(
             current_json["collection_timestamp"] / 1e3

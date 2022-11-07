@@ -123,7 +123,7 @@ def analyze_dataset(response_dataset):
             )
         )
 
-    return all_data
+    return update_with_summary(all_data)
 
 
 def get_dict_from_dict(data, field_name):
@@ -184,18 +184,20 @@ def update_with_summary(all_data):
             "total_assuming_fallback_for_heuristics"
         ]
 
+    return all_data
+
 
 def run_test_scenario(test_file):
 
     metrics.clear_metrics(all_fog_nodes[0]["public_ip"])
-    response_dataset = invoke_jmeter_test(test_file)
-    all_data = analyze_dataset(response_dataset)
-    update_with_summary(all_data)
 
-    assertions.make_assertions(all_data)
+    response_dataset = invoke_jmeter_test(test_file)
+    cpu_usage = metrics.collect_cpu_usage(all_fog_nodes[0]["public_ip"])
+    all_data = analyze_dataset(response_dataset)
+    assertions.make_assertions(cpu_usage, all_data)
 
     summary.print_summary(all_data)
-    plot.plot_all_charts(all_fog_nodes, all_data)
+    plot.plot_all_charts(cpu_usage, all_data)
 
 
 def wrap_dir(file):

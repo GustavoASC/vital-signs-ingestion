@@ -17,7 +17,17 @@ JMETER_THREAD_NAME = "threadName"
 JMETER_TIMESTAMP = "timeStamp"
 
 
+def _get_backup_dir():
+    datetime = dt.datetime.today().strftime("%Y-%m-%d-%H:%M:%S")
+    return "./backup-{}".format(datetime)
+
+
+backup_dir = _get_backup_dir()
+os.makedirs(backup_dir)
+
+
 logging.basicConfig(
+    filename='{}/log.txt'.format(backup_dir),
     level=logging.INFO,
     format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -28,20 +38,20 @@ all_fog_nodes = []
 all_edge_nodes = []
 
 
-def update_thresholds_for_virtual_machine(
+def _update_thresholds_for_virtual_machine(
     cpu_interval, warning_threshold, critical_threshold
 ):
     for fog_node in all_fog_nodes:
         public_ip = fog_node["public_ip"]
-        update_cpu_interval(cpu_interval, public_ip)
-        authenticate_openfaas(public_ip)
-        deploy_service_executor_openfaas(
+        _update_cpu_interval(cpu_interval, public_ip)
+        _authenticate_openfaas(public_ip)
+        _deploy_service_executor_openfaas(
             warning_threshold, critical_threshold, public_ip
         )
 
 
-def deploy_service_executor_openfaas(warning_threshold, critical_threshold, fog_node):
-    print("\n\n")
+def _deploy_service_executor_openfaas(warning_threshold, critical_threshold, fog_node):
+    logging.info("\n\n")
     logging.info(
         "Re-deploying service-executor module on remote fog nod with {} warning threshold and {} critical threshold...".format(
             warning_threshold, critical_threshold
@@ -64,7 +74,7 @@ def deploy_service_executor_openfaas(warning_threshold, critical_threshold, fog_
     )
 
 
-def authenticate_openfaas(fog_node):
+def _authenticate_openfaas(fog_node):
     logging.info("Authenticating on remote OpenFaaS running on the fog node...\n\n")
     subprocess.call(
         [
@@ -78,15 +88,15 @@ def authenticate_openfaas(fog_node):
     )
 
 
-def check_error(response):
+def _check_error(response):
     if response.status != 200:
         logging.info("Error collecting offloading metrics during tests")
         exit(1)
 
 
-def update_cpu_interval(cpu_interval, fog_node):
+def _update_cpu_interval(cpu_interval, fog_node):
     logging.info("Updating the CPU collection interval to {}...".format(cpu_interval))
-    check_error(
+    _check_error(
         http.request(
             "POST",
             "http://{}:8099/machine-resources".format(fog_node),
@@ -97,36 +107,36 @@ def update_cpu_interval(cpu_interval, fog_node):
 
 
 # The user priority configured on JMeter is always the same as the group number
-def group_name_from_thread(thread_name):
+def _group_name_from_thread(thread_name):
     association = {"1": "5", "2": "4", "3": "3", "4": "2", "5": "1"}
     group_id = re.findall("Thread\sGroup\s(\d).*", thread_name)[0]
     return association[group_id]
 
 
-def analyze_dataset(response_dataset):
+def _analyze_dataset(response_dataset):
     all_data = {}
     df = pd.read_csv(StringIO(response_dataset), delimiter=",")
     for index, row in df.iterrows():
 
-        thread_data = get_dict_from_dict(
-            all_data, group_name_from_thread(row[JMETER_THREAD_NAME])
+        thread_data = _get_dict_from_dict(
+            all_data, _group_name_from_thread(row[JMETER_THREAD_NAME])
         )
 
-        get_array_from_dict(thread_data, "elapsed").append(row[JMETER_ELAPSED])
-        get_array_from_dict(thread_data, "timestamp").append(row[JMETER_TIMESTAMP])
-        get_array_from_dict(thread_data, "start_datetime").append(
+        _get_array_from_dict(thread_data, "elapsed").append(row[JMETER_ELAPSED])
+        _get_array_from_dict(thread_data, "timestamp").append(row[JMETER_TIMESTAMP])
+        _get_array_from_dict(thread_data, "start_datetime").append(
             dt.datetime.fromtimestamp(row[JMETER_TIMESTAMP] / 1e3)
         )
-        get_array_from_dict(thread_data, "end_datetime").append(
+        _get_array_from_dict(thread_data, "end_datetime").append(
             dt.datetime.fromtimestamp(
                 (row[JMETER_TIMESTAMP] + row[JMETER_ELAPSED]) / 1e3
             )
         )
 
-    return update_with_summary(all_data)
+    return _update_with_summary(all_data)
 
 
-def get_dict_from_dict(data, field_name):
+def _get_dict_from_dict(data, field_name):
     result_dict = data.get(field_name)
     if result_dict is None:
         result_dict = {}
@@ -135,7 +145,7 @@ def get_dict_from_dict(data, field_name):
     return result_dict
 
 
-def get_array_from_dict(data, field_name):
+def _get_array_from_dict(data, field_name):
     result_array = data.get(field_name)
     if result_array is None:
         result_array = []
@@ -144,9 +154,9 @@ def get_array_from_dict(data, field_name):
     return result_array
 
 
-def update_with_summary(all_data):
+def _update_with_summary(all_data):
     for user_priority, thread_data in all_data.items():
-        thread_data["throughput_seconds"] = throughput_seconds(
+        thread_data["throughput_seconds"] = _throughput_seconds(
             thread_data["start_datetime"], thread_data["end_datetime"]
         )
         thread_data["minimum"] = np.amin(thread_data["elapsed"])
@@ -187,26 +197,35 @@ def update_with_summary(all_data):
     return all_data
 
 
-def run_test_scenario(test_file):
+def _run_test_scenario(test_file):
 
     metrics.clear_metrics(all_fog_nodes[0]["public_ip"])
 
-    response_dataset = invoke_jmeter_test(test_file)
+    response_dataset = _invoke_jmeter_test(test_file)
     cpu_usage = metrics.collect_cpu_usage(all_fog_nodes[0]["public_ip"])
-    all_data = analyze_dataset(response_dataset)
+    all_data = _analyze_dataset(response_dataset)
     assertions.make_assertions(cpu_usage, all_data)
 
+    _save_backup(response_dataset, backup_dir, "jmeter-results.csv")
+    _save_backup(cpu_usage, backup_dir, "cpu-usage.json")
+    _save_backup(all_data, backup_dir, "analyzed-dataset.json")
+
     summary.print_summary(all_data)
-    plot.plot_all_charts(cpu_usage, all_data)
+    plot.plot_all_charts(backup_dir, cpu_usage, all_data)
 
 
-def wrap_dir(file):
+def _save_backup(data, backup_dir, filename):
+    with open(backup_dir + "/" + filename, "w") as f:
+        f.write(str(data))
+
+
+def _wrap_dir(file):
     return "./scripts/evaluation/" + file
 
 
-def invoke_jmeter_test(test_file):
+def _invoke_jmeter_test(test_file):
 
-    print("\n\n")
+    logging.info("\n\n")
     logging.info("Invoking JMeter on remote edge node...")
 
     r = http.request(
@@ -218,11 +237,11 @@ def invoke_jmeter_test(test_file):
         ).encode("utf-8"),
     )
 
-    check_error(r)
+    _check_error(r)
     return r.data.decode("UTF-8")
 
 
-def throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
+def _throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
     min_datetime = min(start_datetime_for_thread)
     max_datetime = max(end_datetime_for_thread)
     total_requests = len(start_datetime_for_thread)
@@ -232,11 +251,11 @@ def throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
 
 if __name__ == "__main__":
 
-    load_dotenv(wrap_dir(".env"))
+    load_dotenv(_wrap_dir(".env"))
     all_fog_nodes = aws.locate_vm_ips_with_name("fog_node_a")
     all_edge_nodes = aws.locate_vm_ips_with_name("edge_node_a")
 
-    update_thresholds_for_virtual_machine(
-        cpu_interval=2, warning_threshold=20, critical_threshold=99
+    _update_thresholds_for_virtual_machine(
+        cpu_interval=1, warning_threshold=60, critical_threshold=95
     )
-    run_test_scenario(test_file="scenario-1.jmx")
+    _run_test_scenario(test_file="scenario-1.jmx")

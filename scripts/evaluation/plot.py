@@ -7,18 +7,24 @@ import datetime as dt
 http = urllib3.PoolManager()
 save_chart_as_file = True
 
+global_backup_dir = ""
+
 def _initialize_chart():
     plt.figure(figsize=(20,10))
 
 def _finalize_chart(name):
     if save_chart_as_file:
-        plt.savefig(name, bbox_inches='tight')
+        plt.savefig(global_backup_dir + "/" + name, bbox_inches='tight')
         plt.close()
     else:
         plt.show()
 
 
-def plot_all_charts(cpu_usage, all_data):
+def plot_all_charts(backup_dir, cpu_usage, all_data):
+
+    global global_backup_dir
+    global_backup_dir = backup_dir
+
     _plot_chart_cpu_usage(cpu_usage)
     _plot_chart_response_time(all_data)
     _plot_offloading_histogram(all_data)

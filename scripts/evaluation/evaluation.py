@@ -16,26 +16,12 @@ JMETER_ELAPSED = "elapsed"
 JMETER_THREAD_NAME = "threadName"
 JMETER_TIMESTAMP = "timeStamp"
 
-
-def _get_backup_dir():
-    datetime = dt.datetime.today().strftime("%Y-%m-%d-%H:%M:%S")
-    return "./backup-{}".format(datetime)
-
-
-backup_dir = _get_backup_dir()
-os.makedirs(backup_dir)
-
-
-logging.basicConfig(
-    filename='{}/log.txt'.format(backup_dir),
-    level=logging.INFO,
-    format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
 http = urllib3.PoolManager()
-all_fog_nodes = []
-all_edge_nodes = []
+
+
+def _get_backup_dir(round):
+    datetime = dt.datetime.today().strftime("%Y-%m-%d-%H:%M:%S")
+    return "./round-{}/backup-{}".format(round, datetime)
 
 
 def _update_thresholds_for_virtual_machine(
@@ -252,10 +238,37 @@ def _throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
 if __name__ == "__main__":
 
     load_dotenv(_wrap_dir(".env"))
-    all_fog_nodes = aws.locate_vm_ips_with_name("fog_node_a")
-    all_edge_nodes = aws.locate_vm_ips_with_name("edge_node_a")
 
-    _update_thresholds_for_virtual_machine(
-        cpu_interval=1, warning_threshold=60, critical_threshold=95
-    )
-    _run_test_scenario(test_file="scenario-1.jmx")
+    test_settings = [
+        {"cpu_interval": 1, "warning_threshold": 30, "critical_threshold": 95},
+        {"cpu_interval": 2, "warning_threshold": 30, "critical_threshold": 95},
+        {"cpu_interval": 3, "warning_threshold": 30, "critical_threshold": 95},
+        {"cpu_interval": 1, "warning_threshold": 50, "critical_threshold": 95},
+        {"cpu_interval": 2, "warning_threshold": 50, "critical_threshold": 95},
+        {"cpu_interval": 3, "warning_threshold": 50, "critical_threshold": 95},
+    ]
+
+    for round in range(5):
+        
+        for settings in test_settings:
+
+            backup_dir = _get_backup_dir(round)
+            os.makedirs(backup_dir)
+
+            logging.basicConfig(
+                filename="{}/log.txt".format(backup_dir),
+                force=True,
+                level=logging.INFO,
+                format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+
+            all_fog_nodes = aws.locate_vm_ips_with_name("fog_node_a")
+            all_edge_nodes = aws.locate_vm_ips_with_name("edge_node_a")
+
+            _update_thresholds_for_virtual_machine(
+                cpu_interval=settings["cpu_interval"],
+                warning_threshold=settings["warning_threshold"],
+                critical_threshold=settings["critical_threshold"],
+            )
+            _run_test_scenario(test_file="scenario-1.jmx")

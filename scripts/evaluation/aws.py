@@ -16,7 +16,7 @@ def locate_vm_ips_with_name(name):
             all_ips.append(current_vm_info)
 
     logging.info("IPs for running for nodes with name {}: {}".format(name, all_ips))
-    return all_ips
+    return all_ips[0]
 
 
 def _ec2_client():

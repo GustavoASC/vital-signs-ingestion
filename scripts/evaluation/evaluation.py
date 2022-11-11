@@ -190,11 +190,12 @@ def _run_test_scenario(test_file):
     response_dataset = _invoke_jmeter_test(test_file)
     cpu_usage = metrics.collect_cpu_usage(all_fog_nodes[0]["public_ip"])
     all_data = _analyze_dataset(response_dataset)
-    assertions.make_assertions(cpu_usage, all_data)
 
     _save_backup(response_dataset, backup_dir, "jmeter-results.csv")
     _save_backup(cpu_usage, backup_dir, "cpu-usage.json")
     _save_backup(all_data, backup_dir, "analyzed-dataset.json")
+
+    assertions.make_assertions(cpu_usage, all_data)
 
     summary.print_summary(all_data)
     plot.plot_all_charts(backup_dir, cpu_usage, all_data)
@@ -251,7 +252,7 @@ if __name__ == "__main__":
                 "critical_threshold": current_critical_threshold,
             }
 
-            backup_dir = _get_backup_dir(1)
+            backup_dir = _get_backup_dir("cpu_interval_2_fog_a_connected_to_fog_c_connected_to_cloud")
             os.makedirs(backup_dir)
 
             logging.basicConfig(
@@ -262,8 +263,9 @@ if __name__ == "__main__":
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
 
-            all_fog_nodes = aws.locate_vm_ips_with_name("fog_node_a")
-            all_edge_nodes = aws.locate_vm_ips_with_name("edge_node_a")
+            all_fog_nodes = [aws.locate_vm_ips_with_name("fog_node_a")]
+            all_fog_nodes.append(aws.locate_vm_ips_with_name("fog_node_c"))
+            all_edge_nodes = [aws.locate_vm_ips_with_name("edge_node_a")]
 
             _update_thresholds_for_virtual_machine(
                 cpu_interval=settings["cpu_interval"],

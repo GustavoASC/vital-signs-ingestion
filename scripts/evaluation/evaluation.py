@@ -239,20 +239,19 @@ if __name__ == "__main__":
 
     load_dotenv(_wrap_dir(".env"))
 
-    test_settings = [
-        {"cpu_interval": 1, "warning_threshold": 30, "critical_threshold": 95},
-        {"cpu_interval": 2, "warning_threshold": 30, "critical_threshold": 95},
-        {"cpu_interval": 3, "warning_threshold": 30, "critical_threshold": 95},
-        {"cpu_interval": 1, "warning_threshold": 50, "critical_threshold": 95},
-        {"cpu_interval": 2, "warning_threshold": 50, "critical_threshold": 95},
-        {"cpu_interval": 3, "warning_threshold": 50, "critical_threshold": 95},
-    ]
+    warning_thresholds = [30, 35, 40, 45, 50]
+    critical_thresholds = [70, 75, 80, 85, 90]
 
-    for round in range(5):
-        
-        for settings in test_settings:
+    for current_warning_threshold in warning_thresholds:
+        for current_critical_threshold in critical_thresholds:
 
-            backup_dir = _get_backup_dir(round)
+            settings = {
+                "cpu_interval": 2,
+                "warning_threshold": current_warning_threshold,
+                "critical_threshold": current_critical_threshold,
+            }
+
+            backup_dir = _get_backup_dir(1)
             os.makedirs(backup_dir)
 
             logging.basicConfig(

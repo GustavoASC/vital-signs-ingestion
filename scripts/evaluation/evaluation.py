@@ -10,6 +10,7 @@ import aws
 import plot
 import assertions
 import metrics
+import warm
 from io import StringIO
 
 JMETER_ELAPSED = "elapsed"
@@ -162,30 +163,35 @@ def _update_with_summary(all_data):
             metrics_summary = metrics.collect_metrics_summary_for_user_priority(
                 fog_node["public_ip"], user_priority
             )
-            current_fog_node_data["total_offloading"] = metrics_summary["total_offloading"]
-            current_fog_node_data["total_local_execution"] = metrics_summary["total_local_execution"]
-            current_fog_node_data["total_exceeded_critical_threshold"] = metrics_summary[
+            current_fog_node_data["total_offloading"] = metrics_summary[
+                "total_offloading"
+            ]
+            current_fog_node_data["total_local_execution"] = metrics_summary[
+                "total_local_execution"
+            ]
+            current_fog_node_data[
                 "total_exceeded_critical_threshold"
-            ]
-            current_fog_node_data["total_triggered_heuristic_by_rankings"] = metrics_summary[
+            ] = metrics_summary["total_exceeded_critical_threshold"]
+            current_fog_node_data[
                 "total_triggered_heuristic_by_rankings"
-            ]
-            current_fog_node_data["total_result_for_heuristic_by_ranking"] = metrics_summary[
+            ] = metrics_summary["total_triggered_heuristic_by_rankings"]
+            current_fog_node_data[
                 "total_result_for_heuristic_by_ranking"
-            ]
-            current_fog_node_data["total_triggered_heuristic_by_duration"] = metrics_summary[
+            ] = metrics_summary["total_result_for_heuristic_by_ranking"]
+            current_fog_node_data[
                 "total_triggered_heuristic_by_duration"
-            ]
-            current_fog_node_data["total_result_for_heuristic_by_duration"] = metrics_summary[
+            ] = metrics_summary["total_triggered_heuristic_by_duration"]
+            current_fog_node_data[
                 "total_result_for_heuristic_by_duration"
-            ]
-            current_fog_node_data["total_assuming_fallback_for_heuristics"] = metrics_summary[
+            ] = metrics_summary["total_result_for_heuristic_by_duration"]
+            current_fog_node_data[
                 "total_assuming_fallback_for_heuristics"
-            ]
+            ] = metrics_summary["total_assuming_fallback_for_heuristics"]
 
             thread_data["fog_nodes_data"][fog_node["name"]] = current_fog_node_data
 
     return all_data
+
 
 #
 # Data structure fog user priority:
@@ -221,6 +227,7 @@ def _update_with_summary(all_data):
 #     - Used CPU percentage
 #
 #
+
 
 def _run_test_scenario(test_file):
 
@@ -296,7 +303,9 @@ if __name__ == "__main__":
                 "critical_threshold": current_critical_threshold,
             }
 
-            backup_dir = _get_backup_dir("cpu_interval_2_fog_a_connected_to_fog_c_connected_to_cloud")
+            backup_dir = _get_backup_dir(
+                "cpu_interval_2_fog_a_connected_to_fog_c_connected_to_cloud"
+            )
             os.makedirs(backup_dir)
 
             logging.basicConfig(
@@ -315,4 +324,9 @@ if __name__ == "__main__":
                 warning_threshold=settings["warning_threshold"],
                 critical_threshold=settings["critical_threshold"],
             )
+
+            for fog_node in all_fog_nodes:
+                node_public_ip = fog_node["public_ip"]
+                warm.warmup_functions(node_public_ip)
+
             _run_test_scenario(test_file="scenario-1.jmx")

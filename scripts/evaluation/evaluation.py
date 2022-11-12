@@ -26,15 +26,13 @@ def _get_backup_dir(round):
 
 
 def _update_thresholds_for_virtual_machine(
-    cpu_interval, warning_threshold, critical_threshold
+    cpu_interval, warning_threshold, critical_threshold, node_public_ip
 ):
-    for fog_node in all_fog_nodes:
-        public_ip = fog_node["public_ip"]
-        _update_cpu_interval(cpu_interval, public_ip)
-        _authenticate_openfaas(public_ip)
-        _deploy_service_executor_openfaas(
-            warning_threshold, critical_threshold, public_ip
-        )
+    _update_cpu_interval(cpu_interval, node_public_ip)
+    _authenticate_openfaas(node_public_ip)
+    _deploy_service_executor_openfaas(
+        warning_threshold, critical_threshold, node_public_ip
+    )
 
 
 def _deploy_service_executor_openfaas(warning_threshold, critical_threshold, fog_node):
@@ -319,11 +317,14 @@ if __name__ == "__main__":
             all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
             all_edge_nodes = aws.locate_vm_data_with_name("edge_node_*")
 
-            _update_thresholds_for_virtual_machine(
-                cpu_interval=settings["cpu_interval"],
-                warning_threshold=settings["warning_threshold"],
-                critical_threshold=settings["critical_threshold"],
-            )
+            for fog_node in all_fog_nodes:
+                node_public_ip = fog_node["public_ip"]
+                _update_thresholds_for_virtual_machine(
+                    settings["cpu_interval"],
+                    settings["warning_threshold"],
+                    settings["critical_threshold"],
+                    node_public_ip,
+                )
 
             for fog_node in all_fog_nodes:
                 node_public_ip = fog_node["public_ip"]

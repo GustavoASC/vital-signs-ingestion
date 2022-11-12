@@ -9,12 +9,14 @@ save_chart_as_file = True
 
 global_backup_dir = ""
 
+
 def _initialize_chart():
-    plt.figure(figsize=(20,10))
+    plt.figure(figsize=(20, 10))
+
 
 def _finalize_chart(name):
     if save_chart_as_file:
-        plt.savefig(global_backup_dir + "/" + name, bbox_inches='tight')
+        plt.savefig(global_backup_dir + "/" + name, bbox_inches="tight")
         plt.close()
     else:
         plt.show()
@@ -25,17 +27,22 @@ def plot_all_charts(backup_dir, cpu_usage, all_data):
     global global_backup_dir
     global_backup_dir = backup_dir
 
-    _plot_chart_cpu_usage(cpu_usage)
     _plot_chart_response_time(all_data)
-    _plot_offloading_histogram(all_data)
-    _plot_local_executions_histogram(all_data)
-    _plot_stacked_offloading_local_executions(all_data)
     _plot_throughput(all_data)
     _plot_response_time(all_data)
-    _plot_offloading_reasons(all_data)
+
+    for machine_name, current_cpu_node_data in cpu_usage.items():
+        _plot_chart_cpu_usage(machine_name, current_cpu_node_data)
+
+    for priority, thread_data in sorted(all_data.items()):
+        for fog_name in thread_data["fog_nodes_data"]:
+            _plot_offloading_histogram(all_data, fog_name)
+            _plot_local_executions_histogram(all_data, fog_name)
+            _plot_stacked_offloading_local_executions(all_data, fog_name)
+            _plot_offloading_reasons(all_data, fog_name)
 
 
-def _plot_chart_cpu_usage(cpu_usage):
+def _plot_chart_cpu_usage(machine_name, cpu_usage):
     _initialize_chart()
 
     all_datetimes = []
@@ -43,17 +50,17 @@ def _plot_chart_cpu_usage(cpu_usage):
     for index in range(len(cpu_usage)):
         current_json = cpu_usage[index]
         all_cpus.append(current_json["cpu"])
-        all_datetimes.append(dt.datetime.fromtimestamp(
-            current_json["collection_timestamp"] / 1e3
-        ))
+        all_datetimes.append(
+            dt.datetime.fromtimestamp(current_json["collection_timestamp"] / 1e3)
+        )
 
     all_datetimes, all_cpus = zip(*sorted(zip(all_datetimes, all_cpus)))
 
     plt.plot(all_datetimes, all_cpus)
-    plt.title("CPU Usage during tests")
+    plt.title("CPU Usage during tests for machine {}".format(machine_name))
     plt.xlabel("Timestamp")
     plt.ylabel("CPU Usage")
-    _finalize_chart('cpu_usage.png')
+    _finalize_chart("cpu_usage.png")
 
 
 def _plot_chart_response_time(all_data):
@@ -67,48 +74,50 @@ def _plot_chart_response_time(all_data):
     plt.xlabel("Timestamp")
     plt.ylabel("Response time")
     plt.legend(legend)
-    _finalize_chart('response_time.png')
+    _finalize_chart("response_time.png")
 
 
-def _plot_offloading_histogram(all_data):
+def _plot_offloading_histogram(all_data, fog_name):
     _initialize_chart()
     x = []
     y = []
     for key, thread_data in sorted(all_data.items()):
         x.append(key)
-        y.append(thread_data["total_offloading"])
+        y.append(thread_data["fog_nodes_data"][fog_name]["total_offloading"])
 
     plt.bar(x, y, color="b", width=0.4)
     plt.title("Offloading operations according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Offloading operations")
-    _finalize_chart('offloading_operations.png')
+    _finalize_chart("offloading_operations.png")
 
 
-def _plot_local_executions_histogram(all_data):
+def _plot_local_executions_histogram(all_data, fog_name):
     _initialize_chart()
     x = []
     y = []
     for key, thread_data in sorted(all_data.items()):
         x.append(key)
-        y.append(thread_data["total_local_execution"])
+        y.append(thread_data["fog_nodes_data"][fog_name]["total_local_execution"])
 
     plt.bar(x, y, color="g", width=0.4)
     plt.title("Local executions according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Local executions")
-    _finalize_chart('local_executions.png')
+    _finalize_chart("local_executions.png")
 
 
-def _plot_stacked_offloading_local_executions(all_data):
+def _plot_stacked_offloading_local_executions(all_data, fog_name):
     _initialize_chart()
     x = []
     local_execution = []
     offloading = []
     for key, thread_data in sorted(all_data.items()):
         x.append(key)
-        local_execution.append(thread_data["total_local_execution"])
-        offloading.append(thread_data["total_offloading"])
+        local_execution.append(
+            thread_data["fog_nodes_data"][fog_name]["total_local_execution"]
+        )
+        offloading.append(thread_data["fog_nodes_data"][fog_name]["total_offloading"])
 
     plt.bar(x, local_execution, color="g", width=0.4, label="Local executions")
     plt.bar(
@@ -123,7 +132,8 @@ def _plot_stacked_offloading_local_executions(all_data):
     plt.xlabel("User priority")
     plt.ylabel("Execution operations")
     plt.legend(loc="lower right")
-    _finalize_chart('execution_operations.png')
+    _finalize_chart("execution_operations.png")
+
 
 def _plot_throughput(all_data):
     _initialize_chart()
@@ -137,7 +147,7 @@ def _plot_throughput(all_data):
     plt.title("Throughput (seconds) according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Throughout (seconds)")
-    _finalize_chart('throughput.png')
+    _finalize_chart("throughput.png")
 
 
 def _plot_response_time(all_data):
@@ -167,40 +177,95 @@ def _plot_response_time(all_data):
         min_response_time.append(thread_data["minimum"])
 
     x_axis = np.arange(len(x))
-    plt.bar(x_axis - 0.5, max_response_time, color="g", width=0.1, label = "Max response time")
-    plt.bar(x_axis - 0.4, p99_response_time, color="r", width=0.1, label = "99th percentile")
-    plt.bar(x_axis - 0.3, p95_response_time, color="y", width=0.1, label = "95th percentile")
-    plt.bar(x_axis - 0.2, p90_response_time, color="m", width=0.1, label = "90th percentile")
-    plt.bar(x_axis - 0.1, p80_response_time, color="brown", width=0.1, label = "80th percentile")
-    plt.bar(x_axis,       p70_response_time, color="black", width=0.1, label = "70th percentile")
-    plt.bar(x_axis + 0.1, p60_response_time, color="cyan", width=0.1, label = "60th percentile")
-    plt.bar(x_axis + 0.2, p50_response_time, color="gray", width=0.1, label = "50th percentile")
-    plt.bar(x_axis + 0.3, avg_response_time, color="maroon", width=0.1, label = "Avg response time")
-    plt.bar(x_axis + 0.4, min_response_time, color="b", width=0.1, label = "Min response time")
+    plt.bar(
+        x_axis - 0.5, max_response_time, color="g", width=0.1, label="Max response time"
+    )
+    plt.bar(
+        x_axis - 0.4, p99_response_time, color="r", width=0.1, label="99th percentile"
+    )
+    plt.bar(
+        x_axis - 0.3, p95_response_time, color="y", width=0.1, label="95th percentile"
+    )
+    plt.bar(
+        x_axis - 0.2, p90_response_time, color="m", width=0.1, label="90th percentile"
+    )
+    plt.bar(
+        x_axis - 0.1,
+        p80_response_time,
+        color="brown",
+        width=0.1,
+        label="80th percentile",
+    )
+    plt.bar(
+        x_axis, p70_response_time, color="black", width=0.1, label="70th percentile"
+    )
+    plt.bar(
+        x_axis + 0.1,
+        p60_response_time,
+        color="cyan",
+        width=0.1,
+        label="60th percentile",
+    )
+    plt.bar(
+        x_axis + 0.2,
+        p50_response_time,
+        color="gray",
+        width=0.1,
+        label="50th percentile",
+    )
+    plt.bar(
+        x_axis + 0.3,
+        avg_response_time,
+        color="maroon",
+        width=0.1,
+        label="Avg response time",
+    )
+    plt.bar(
+        x_axis + 0.4, min_response_time, color="b", width=0.1, label="Min response time"
+    )
 
     plt.xticks(x_axis, x)
     plt.title("Response time (seconds) according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Response time (seconds)")
     plt.legend(loc="upper right")
-    _finalize_chart('response_time_with_priority.png')
+    _finalize_chart("response_time_with_priority.png")
 
 
-def _plot_offloading_reasons(all_data):
+def _plot_offloading_reasons(all_data, fog_name):
     _initialize_chart()
     x = []
     exceeded_critical_threshold = []
     heuristic_by_ranking = []
     for key, thread_data in sorted(all_data.items()):
         x.append(key)
-        exceeded_critical_threshold.append(thread_data["total_exceeded_critical_threshold"])
-        heuristic_by_ranking.append(thread_data["total_result_for_heuristic_by_ranking"])
+        exceeded_critical_threshold.append(
+            thread_data["fog_nodes_data"][fog_name]["total_exceeded_critical_threshold"]
+        )
+        heuristic_by_ranking.append(
+            thread_data["fog_nodes_data"][fog_name][
+                "total_result_for_heuristic_by_ranking"
+            ]
+        )
 
-    plt.bar(x, exceeded_critical_threshold, color="g", width=0.4, label="Exceeded critical threshold")
-    plt.bar(x, heuristic_by_ranking, bottom = exceeded_critical_threshold, color="r", width=0.4, label="Heuristic by ranking")
+    plt.bar(
+        x,
+        exceeded_critical_threshold,
+        color="g",
+        width=0.4,
+        label="Exceeded critical threshold",
+    )
+    plt.bar(
+        x,
+        heuristic_by_ranking,
+        bottom=exceeded_critical_threshold,
+        color="r",
+        width=0.4,
+        label="Heuristic by ranking",
+    )
 
     plt.title("Reasons for offloading")
     plt.xlabel("User priority")
     plt.ylabel("Offloading operations")
-    plt.legend(loc = "upper right")
-    _finalize_chart('offloading_reasons.png')
+    plt.legend(loc="upper right")
+    _finalize_chart("offloading_reasons.png")

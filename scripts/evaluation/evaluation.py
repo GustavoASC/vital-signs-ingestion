@@ -156,45 +156,89 @@ def _update_with_summary(all_data):
         thread_data["percentile_50"] = np.percentile(thread_data["elapsed"], 50)
         thread_data["average"] = np.average(thread_data["elapsed"])
 
-        metrics_summary = metrics.collect_metrics_summary_for_user_priority(
-            all_fog_nodes[0]["public_ip"], user_priority
-        )
-        thread_data["total_offloading"] = metrics_summary["total_offloading"]
-        thread_data["total_local_execution"] = metrics_summary["total_local_execution"]
-        thread_data["total_exceeded_critical_threshold"] = metrics_summary[
-            "total_exceeded_critical_threshold"
-        ]
-        thread_data["total_triggered_heuristic_by_rankings"] = metrics_summary[
-            "total_triggered_heuristic_by_rankings"
-        ]
-        thread_data["total_result_for_heuristic_by_ranking"] = metrics_summary[
-            "total_result_for_heuristic_by_ranking"
-        ]
-        thread_data["total_triggered_heuristic_by_duration"] = metrics_summary[
-            "total_triggered_heuristic_by_duration"
-        ]
-        thread_data["total_result_for_heuristic_by_duration"] = metrics_summary[
-            "total_result_for_heuristic_by_duration"
-        ]
-        thread_data["total_assuming_fallback_for_heuristics"] = metrics_summary[
-            "total_assuming_fallback_for_heuristics"
-        ]
+        thread_data["fog_nodes_data"] = {}
+        for fog_node in all_fog_nodes:
+            current_fog_node_data = {}
+            metrics_summary = metrics.collect_metrics_summary_for_user_priority(
+                fog_node["public_ip"], user_priority
+            )
+            current_fog_node_data["total_offloading"] = metrics_summary["total_offloading"]
+            current_fog_node_data["total_local_execution"] = metrics_summary["total_local_execution"]
+            current_fog_node_data["total_exceeded_critical_threshold"] = metrics_summary[
+                "total_exceeded_critical_threshold"
+            ]
+            current_fog_node_data["total_triggered_heuristic_by_rankings"] = metrics_summary[
+                "total_triggered_heuristic_by_rankings"
+            ]
+            current_fog_node_data["total_result_for_heuristic_by_ranking"] = metrics_summary[
+                "total_result_for_heuristic_by_ranking"
+            ]
+            current_fog_node_data["total_triggered_heuristic_by_duration"] = metrics_summary[
+                "total_triggered_heuristic_by_duration"
+            ]
+            current_fog_node_data["total_result_for_heuristic_by_duration"] = metrics_summary[
+                "total_result_for_heuristic_by_duration"
+            ]
+            current_fog_node_data["total_assuming_fallback_for_heuristics"] = metrics_summary[
+                "total_assuming_fallback_for_heuristics"
+            ]
+
+            thread_data["fog_nodes_data"][fog_node["name"]] = current_fog_node_data
 
     return all_data
 
+#
+# Data structure fog user priority:
+#
+# all_data
+#
+#   -> Priority 1
+#      - Data collected from JMeter's CSV for this priority
+#      - Summary (percentiles etc) computed based on the response of JMeter
+#      -> Fog nodes list
+#         - Metrics for this priority (offloading operations, local executions, etc) on the fog node
+#
+#   ...
+#
+#   -> Priority 5
+#      - Data collected from JMeter's CSV for this priority
+#      - Summary (percentiles etc) computed based on the response of JMeter
+#      -> Fog nodes list
+#         - Metrics for this priority (offloading operations, local executions, etc) on the fog node
+#
+
+#
+# Data structure for CPU usage
+#
+#  -> fog_node_a
+#     - Timestamp collected
+#     - Used CPU percentage
+#
+#  ...
+#
+#  -> fog_node_z
+#     - Timestamp collected
+#     - Used CPU percentage
+#
+#
 
 def _run_test_scenario(test_file):
 
-    metrics.clear_metrics(all_fog_nodes[0]["public_ip"])
+    for fog_node in all_fog_nodes:
+        metrics.clear_metrics(fog_node["public_ip"])
 
     response_dataset = _invoke_jmeter_test(test_file)
-    cpu_usage = metrics.collect_cpu_usage(all_fog_nodes[0]["public_ip"])
     all_data = _analyze_dataset(response_dataset)
-
     _save_backup(response_dataset, backup_dir, "jmeter-results.csv")
-    _save_backup(cpu_usage, backup_dir, "cpu-usage.json")
     _save_backup(all_data, backup_dir, "analyzed-dataset.json")
 
+    cpu_usage = {}
+    for fog_node in all_fog_nodes:
+        node_name = fog_node["name"]
+        node_public_ip = fog_node["public_ip"]
+        cpu_usage[node_name] = metrics.collect_cpu_usage(node_public_ip)
+
+    _save_backup(cpu_usage, backup_dir, "cpu-usage.json")
     assertions.make_assertions(cpu_usage, all_data)
 
     summary.print_summary(all_data)
@@ -263,9 +307,8 @@ if __name__ == "__main__":
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
 
-            all_fog_nodes = [aws.locate_vm_ips_with_name("fog_node_a")]
-            all_fog_nodes.append(aws.locate_vm_ips_with_name("fog_node_c"))
-            all_edge_nodes = [aws.locate_vm_ips_with_name("edge_node_a")]
+            all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
+            all_edge_nodes = aws.locate_vm_data_with_name("edge_node_*")
 
             _update_thresholds_for_virtual_machine(
                 cpu_interval=settings["cpu_interval"],

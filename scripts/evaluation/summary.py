@@ -21,38 +21,47 @@ def print_summary_current_key(key, thread_data):
     logging.info("##     60th percentile: {}".format(thread_data["percentile_60"]))
     logging.info("##     50th percentile: {}".format(thread_data["percentile_50"]))
     logging.info("##             Average: {}".format(thread_data["average"]))
-    logging.info("##     Tot.offloadings: {}".format(thread_data["total_offloading"]))
+
+    for fog_node_name in thread_data["fog_nodes_data"]:
+        logging.info("## Current fog node name: {}".format(fog_node_name))
+        _print_fog_node_data(thread_data["fog_nodes_data"][fog_node_name])
+        logging.info("")
+
+
+def _print_fog_node_data(fog_node_data):
     logging.info(
-        "##      Tot.local exec: {}".format(thread_data["total_local_execution"])
+        "###     Tot.offloadings: {}".format(fog_node_data["total_offloading"])
     )
     logging.info(
-        "##      Tot.exceeded critical threshold: {}".format(
-            thread_data["total_exceeded_critical_threshold"]
+        "###      Tot.local exec: {}".format(fog_node_data["total_local_execution"])
+    )
+    logging.info(
+        "###      Tot.exceeded critical threshold: {}".format(
+            fog_node_data["total_exceeded_critical_threshold"]
         )
     )
     logging.info(
-        "##  Tot.triggered heuristic by rankings: {}".format(
-            thread_data["total_triggered_heuristic_by_rankings"]
+        "###  Tot.triggered heuristic by rankings: {}".format(
+            fog_node_data["total_triggered_heuristic_by_rankings"]
         )
     )
     logging.info(
-        "##  Tot.result for heuristic by ranking: {}".format(
-            thread_data["total_result_for_heuristic_by_ranking"]
+        "###  Tot.result for heuristic by ranking: {}".format(
+            fog_node_data["total_result_for_heuristic_by_ranking"]
         )
     )
     logging.info(
-        "##  Tot.triggered heuristic by duration: {}".format(
-            thread_data["total_triggered_heuristic_by_duration"]
+        "###  Tot.triggered heuristic by duration: {}".format(
+            fog_node_data["total_triggered_heuristic_by_duration"]
         )
     )
     logging.info(
-        "## Tot.result for heuristic by duration: {}".format(
-            thread_data["total_result_for_heuristic_by_duration"]
+        "### Tot.result for heuristic by duration: {}".format(
+            fog_node_data["total_result_for_heuristic_by_duration"]
         )
     )
     logging.info(
-        "##          Tot.fallback for heuristics: {}".format(
-            thread_data["total_assuming_fallback_for_heuristics"]
+        "###          Tot.fallback for heuristics: {}".format(
+            fog_node_data["total_assuming_fallback_for_heuristics"]
         )
     )
-    logging.info("")

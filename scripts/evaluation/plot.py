@@ -89,7 +89,7 @@ def _plot_offloading_histogram(all_data, fog_name):
     plt.title("Offloading operations according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Offloading operations")
-    _finalize_chart("offloading_operations.png")
+    _finalize_chart("offloading_operations_{}.png".format(fog_name))
 
 
 def _plot_local_executions_histogram(all_data, fog_name):
@@ -104,7 +104,7 @@ def _plot_local_executions_histogram(all_data, fog_name):
     plt.title("Local executions according to user priority")
     plt.xlabel("User priority")
     plt.ylabel("Local executions")
-    _finalize_chart("local_executions.png")
+    _finalize_chart("local_executions_{}.png".format(fog_name))
 
 
 def _plot_stacked_offloading_local_executions(all_data, fog_name):
@@ -132,7 +132,7 @@ def _plot_stacked_offloading_local_executions(all_data, fog_name):
     plt.xlabel("User priority")
     plt.ylabel("Execution operations")
     plt.legend(loc="lower right")
-    _finalize_chart("execution_operations.png")
+    _finalize_chart("execution_operations_{}.png".format(fog_name))
 
 
 def _plot_throughput(all_data):
@@ -268,4 +268,4 @@ def _plot_offloading_reasons(all_data, fog_name):
     plt.xlabel("User priority")
     plt.ylabel("Offloading operations")
     plt.legend(loc="upper right")
-    _finalize_chart("offloading_reasons.png")
+    _finalize_chart("offloading_reasons_{}.png".format(fog_name))

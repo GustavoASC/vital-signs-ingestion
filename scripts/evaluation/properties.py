@@ -1,6 +1,8 @@
 import aws
+import logging
 
 def update_properties(fog_nodes, cloud_api_adapter_url):
+    logging.info("Generating nodes-mappings.properties with nodes configuration...")
 
     relationship = {
         "fog_node_a": "fog_node_e",
@@ -27,6 +29,8 @@ def update_properties(fog_nodes, cloud_api_adapter_url):
     for current_line in lines:
         single_string = single_string + "\n" + current_line
 
+    logging.info("Mapping has the following content:")
+    logging.info(single_string)
 
     aws.upload_public_file_to_s3_as_bytes(
         file_bytes = single_string.encode('utf-8'),

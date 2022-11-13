@@ -27,19 +27,22 @@ def _get_backup_dir(round):
 
 
 def _update_thresholds_for_virtual_machine(
-    cpu_interval, warning_threshold, critical_threshold, node_public_ip
+    cpu_interval, warning_threshold, critical_threshold, node_name, node_public_ip
 ):
     _update_cpu_interval(cpu_interval, node_public_ip)
     _authenticate_openfaas(node_public_ip)
     _deploy_service_executor_openfaas(
         warning_threshold, critical_threshold, node_public_ip
     )
+    _deploy_topology_mapping_with_node_name(node_name, node_public_ip)
 
 
-def _deploy_service_executor_openfaas(warning_threshold, critical_threshold, fog_node):
+def _deploy_service_executor_openfaas(
+    warning_threshold, critical_threshold, node_public_ip
+):
     logging.info("\n\n")
     logging.info(
-        "Re-deploying service-executor module on remote fog nod with {} warning threshold and {} critical threshold...".format(
+        "Re-deploying service-executor module on remote fog node with {} warning threshold and {} critical threshold...".format(
             warning_threshold, critical_threshold
         )
     )
@@ -47,7 +50,7 @@ def _deploy_service_executor_openfaas(warning_threshold, critical_threshold, fog
         [
             "faas-cli",
             "--gateway",
-            fog_node + ":8080",
+            node_public_ip + ":8080",
             "deploy",
             "-f",
             "service-executor.yml",
@@ -55,6 +58,28 @@ def _deploy_service_executor_openfaas(warning_threshold, critical_threshold, fog
             "THRESHOLD_CRITICAL_CPU_USAGE={}".format(critical_threshold),
             "-e",
             "THRESHOLD_WARNING_CPU_USAGE={}".format(warning_threshold),
+        ],
+        cwd="./functions",
+    )
+
+
+def _deploy_topology_mapping_with_node_name(node_name, node_public_ip):
+    logging.info("\n\n")
+    logging.info(
+        "Re-deploying topology-mapping module on remote fog node with given name {}...".format(
+            node_name
+        )
+    )
+    subprocess.call(
+        [
+            "faas-cli",
+            "--gateway",
+            node_public_ip + ":8080",
+            "deploy",
+            "-f",
+            "topology-mapping.yml",
+            "-e",
+            "ALIAS_CURRENT_MACHINE={}".format(node_name),
         ],
         cwd="./functions",
     )
@@ -318,15 +343,18 @@ if __name__ == "__main__":
             all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
             all_edge_nodes = aws.locate_vm_data_with_name("edge_node_*")
 
-            properties.update_properties(all_fog_nodes, "https://x7fusq6sruwliycun2bdnfbx2e0iobzz.lambda-url.eu-west-2.on.aws/")
+            properties.update_properties(
+                fog_nodes=all_fog_nodes,
+                cloud_api_adapter_url="https://x7fusq6sruwliycun2bdnfbx2e0iobzz.lambda-url.eu-west-2.on.aws/",
+            )
 
             for fog_node in all_fog_nodes:
-                node_public_ip = fog_node["public_ip"]
                 _update_thresholds_for_virtual_machine(
                     settings["cpu_interval"],
                     settings["warning_threshold"],
                     settings["critical_threshold"],
-                    node_public_ip,
+                    fog_node["name"],
+                    fog_node["public_ip"],
                 )
 
             for fog_node in all_fog_nodes:

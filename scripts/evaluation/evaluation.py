@@ -11,6 +11,7 @@ import plot
 import assertions
 import metrics
 import warm
+import properties
 from io import StringIO
 
 JMETER_ELAPSED = "elapsed"
@@ -316,6 +317,8 @@ if __name__ == "__main__":
 
             all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
             all_edge_nodes = aws.locate_vm_data_with_name("edge_node_*")
+
+            properties.update_properties(all_fog_nodes, "https://x7fusq6sruwliycun2bdnfbx2e0iobzz.lambda-url.eu-west-2.on.aws/")
 
             for fog_node in all_fog_nodes:
                 node_public_ip = fog_node["public_ip"]

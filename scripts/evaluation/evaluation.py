@@ -21,9 +21,11 @@ JMETER_TIMESTAMP = "timeStamp"
 http = urllib3.PoolManager()
 
 
-def _get_backup_dir(round):
+def _get_results_dir(cpu_interval, warning_threshold, critical_threshold):
     datetime = dt.datetime.today().strftime("%Y-%m-%d-%H:%M:%S")
-    return "./round-{}/backup-{}".format(round, datetime)
+    return "./results/cpu_interval_{}/warning_{}/critical_{}/{}".format(
+        cpu_interval, warning_threshold, critical_threshold, datetime
+    )
 
 
 def _update_thresholds_for_virtual_machine(
@@ -260,8 +262,8 @@ def _run_test_scenario(test_file):
 
     response_dataset = _invoke_jmeter_test(test_file)
     all_data = _analyze_dataset(response_dataset)
-    _save_backup(response_dataset, backup_dir, "jmeter-results.csv")
-    _save_backup(all_data, backup_dir, "analyzed-dataset.json")
+    _save_result(response_dataset, results_dir, "jmeter-results.csv")
+    _save_result(all_data, results_dir, "analyzed-dataset.json")
 
     cpu_usage = {}
     for fog_node in all_fog_nodes:
@@ -269,15 +271,15 @@ def _run_test_scenario(test_file):
         node_public_ip = fog_node["public_ip"]
         cpu_usage[node_name] = metrics.collect_cpu_usage(node_public_ip)
 
-    _save_backup(cpu_usage, backup_dir, "cpu-usage.json")
+    _save_result(cpu_usage, results_dir, "cpu-usage.json")
     assertions.make_assertions(cpu_usage, all_data)
 
     summary.print_summary(all_data)
-    plot.plot_all_charts(backup_dir, cpu_usage, all_data)
+    plot.plot_all_charts(results_dir, cpu_usage, all_data)
 
 
-def _save_backup(data, backup_dir, filename):
-    with open(backup_dir + "/" + filename, "w") as f:
+def _save_result(data, result_dir, filename):
+    with open(result_dir + "/" + filename, "w") as f:
         f.write(str(data))
 
 
@@ -315,50 +317,54 @@ if __name__ == "__main__":
 
     load_dotenv(_wrap_dir(".env"))
 
-    warning_thresholds = [30, 35, 40, 45, 50]
-    critical_thresholds = [70, 75, 80, 85, 90]
+    cpu_interval = [0.5, 1, 2]
+    warning_thresholds = [40, 45, 50, 55, 60, 65, 70, 75]
+    critical_thresholds = [85, 90, 95, 99]
 
-    for current_warning_threshold in warning_thresholds:
-        for current_critical_threshold in critical_thresholds:
+    for current_cpu_interval in cpu_interval:
+        for current_warning_threshold in warning_thresholds:
+            for current_critical_threshold in critical_thresholds:
 
-            settings = {
-                "cpu_interval": 2,
-                "warning_threshold": current_warning_threshold,
-                "critical_threshold": current_critical_threshold,
-            }
+                settings = {
+                    "cpu_interval": current_cpu_interval,
+                    "warning_threshold": current_warning_threshold,
+                    "critical_threshold": current_critical_threshold,
+                }
 
-            backup_dir = _get_backup_dir(
-                "cpu_interval_2_fog_a_connected_to_fog_c_connected_to_cloud"
-            )
-            os.makedirs(backup_dir)
-
-            logging.basicConfig(
-                filename="{}/log.txt".format(backup_dir),
-                force=True,
-                level=logging.INFO,
-                format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
-            )
-
-            all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
-            all_edge_nodes = aws.locate_vm_data_with_name("edge_node_*")
-
-            properties.update_properties(
-                fog_nodes=all_fog_nodes,
-                cloud_api_adapter_url="https://x7fusq6sruwliycun2bdnfbx2e0iobzz.lambda-url.eu-west-2.on.aws/",
-            )
-
-            for fog_node in all_fog_nodes:
-                _update_thresholds_for_virtual_machine(
+                results_dir = _get_results_dir(
                     settings["cpu_interval"],
                     settings["warning_threshold"],
                     settings["critical_threshold"],
-                    fog_node["name"],
-                    fog_node["public_ip"],
+                )
+                os.makedirs(results_dir)
+
+                logging.basicConfig(
+                    filename="{}/log.txt".format(results_dir),
+                    force=True,
+                    level=logging.INFO,
+                    format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
                 )
 
-            for fog_node in all_fog_nodes:
-                node_public_ip = fog_node["public_ip"]
-                warm.warmup_functions(node_public_ip)
+                all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
+                all_edge_nodes = aws.locate_vm_data_with_name("edge_node_*")
 
-            _run_test_scenario(test_file="scenario-1.jmx")
+                properties.update_properties(
+                    fog_nodes=all_fog_nodes,
+                    cloud_api_adapter_url="https://x7fusq6sruwliycun2bdnfbx2e0iobzz.lambda-url.eu-west-2.on.aws/",
+                )
+
+                for fog_node in all_fog_nodes:
+                    _update_thresholds_for_virtual_machine(
+                        settings["cpu_interval"],
+                        settings["warning_threshold"],
+                        settings["critical_threshold"],
+                        fog_node["name"],
+                        fog_node["public_ip"],
+                    )
+
+                for fog_node in all_fog_nodes:
+                    node_public_ip = fog_node["public_ip"]
+                    warm.warmup_functions(node_public_ip)
+
+                _run_test_scenario(test_file="scenario-1.jmx")

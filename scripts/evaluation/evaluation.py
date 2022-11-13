@@ -88,7 +88,7 @@ def _deploy_topology_mapping_with_node_name(node_name, node_public_ip):
 
 
 def _authenticate_openfaas(fog_node):
-    logging.info("Authenticating on remote OpenFaaS running on the fog node...\n\n")
+    logging.info("Authenticating on remote OpenFaaS running on the fog node {}...\n\n".format(fog_node))
     subprocess.call(
         [
             "faas-cli",
@@ -291,6 +291,8 @@ def _invoke_jmeter_test(test_file):
 
     logging.info("\n\n")
     logging.info("Invoking JMeter on remote edge node...")
+    logging.info("Edge node public IP: {}".format(all_edge_nodes[0]["public_ip"]))
+    logging.info("Fog node private IP: {}".format(all_fog_nodes[0]["private_ip"]))
 
     r = http.request(
         "POST",

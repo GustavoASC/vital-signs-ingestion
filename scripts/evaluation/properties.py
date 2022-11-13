@@ -5,13 +5,9 @@ def update_properties(fog_nodes, cloud_api_adapter_url):
     logging.info("Generating nodes-mappings.properties with nodes configuration...")
 
     relationship = {
-        "fog_node_a": "fog_node_e",
-        "fog_node_b": "fog_node_e",
-        "fog_node_c": "fog_node_f",
-        "fog_node_d": "fog_node_f",
-        "fog_node_e": "fog_node_g",
-        "fog_node_f": "fog_node_g",
-        "fog_node_g": "cloud_api_adapter"
+        "fog_node_a": "fog_node_b",
+        "fog_node_b": "fog_node_c",
+        "fog_node_c": "cloud_api_adapter",
     }
 
     lines = []
@@ -21,7 +17,8 @@ def update_properties(fog_nodes, cloud_api_adapter_url):
     for current_fog_node in fog_nodes:
         name = current_fog_node["name"]
         public_ip = current_fog_node["public_ip"]
-        lines.append("ip_address.{}={}".format(name, public_ip))
+        ip_with_protocol_and_port = "http://{}:8080".format(public_ip)
+        lines.append("ip_address.{}={}".format(name, ip_with_protocol_and_port))
 
     lines.append("ip_address.cloud_api_adapter={}".format(cloud_api_adapter_url))
 

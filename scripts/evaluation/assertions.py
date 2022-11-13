@@ -1,6 +1,6 @@
 import logging
 
-EXECUTIONS_PER_THREAD = 100
+EXECUTIONS_PER_THREAD = 300
 
 
 def make_assertions(cpu_usage, all_data):

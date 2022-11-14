@@ -20,11 +20,12 @@ def locate_vm_data_with_name(name_mask):
     )
     for r in response["Reservations"]:
         for i in r["Instances"]:
-            current_vm_info = {}
-            current_vm_info["name"] = _get_name_tag_value(i["Tags"])
-            current_vm_info["public_ip"] = i["PublicDnsName"]
-            current_vm_info["private_ip"] = i["PrivateDnsName"]
-            all_vms.append(current_vm_info)
+            if len(i["PublicDnsName"]) > 0:
+                current_vm_info = {}
+                current_vm_info["name"] = _get_name_tag_value(i["Tags"])
+                current_vm_info["public_ip"] = i["PublicDnsName"]
+                current_vm_info["private_ip"] = i["PrivateDnsName"]
+                all_vms.append(current_vm_info)
 
     logging.info(
         "Running VMs for nodes with name mask {}: {}".format(name_mask, all_vms)

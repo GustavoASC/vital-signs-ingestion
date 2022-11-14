@@ -60,7 +60,7 @@ def _plot_chart_cpu_usage(machine_name, cpu_usage):
     plt.title("CPU Usage during tests for machine {}".format(machine_name))
     plt.xlabel("Timestamp")
     plt.ylabel("CPU Usage")
-    _finalize_chart("cpu_usage.png")
+    _finalize_chart("cpu_usage_{}.png".format(machine_name))
 
 
 def _plot_chart_response_time(all_data):

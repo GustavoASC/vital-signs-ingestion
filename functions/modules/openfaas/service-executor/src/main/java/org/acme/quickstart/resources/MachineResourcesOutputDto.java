@@ -1,5 +1,6 @@
 package org.acme.quickstart.resources;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -9,14 +10,14 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 @RegisterForReflection
 public class MachineResourcesOutputDto {
 
-    private final Double cpu;
+    private final BigDecimal cpu;
 
     @JsonCreator
-    public MachineResourcesOutputDto(Double cpu) {
+    public MachineResourcesOutputDto(BigDecimal cpu) {
         this.cpu = cpu;
     }
 
-    public Double getCpu() {
+    public BigDecimal getCpu() {
         return this.cpu;
     }
 

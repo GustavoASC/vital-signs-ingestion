@@ -1,5 +1,7 @@
 package org.acme.quickstart.resources;
 
+import java.math.BigDecimal;
+
 import javax.enterprise.context.ApplicationScoped;
 
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -14,8 +16,8 @@ public class ResourcesLocatorImpl implements ResourcesLocator {
     }
     
     @Override
-    public int getUsedCpuPercentage() {
-        return machineResourcesClient.getMachineResources().getCpu().intValue();
+    public BigDecimal getUsedCpuPercentage() {
+        return machineResourcesClient.getMachineResources().getCpu();
     }
 
 }

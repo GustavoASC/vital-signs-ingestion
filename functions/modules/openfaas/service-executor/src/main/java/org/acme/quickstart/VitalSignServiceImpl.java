@@ -100,16 +100,16 @@ public class VitalSignServiceImpl implements VitalSignService {
     }
 
     private boolean shouldOffloadToParent(Metrics metrics, int ranking, String fn) {
-        int usedCpu = resourcesLocator.getUsedCpuPercentage();
+        BigDecimal usedCpu = resourcesLocator.getUsedCpuPercentage();
         metrics.cpuCollectionTimestamp = clock.instant().toEpochMilli();
-        metrics.usedCpu = BigDecimal.valueOf(usedCpu);
+        metrics.usedCpu = usedCpu;
         
-        if (usedCpu > criticalCpuUsage) {
+        if (usedCpu.doubleValue() > criticalCpuUsage) {
             metrics.exceededCriticalThreshold = true;
             return true;
         }
 
-        if (usedCpu > warningCpuUsage) {
+        if (usedCpu.doubleValue() > warningCpuUsage) {
             try {
                 metrics.triggeredHeuristicByRanking = true;
                 metrics.resultForHeuristicByRanking = offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);

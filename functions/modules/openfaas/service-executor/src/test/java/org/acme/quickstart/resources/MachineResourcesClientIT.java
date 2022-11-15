@@ -9,6 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -54,7 +55,7 @@ public class MachineResourcesClientIT {
                     .willReturn(okJson(jsonFromResource("output-machine-resources-with-cpu.json"))));
 
         assertThat(machineResourcesClient.getMachineResources())
-            .isEqualTo(new MachineResourcesOutputDto(27.8));
+            .isEqualTo(new MachineResourcesOutputDto(new BigDecimal("27.8")));
     }
 
     private String jsonFromResource(String resourcePath) throws IOException {

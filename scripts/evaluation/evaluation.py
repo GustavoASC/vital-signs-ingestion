@@ -270,8 +270,8 @@ def _run_test_scenario(test_file):
         node_name = fog_node["name"]
         node_public_ip = fog_node["public_ip"]
         cpu_usage[node_name] = metrics.collect_cpu_usage(node_public_ip)
+        _save_result(cpu_usage[node_name], results_dir, "cpu-usage_{}.json".format(node_name))
 
-    _save_result(cpu_usage, results_dir, "cpu-usage.json")
     assertions.make_assertions(cpu_usage, all_data)
 
     summary.print_summary(all_data)

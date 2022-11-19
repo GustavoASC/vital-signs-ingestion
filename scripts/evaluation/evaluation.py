@@ -13,6 +13,7 @@ import metrics
 import warm
 import properties
 from io import StringIO
+import time
 
 JMETER_ELAPSED = "elapsed"
 JMETER_THREAD_NAME = "threadName"
@@ -21,17 +22,17 @@ JMETER_TIMESTAMP = "timeStamp"
 http = urllib3.PoolManager()
 
 
-def _get_results_dir(cpu_interval, warning_threshold, critical_threshold):
+def _get_results_dir(threads_cpu_collection, cpu_interval, warning_threshold, critical_threshold):
     datetime = dt.datetime.today().strftime("%Y-%m-%d-%H:%M:%S")
-    return "./results/cpu_interval_{}/warning_{}/critical_{}/{}".format(
-        cpu_interval, warning_threshold, critical_threshold, datetime
+    return "./results/threads_cpu_{}/cpu_interval_{}/warning_{}/critical_{}/{}".format(
+        threads_cpu_collection, cpu_interval, warning_threshold, critical_threshold, datetime
     )
 
 
 def _update_thresholds_for_virtual_machine(
-    cpu_interval, warning_threshold, critical_threshold, node_name, node_public_ip
+    threads_cpu_collection, cpu_interval, warning_threshold, critical_threshold, node_name, node_public_ip
 ):
-    _update_cpu_interval(cpu_interval, node_public_ip)
+    _update_cpu_interval(threads_cpu_collection, cpu_interval, node_public_ip)
     _authenticate_openfaas(node_public_ip)
     _deploy_service_executor_openfaas(
         warning_threshold, critical_threshold, node_public_ip
@@ -107,16 +108,19 @@ def _check_error(response):
         exit(1)
 
 
-def _update_cpu_interval(cpu_interval, fog_node):
-    logging.info("Updating the CPU collection interval to {}...".format(cpu_interval))
+def _update_cpu_interval(threads_cpu_collection, cpu_interval, fog_node):
+    logging.info("Updating the CPU collection interval to {} seconds with {} threads...".format(cpu_interval, threads_cpu_collection))
     _check_error(
         http.request(
             "POST",
             "http://{}:8099/machine-resources".format(fog_node),
             headers={"Content-Type": "application/json"},
-            body=json.dumps({"update_interval": cpu_interval}).encode("utf-8"),
+            body=json.dumps({"update_interval": cpu_interval, "total_threads": threads_cpu_collection}).encode("utf-8"),
         )
     )
+
+    logging.info("Waiting for a while until the CPU collection threads are stable...")
+    time.sleep(10)
 
 
 # The user priority configured on JMeter is always the same as the group number
@@ -319,54 +323,60 @@ if __name__ == "__main__":
 
     load_dotenv(_wrap_dir(".env"))
 
-    cpu_interval = [0.5, 1, 2]
-    warning_thresholds = [40, 45, 50, 55, 60, 65, 70, 75]
-    critical_thresholds = [85, 90, 95, 99]
+    threads_cpu_collection = [1]
+    cpu_interval = [1]
+    warning_thresholds = [75]
+    critical_thresholds = [90]
+    
+    for i in range(4):
+        for current_thread_cpu_collection in threads_cpu_collection:
+            for current_cpu_interval in cpu_interval:
+                for current_warning_threshold in warning_thresholds:
+                    for current_critical_threshold in critical_thresholds:
 
-    for current_cpu_interval in cpu_interval:
-        for current_warning_threshold in warning_thresholds:
-            for current_critical_threshold in critical_thresholds:
+                        settings = {
+                            "threads_cpu_collection": current_thread_cpu_collection,
+                            "cpu_interval": current_cpu_interval,
+                            "warning_threshold": current_warning_threshold,
+                            "critical_threshold": current_critical_threshold,
+                        }
 
-                settings = {
-                    "cpu_interval": current_cpu_interval,
-                    "warning_threshold": current_warning_threshold,
-                    "critical_threshold": current_critical_threshold,
-                }
+                        results_dir = _get_results_dir(
+                            settings["threads_cpu_collection"],
+                            settings["cpu_interval"],
+                            settings["warning_threshold"],
+                            settings["critical_threshold"],
+                        )
+                        os.makedirs(results_dir)
 
-                results_dir = _get_results_dir(
-                    settings["cpu_interval"],
-                    settings["warning_threshold"],
-                    settings["critical_threshold"],
-                )
-                os.makedirs(results_dir)
+                        logging.basicConfig(
+                            filename="{}/log.txt".format(results_dir),
+                            force=True,
+                            level=logging.INFO,
+                            format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
+                            datefmt="%Y-%m-%d %H:%M:%S",
+                        )
 
-                logging.basicConfig(
-                    filename="{}/log.txt".format(results_dir),
-                    force=True,
-                    level=logging.INFO,
-                    format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S",
-                )
+                        all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
+                        all_edge_nodes = aws.locate_vm_data_with_name("edge_node_*")
 
-                all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
-                all_edge_nodes = aws.locate_vm_data_with_name("edge_node_*")
+                        properties.update_properties(
+                            fog_nodes=all_fog_nodes,
+                            cloud_api_adapter_url="https://x7fusq6sruwliycun2bdnfbx2e0iobzz.lambda-url.eu-west-2.on.aws/",
+                        )
 
-                properties.update_properties(
-                    fog_nodes=all_fog_nodes,
-                    cloud_api_adapter_url="https://x7fusq6sruwliycun2bdnfbx2e0iobzz.lambda-url.eu-west-2.on.aws/",
-                )
+                        for fog_node in all_fog_nodes:
+                            _update_thresholds_for_virtual_machine(
+                                settings["threads_cpu_collection"],
+                                settings["cpu_interval"],
+                                settings["warning_threshold"],
+                                settings["critical_threshold"],
+                                fog_node["name"],
+                                fog_node["public_ip"],
+                            )
 
-                for fog_node in all_fog_nodes:
-                    _update_thresholds_for_virtual_machine(
-                        settings["cpu_interval"],
-                        settings["warning_threshold"],
-                        settings["critical_threshold"],
-                        fog_node["name"],
-                        fog_node["public_ip"],
-                    )
+                        for fog_node in all_fog_nodes:
+                            node_public_ip = fog_node["public_ip"]
+                            warm.warmup_functions(node_public_ip)
 
-                for fog_node in all_fog_nodes:
-                    node_public_ip = fog_node["public_ip"]
-                    warm.warmup_functions(node_public_ip)
-
-                _run_test_scenario(test_file="scenario-1.jmx")
+                        _run_test_scenario(test_file="scenario-1.jmx")

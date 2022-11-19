@@ -62,7 +62,7 @@ def _initialize_threads():
 
     print("Initiating schedule...")
     for i in range(total_threads):
-        schedule.every(update_interval + 0.2).seconds.do(job_thread)
+        schedule.every(update_interval).seconds.do(job_thread)
         time.sleep(thread_start_offset)
 
 

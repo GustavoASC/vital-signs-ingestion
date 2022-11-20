@@ -49,13 +49,23 @@ public class MachineResourcesClientIT {
     }
 
     @Test
-    public void shouldReturnMachineResources() throws Throwable {
+    public void shouldReturnMachineResourcesWithoutLastObservationField() throws Throwable {
         stubFor(
             get("/machine-resources")
                     .willReturn(okJson(jsonFromResource("output-machine-resources-with-cpu.json"))));
 
         assertThat(machineResourcesClient.getMachineResources())
-            .isEqualTo(new MachineResourcesOutputDto(new BigDecimal("27.8")));
+            .isEqualTo(new MachineResourcesOutputDto(new BigDecimal("27.8"), null));
+    }
+
+    @Test
+    public void shouldReturnMachineResourcesWithLastObservationField() throws Throwable {
+        stubFor(
+            get("/machine-resources")
+                    .willReturn(okJson(jsonFromResource("output-machine-resources-with-cpu-and-last-observation.json"))));
+
+        assertThat(machineResourcesClient.getMachineResources())
+            .isEqualTo(new MachineResourcesOutputDto(new BigDecimal("18.090625000000003"), new BigDecimal("19.3")));
     }
 
     private String jsonFromResource(String resourcePath) throws IOException {

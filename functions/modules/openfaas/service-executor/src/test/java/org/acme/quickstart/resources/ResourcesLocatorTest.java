@@ -24,7 +24,7 @@ public class ResourcesLocatorTest {
     public void shouldRetrieveCpuWithoutBeingUpdated() {
         
         when(machineResourcesClient.getMachineResources())
-            .thenReturn(new MachineResourcesOutputDto(new BigDecimal("14.6")));
+            .thenReturn(new MachineResourcesOutputDto(new BigDecimal("14.6"), null));
 
         assertThat(resourcesLocator.getUsedCpuPercentage())
                 .isEqualTo(new BigDecimal("14.6"));

@@ -11,20 +11,27 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 public class MachineResourcesOutputDto {
 
     private final BigDecimal cpu;
+    private final BigDecimal lastObservation;
 
     @JsonCreator
-    public MachineResourcesOutputDto(BigDecimal cpu) {
+    public MachineResourcesOutputDto(BigDecimal cpu, BigDecimal lastObservation) {
         this.cpu = cpu;
+        this.lastObservation = lastObservation;
     }
 
     public BigDecimal getCpu() {
         return this.cpu;
     }
 
+    public BigDecimal getLastObservation() {
+        return this.lastObservation;
+    }
+
     @Override
     public String toString() {
         return "{" +
                 " cpu='" + getCpu() + "'" +
+                ", lastObservation='" + getLastObservation() + "'" +
                 "}";
     }
 
@@ -36,12 +43,13 @@ public class MachineResourcesOutputDto {
             return false;
         }
         MachineResourcesOutputDto machineResourcesOutputDto = (MachineResourcesOutputDto) o;
-        return Objects.equals(cpu, machineResourcesOutputDto.cpu);
+        return Objects.equals(cpu, machineResourcesOutputDto.cpu)
+                && Objects.equals(lastObservation, machineResourcesOutputDto.lastObservation);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(cpu);
+        return Objects.hash(cpu, lastObservation);
     }
 
 }

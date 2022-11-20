@@ -11,6 +11,7 @@ public class Metrics {
     public int userPriority;
     public int ranking;
     public BigDecimal usedCpu;
+    public BigDecimal lastCpuObservation;
     public long cpuCollectionTimestamp;
     public String function;
     public boolean offloading;
@@ -28,6 +29,7 @@ public class Metrics {
                 " userPriority='" + userPriority + "'" +
                 ", ranking='" + ranking + "'" +
                 ", usedCpu='" + usedCpu + "'" +
+                ", lastCpuObservation='" + lastCpuObservation + "'" +
                 ", cpuCollectionTimestamp='" + cpuCollectionTimestamp + "'" +
                 ", function='" + function + "'" +
                 ", offloading='" + offloading + "'" +
@@ -50,7 +52,9 @@ public class Metrics {
         }
         Metrics metrics = (Metrics) o;
         return userPriority == metrics.userPriority && ranking == metrics.ranking
-                && Objects.equals(usedCpu, metrics.usedCpu) && cpuCollectionTimestamp == metrics.cpuCollectionTimestamp
+                && Objects.equals(usedCpu, metrics.usedCpu)
+                && Objects.equals(lastCpuObservation, metrics.lastCpuObservation)
+                && cpuCollectionTimestamp == metrics.cpuCollectionTimestamp
                 && Objects.equals(function, metrics.function) && offloading == metrics.offloading
                 && runningLocally == metrics.runningLocally
                 && exceededCriticalThreshold == metrics.exceededCriticalThreshold
@@ -63,9 +67,10 @@ public class Metrics {
 
     @Override
     public int hashCode() {
-        return Objects.hash(userPriority, ranking, usedCpu, cpuCollectionTimestamp, function, offloading,
-                runningLocally, exceededCriticalThreshold, triggeredHeuristicByRanking, resultForHeuristicByRanking,
-                triggeredHeuristicByDuration, resultForHeuristicByDuration, assumingFallbackForHeuristics);
+        return Objects.hash(userPriority, ranking, usedCpu, lastCpuObservation, cpuCollectionTimestamp, function,
+                offloading, runningLocally, exceededCriticalThreshold, triggeredHeuristicByRanking,
+                resultForHeuristicByRanking, triggeredHeuristicByDuration, resultForHeuristicByDuration,
+                assumingFallbackForHeuristics);
     }
 
 }

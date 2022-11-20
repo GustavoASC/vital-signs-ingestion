@@ -1,6 +1,5 @@
 package org.acme.quickstart;
 
-import java.math.BigDecimal;
 import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +14,7 @@ import org.acme.quickstart.offloading.duration.OffloadingHeuristicByDuration;
 import org.acme.quickstart.offloading.ranking.OffloadingHeuristicByRanking;
 import org.acme.quickstart.offloading.shared.CouldNotDetermineException;
 import org.acme.quickstart.resources.ResourcesLocator;
+import org.acme.quickstart.resources.ResourcesLocatorResponse;
 import org.acme.quickstart.serverless.ServerlessFunctionClient;
 import org.acme.quickstart.serverless.ServiceExecutorClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -100,16 +100,17 @@ public class VitalSignServiceImpl implements VitalSignService {
     }
 
     private boolean shouldOffloadToParent(Metrics metrics, int ranking, String fn) {
-        BigDecimal usedCpu = resourcesLocator.getUsedCpuPercentage();
+        ResourcesLocatorResponse response = resourcesLocator.getUsedCpuPercentage();
         metrics.cpuCollectionTimestamp = clock.instant().toEpochMilli();
-        metrics.usedCpu = usedCpu;
+        metrics.usedCpu = response.getUsedCpu();
+        metrics.lastCpuObservation = response.getLastCpuObservation();
         
-        if (usedCpu.doubleValue() > criticalCpuUsage) {
+        if (metrics.usedCpu.doubleValue() > criticalCpuUsage) {
             metrics.exceededCriticalThreshold = true;
             return true;
         }
 
-        if (usedCpu.doubleValue() > warningCpuUsage) {
+        if (metrics.usedCpu.doubleValue() > warningCpuUsage) {
             try {
                 metrics.triggeredHeuristicByRanking = true;
                 metrics.resultForHeuristicByRanking = offloadingHeuristicByRanking.shouldOffloadVitalSigns(ranking);

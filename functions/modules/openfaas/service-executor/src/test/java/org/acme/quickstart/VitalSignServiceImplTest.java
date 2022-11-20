@@ -20,6 +20,7 @@ import org.acme.quickstart.offloading.duration.OffloadingHeuristicByDuration;
 import org.acme.quickstart.offloading.ranking.OffloadingHeuristicByRanking;
 import org.acme.quickstart.offloading.shared.CouldNotDetermineException;
 import org.acme.quickstart.resources.ResourcesLocator;
+import org.acme.quickstart.resources.ResourcesLocatorResponse;
 import org.acme.quickstart.serverless.ServerlessFunctionClient;
 import org.acme.quickstart.serverless.ServiceExecutorClient;
 import org.junit.jupiter.api.AfterEach;
@@ -87,14 +88,14 @@ public class VitalSignServiceImplTest {
         }
 
         @Test
-        public void shouldGenerateMetrics() {
+        public void shouldGenerateMetricsWithouLastCpuObservation() {
 
                 when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
                                 .thenReturn(13);
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
                                 .thenReturn(17);
                 when(resourcesLocator.getUsedCpuPercentage())
-                                .thenReturn(new BigDecimal("97.75"));
+                                .thenReturn(new ResourcesLocatorResponse(new BigDecimal("97.75"), null));
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
@@ -113,13 +114,40 @@ public class VitalSignServiceImplTest {
         }
 
         @Test
+        public void shouldGenerateMetricsWithLastCpuObservation() {
+
+                when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                                .thenReturn(13);
+                when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                                .thenReturn(17);
+                when(resourcesLocator.getUsedCpuPercentage())
+                                .thenReturn(new ResourcesLocatorResponse(new BigDecimal("97.75"), new BigDecimal("87.3")));
+
+                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+
+                Metrics metrics;
+                metrics = new Metrics();
+                metrics.userPriority = USER_PRIORITY;
+                metrics.ranking = 13;
+                metrics.usedCpu = BigDecimal.valueOf(97.75);
+                metrics.lastCpuObservation = BigDecimal.valueOf(87.3);
+                metrics.cpuCollectionTimestamp = 1663527788128l;
+                metrics.function = "body-temperature-monitor";
+                metrics.offloading = true;
+                metrics.exceededCriticalThreshold = true;
+
+                verify(metricsClient, times(1))
+                    .sendMetrics(metrics);
+        }
+
+        @Test
         void shouldOffloadConsideringDecimals() {
                 when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
                                 .thenReturn(13);
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
                                 .thenReturn(14);
                 when(resourcesLocator.getUsedCpuPercentage())
-                                .thenReturn(new BigDecimal("90.01"));
+                                .thenReturn(new ResourcesLocatorResponse(new BigDecimal("90.01"), null));
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
@@ -139,7 +167,7 @@ public class VitalSignServiceImplTest {
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
                                 .thenReturn(17);
                 when(resourcesLocator.getUsedCpuPercentage())
-                                .thenReturn(new BigDecimal("74"));
+                                .thenReturn(new ResourcesLocatorResponse(new BigDecimal("74"), null));
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
@@ -175,7 +203,7 @@ public class VitalSignServiceImplTest {
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
                                 .thenReturn(14);
                 when(resourcesLocator.getUsedCpuPercentage())
-                                .thenReturn(new BigDecimal("91"));
+                                .thenReturn(new ResourcesLocatorResponse(new BigDecimal("91"), null));
 
                 vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
 
@@ -190,7 +218,7 @@ public class VitalSignServiceImplTest {
         @Test
         public void shouldTriggerOffloadingHeuristicOnAlertScenario() throws Throwable {
                 when(resourcesLocator.getUsedCpuPercentage())
-                                .thenReturn(new BigDecimal("80"));
+                                .thenReturn(new ResourcesLocatorResponse(new BigDecimal("80"), null));
                 when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
                                 .thenReturn(13);
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
@@ -217,7 +245,7 @@ public class VitalSignServiceImplTest {
         @Test
         public void shouldNotOffloadWhenHeuristicCannotDetermineOperation() throws Throwable {
                 when(resourcesLocator.getUsedCpuPercentage())
-                                .thenReturn(new BigDecimal("80"));
+                                .thenReturn(new ResourcesLocatorResponse(new BigDecimal("80"), null));
                 when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
                                 .thenReturn(13);
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
@@ -251,7 +279,7 @@ public class VitalSignServiceImplTest {
         @Test
         public void shouldNotOffloadAccordingToDurationHeuristic() throws Throwable {
                 when(resourcesLocator.getUsedCpuPercentage())
-                                .thenReturn(new BigDecimal("80"));
+                                .thenReturn(new ResourcesLocatorResponse(new BigDecimal("80"), null));
                 when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
                                 .thenReturn(13);
                 when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))

@@ -21,13 +21,23 @@ public class ResourcesLocatorTest {
     ResourcesLocatorImpl resourcesLocator;
 
     @Test
-    public void shouldRetrieveCpuWithoutBeingUpdated() {
+    public void shouldRetrieveCpuWithoutLastObservation() {
         
         when(machineResourcesClient.getMachineResources())
             .thenReturn(new MachineResourcesOutputDto(new BigDecimal("14.6"), null));
 
         assertThat(resourcesLocator.getUsedCpuPercentage())
-                .isEqualTo(new BigDecimal("14.6"));
+                .isEqualTo(new ResourcesLocatorResponse(new BigDecimal("14.6"), null));
+    }
+
+    @Test
+    public void shouldRetrieveCpuWithLastObservation() {
+        
+        when(machineResourcesClient.getMachineResources())
+            .thenReturn(new MachineResourcesOutputDto(new BigDecimal("18.090625000000003"), new BigDecimal("19.3")));
+
+        assertThat(resourcesLocator.getUsedCpuPercentage())
+                .isEqualTo(new ResourcesLocatorResponse(new BigDecimal("18.090625000000003"), new BigDecimal("19.3")));
     }
 
 }

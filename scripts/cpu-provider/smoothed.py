@@ -6,8 +6,7 @@ import json
 MAX_WINDOW = 6
 
 update_interval = 0.25
-observations = []
-cpu_percent = 0
+cpu_info = {}
 
 
 def aging(cpu_observations):
@@ -22,12 +21,21 @@ def aging(cpu_observations):
 
 class Serv(BaseHTTPRequestHandler):
     def do_GET(self):
-        global cpu_percent
+        global cpu_info
 
-        print("Current amount of cpu: " + str(cpu_percent))
+        print(
+            "Current amount of cpu (last observation): "
+            + str(cpu_info["last_observation"])
+        )
+        print("Current amount of cpu (smoothed): " + str(cpu_info["smoothed"]))
         print("Current amount of memory: " + str(psutil.virtual_memory()))
 
-        response_bytes = json.dumps({"cpu": cpu_percent}).encode("utf-8")
+        response_bytes = json.dumps(
+            {
+                "cpu": cpu_info["smoothed"],
+                "last_observation": cpu_info["last_observation"],
+            }
+        ).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
@@ -50,9 +58,9 @@ class Serv(BaseHTTPRequestHandler):
 
 def update_cpu_percent_loop():
     global update_interval
-    global observations
-    global cpu_percent
+    global cpu_info
 
+    observations = []
     while True:
         x = psutil.cpu_percent(update_interval)
         observations.append(x)
@@ -60,7 +68,10 @@ def update_cpu_percent_loop():
         if len(observations) > MAX_WINDOW:
             observations.pop(0)
 
-        cpu_percent = aging(observations)
+        cpu_info = {
+            "last_observation": x,
+            "smoothed": aging(observations)
+        }
 
 
 def start():

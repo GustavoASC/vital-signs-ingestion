@@ -1,0 +1,10 @@
+version: 1.0
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  heart-failure-predictor:
+    lang: python3-http-debian
+    handler: ./health-services/openfaas/heart-failure-predictor
+    image: gustavoasc/heart-failure-predictor:latest
+

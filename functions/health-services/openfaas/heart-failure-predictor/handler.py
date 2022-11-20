@@ -27,7 +27,15 @@ def get_heartbeat_historical_data():
 
 
 def alert(message):
-    return json.dumps({"send_notification": True, "message": message})
+    return _wrap_response({"send_notification": True, "message": message})
+
+def _wrap_response(body_dict):
+    return {
+        "statusCode": 200,
+        "headers": {"Content-type": "application/json"},
+        "body": json.dumps(body_dict),
+    }
+
 
 
 def handle(event, _context):
@@ -43,4 +51,4 @@ def handle(event, _context):
     if forecast_spo2 < MIN_SPO2_THRESHOLD and (forecast_heartbeat < MIN_HEARTBEAT_THRESHOLD or forecast_heartbeat > MAX_HEARTBEAT_THRESHOLD):
         return alert("Will possibly have heart failure")
     else:
-        return json.dumps({"send_notification": False})
+        return _wrap_response({"send_notification": False})

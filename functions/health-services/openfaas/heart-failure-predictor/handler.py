@@ -30,13 +30,12 @@ def alert(message):
     return json.dumps({"send_notification": True, "message": message})
 
 
-def handle(req, _context):
-    """Predicts if the person will have a heart failure in the next few minutes
-    Args:
-        req (str): request body
+def handle(event, _context):
+    """
+    Predicts if the person will have a heart failure in the next few minutes
     """
 
-    vital_sign = json.loads(req)
+    vital_sign = json.loads(event.body)
 
     forecast_spo2 = forecast(get_spo2_historical_data() + [vital_sign["spo2"]])
     forecast_heartbeat = forecast(get_heartbeat_historical_data() + [vital_sign["heartbeat"]])

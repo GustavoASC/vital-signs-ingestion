@@ -30,7 +30,7 @@ def alert(message):
     return json.dumps({"send_notification": True, "message": message})
 
 
-def handle(req):
+def handle(req, _context):
     """Predicts if the person will have a heart failure in the next few minutes
     Args:
         req (str): request body

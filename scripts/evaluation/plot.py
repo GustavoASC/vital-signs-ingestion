@@ -47,16 +47,19 @@ def _plot_chart_cpu_usage(machine_name, cpu_usage):
 
     all_datetimes = []
     all_cpus = []
+    all_last_observations = []
     for index in range(len(cpu_usage)):
         current_json = cpu_usage[index]
         all_cpus.append(current_json["cpu"])
+        all_last_observations.append(current_json["last_cpu_observation"])
         all_datetimes.append(
             dt.datetime.fromtimestamp(current_json["collection_timestamp"] / 1e3)
         )
 
-    all_datetimes, all_cpus = zip(*sorted(zip(all_datetimes, all_cpus)))
+    all_datetimes, all_cpus, all_last_observations = zip(*sorted(zip(all_datetimes, all_cpus, all_last_observations)))
 
-    plt.plot(all_datetimes, all_cpus)
+    plt.plot(all_datetimes, all_cpus, label = "Smoothed CPU")
+    plt.plot(all_datetimes, all_last_observations, label = "Last CPU observation", color = "moccasin", linestyle="--")
     plt.title("CPU Usage during tests for machine {}".format(machine_name))
     plt.xlabel("Timestamp")
     plt.ylabel("CPU Usage")

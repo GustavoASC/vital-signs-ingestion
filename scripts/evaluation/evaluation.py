@@ -22,10 +22,10 @@ JMETER_TIMESTAMP = "timeStamp"
 http = urllib3.PoolManager()
 
 
-def _get_results_dir(threads_cpu_collection, cpu_interval, warning_threshold, critical_threshold):
+def _get_results_dir(_threads_cpu_collection, cpu_interval, warning_threshold, critical_threshold):
     datetime = dt.datetime.today().strftime("%Y-%m-%d-%H:%M:%S")
-    return "./results/threads_cpu_{}/cpu_interval_{}/warning_{}/critical_{}/{}".format(
-        threads_cpu_collection, cpu_interval, warning_threshold, critical_threshold, datetime
+    return "./results/smoothed/cpu_interval_{}/warning_{}/critical_{}/{}".format(
+        cpu_interval, warning_threshold, critical_threshold, datetime
     )
 
 

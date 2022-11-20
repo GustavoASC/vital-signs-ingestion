@@ -18,6 +18,7 @@ class Serv(BaseHTTPRequestHandler):
             occurences.append(
                 {
                     "cpu": json_metric["used_cpu"],
+                    "last_cpu_observation": json_metric.get("last_cpu_observation"),
                     "collection_timestamp": json_metric["cpu_collection_timestamp"],
                 }
             )

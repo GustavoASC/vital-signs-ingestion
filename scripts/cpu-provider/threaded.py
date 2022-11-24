@@ -4,6 +4,7 @@ import psutil
 import json
 import time
 import schedule
+from socketserver import ThreadingMixIn
 
 update_interval = 5
 total_threads = 20
@@ -71,12 +72,16 @@ def _finalize_all_threads():
     schedule.clear()
 
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle requests in a separate thread."""
+
+
 def start():
     _initialize_threads()
 
     # Starts the HTTP server to listen for GET CPU requests
     print("Starting the HTTP server...")
-    httpd = HTTPServer(("", 8099), Serv)
+    httpd = ThreadedHTTPServer(("", 8099), Serv)
     Thread(target=httpd.serve_forever).start()
 
     while True:

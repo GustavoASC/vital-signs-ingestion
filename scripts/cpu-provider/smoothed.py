@@ -2,6 +2,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 import psutil
 import json
+from socketserver import ThreadingMixIn
 
 MAX_WINDOW = 6
 
@@ -74,12 +75,16 @@ def update_cpu_percent_loop():
         }
 
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle requests in a separate thread."""
+
+
 def start():
     thread = Thread(target=update_cpu_percent_loop)
     thread.start()
 
     print("Starting the HTTP server...")
-    httpd = HTTPServer(("", 8099), Serv)
+    httpd = ThreadedHTTPServer(("", 8099), Serv)
     httpd.serve_forever()
 
 

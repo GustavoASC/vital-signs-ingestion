@@ -1,6 +1,7 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import json
 import urllib.parse
+from socketserver import ThreadingMixIn
 
 metrics = []
 
@@ -123,7 +124,11 @@ class Serv(BaseHTTPRequestHandler):
         self.wfile.write(response_bytes)
 
 
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle requests in a separate thread."""
+
+
 if __name__ == "__main__":
 
-    httpd = HTTPServer(("", 9001), Serv)
+    httpd = ThreadedHTTPServer(("", 9001), Serv)
     httpd.serve_forever()

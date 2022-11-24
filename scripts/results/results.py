@@ -40,7 +40,7 @@ class Serv(BaseHTTPRequestHandler):
         id = self.path.split('/')[-1]
         
         current_update = json.loads(post_body)
-        existing_result = results.get(id)
+        existing_result = results[id]
 
         existing_result["end_timestamp"] = current_update["end_timestamp"]
 

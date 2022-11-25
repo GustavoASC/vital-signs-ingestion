@@ -1,5 +1,6 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from socketserver import ThreadingMixIn
+import datetime
 import json
 
 #
@@ -45,6 +46,7 @@ class Serv(BaseHTTPRequestHandler):
         existing_result = results[id]
 
         existing_result["end_timestamp"] = current_update["end_timestamp"]
+        existing_result["result_received_at"] = int(datetime.datetime.now().timestamp() * 1000)
 
         self.send_response(200)
         self.send_header("Content-type", "application/json")

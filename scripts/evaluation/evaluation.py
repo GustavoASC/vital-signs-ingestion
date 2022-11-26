@@ -14,10 +14,14 @@ import warm
 import properties
 from io import StringIO
 import time
+from threading import Thread
 
 JMETER_ELAPSED = "elapsed"
 JMETER_THREAD_NAME = "threadName"
 JMETER_TIMESTAMP = "timeStamp"
+
+EXPERIMENT_ITERATIONS = 1
+ASSERTION_ENABLED = False
 
 http = urllib3.PoolManager()
 
@@ -38,6 +42,7 @@ def _update_thresholds_for_virtual_machine(
         warning_threshold, critical_threshold, node_public_ip
     )
     _deploy_topology_mapping_with_node_name(node_name, node_public_ip)
+    _deploy_additional_functions(node_name, node_public_ip)
 
 
 def _deploy_service_executor_openfaas(
@@ -88,6 +93,30 @@ def _deploy_topology_mapping_with_node_name(node_name, node_public_ip):
     )
 
 
+def _deploy_additional_functions(node_name, node_public_ip):
+
+    extra_functions = ["ranking-offloading", "duration-offloading", "predictor", "body-temperature-monitor", "heart-failure-predictor"]
+    for fn_name in extra_functions:
+        logging.info("\n\n")
+        logging.info(
+            "Re-deploying {} module on remote fog node with given name {}...".format(
+                fn_name, node_name
+            )
+        )
+        subprocess.call(
+            [
+                "faas-cli",
+                "--gateway",
+                node_public_ip + ":8080",
+                "deploy",
+                "-f",
+                "{}.yml".format(fn_name),
+            ],
+            cwd="./functions",
+        )
+
+
+
 def _authenticate_openfaas(fog_node):
     logging.info("Authenticating on remote OpenFaaS running on the fog node {}...\n\n".format(fog_node))
     subprocess.call(
@@ -120,7 +149,7 @@ def _update_cpu_interval(threads_cpu_collection, cpu_interval, fog_node):
     )
 
     logging.info("Waiting for a while until the CPU collection threads are stable...")
-    time.sleep(10)
+    time.sleep(1)
 
 
 # The user priority configured on JMeter is always the same as the group number
@@ -276,7 +305,8 @@ def _run_test_scenario(test_file):
         cpu_usage[node_name] = metrics.collect_cpu_usage(node_public_ip)
         _save_result(cpu_usage[node_name], results_dir, "cpu-usage_{}.json".format(node_name))
 
-    assertions.make_assertions(cpu_usage, all_data)
+    if ASSERTION_ENABLED:
+        assertions.make_assertions(cpu_usage, all_data)
 
     summary.print_summary(all_data)
     plot.plot_all_charts(results_dir, cpu_usage, all_data)
@@ -290,25 +320,37 @@ def _save_result(data, result_dir, filename):
 def _wrap_dir(file):
     return "./scripts/evaluation/" + file
 
-
-def _invoke_jmeter_test(test_file):
-
+def _invoke_jmeter_thread(test_file, edge_node, fog_node, results, index_results):
     logging.info("\n\n")
     logging.info("Invoking JMeter on remote edge node...")
-    logging.info("Edge node public IP: {}".format(all_edge_nodes[0]["public_ip"]))
-    logging.info("Fog node private IP: {}".format(all_fog_nodes[0]["private_ip"]))
+    logging.info("Edge node public IP: {}".format(edge_node))
+    logging.info("Fog node private IP: {}".format(fog_node))
 
     r = http.request(
         "POST",
-        "http://{}:9002/invoke-test-plan".format(all_edge_nodes[0]["public_ip"]),
+        "http://{}:9002/invoke-test-plan".format(edge_node),
         headers={"Content-Type": "application/json"},
         body=json.dumps(
-            {"target_fog_node": all_fog_nodes[0]["private_ip"], "test_plan": test_file}
+            {"target_fog_node": fog_node, "test_plan": test_file}
         ).encode("utf-8"),
     )
 
     _check_error(r)
-    return r.data.decode("UTF-8")
+    results[index_results] = (r.data.decode("UTF-8"))
+
+def _invoke_jmeter_test(test_file):
+
+    results = [None] * 2
+
+    first_execution = Thread(target=_invoke_jmeter_thread, args=(test_file, edge_node_a["public_ip"], fog_node_a["private_ip"], results, 0,))
+    first_execution.start()
+
+    # second_execution = Thread(target=_invoke_jmeter_thread, args=(test_file, edge_node_b["public_ip"], fog_node_b["private_ip"], results, 1,))
+    # second_execution.start()
+
+    first_execution.join()
+    # second_execution.join()
+    return results[0]
 
 
 def _throughput_seconds(start_datetime_for_thread, end_datetime_for_thread):
@@ -328,7 +370,7 @@ if __name__ == "__main__":
     warning_thresholds = [75]
     critical_thresholds = [90]
     
-    for i in range(4):
+    for i in range(EXPERIMENT_ITERATIONS):
         for current_thread_cpu_collection in threads_cpu_collection:
             for current_cpu_interval in cpu_interval:
                 for current_warning_threshold in warning_thresholds:
@@ -358,7 +400,13 @@ if __name__ == "__main__":
                         )
 
                         all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
-                        all_edge_nodes = aws.locate_vm_data_with_name("edge_node_*")
+                        
+                        edge_node_a = aws.locate_vm_data_with_name("edge_node_a")[0]
+                        edge_node_b = aws.locate_vm_data_with_name("edge_node_b")[0]
+
+                        fog_node_a = aws.locate_vm_data_with_name("fog_node_a")[0]
+                        fog_node_b = aws.locate_vm_data_with_name("fog_node_b")[0]
+
 
                         properties.update_properties(
                             fog_nodes=all_fog_nodes,

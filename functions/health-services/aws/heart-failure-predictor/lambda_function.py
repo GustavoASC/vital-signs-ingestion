@@ -43,10 +43,8 @@ def handle(event, _context):
     Predicts if the person will have a heart failure in the next few minutes
     """
 
-    vital_sign = json.loads(event.body)
-
-    forecast_spo2 = forecast(get_spo2_historical_data() + [vital_sign["spo2"]])
-    forecast_heartbeat = forecast(get_heartbeat_historical_data() + [vital_sign["heartbeat"]])
+    forecast_spo2 = forecast(get_spo2_historical_data() + [event["spo2"]])
+    forecast_heartbeat = forecast(get_heartbeat_historical_data() + [event["heartbeat"]])
 
     if forecast_spo2 < MIN_SPO2_THRESHOLD and (forecast_heartbeat < MIN_HEARTBEAT_THRESHOLD or forecast_heartbeat > MAX_HEARTBEAT_THRESHOLD):
         return alert("Will possibly have heart failure")

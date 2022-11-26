@@ -39,3 +39,20 @@ eval:
 
 logs:
 	@journalctl -t openfaas-fn:$$FN_NAME -f
+
+install-software-fog-node:
+	sudo yum update
+	sudo yum install git
+	sudo ./hack/install.sh
+	sudo ./hack/install.sh # runs again because only on the second time it finds the arkade dependency
+	git clone https://github.com/GustavoASC/vital-signs-ingestion
+	cd vital-signs-ingestion
+	pip3 install psutil
+	sudo yum install docker
+	sudo usermod -a -G docker ec2-user
+	id ec2-user
+	newgrp docker
+	sudo systemctl enable docker.service
+	sudo systemctl start docker.service
+	crontab -e
+	@reboot /home/ec2-user/vital-signs-ingestion/startup.sh

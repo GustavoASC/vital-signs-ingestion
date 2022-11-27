@@ -11,6 +11,7 @@ import plot
 import assertions
 import metrics
 import warm
+import async_results
 import properties
 from io import StringIO
 import time
@@ -22,6 +23,7 @@ JMETER_TIMESTAMP = "timeStamp"
 
 EXPERIMENT_ITERATIONS = 1
 ASSERTION_ENABLED = False
+ASYNC_PROCESSING = False
 
 http = urllib3.PoolManager()
 
@@ -169,7 +171,6 @@ def _analyze_dataset(response_dataset):
         )
 
         _get_array_from_dict(thread_data, "elapsed").append(row[JMETER_ELAPSED])
-        _get_array_from_dict(thread_data, "timestamp").append(row[JMETER_TIMESTAMP])
         _get_array_from_dict(thread_data, "start_datetime").append(
             dt.datetime.fromtimestamp(row[JMETER_TIMESTAMP] / 1e3)
         )
@@ -179,7 +180,7 @@ def _analyze_dataset(response_dataset):
             )
         )
 
-    return _update_with_summary(all_data)
+    return all_data
 
 
 def _get_dict_from_dict(data, field_name):
@@ -294,7 +295,16 @@ def _run_test_scenario(test_file):
         metrics.clear_metrics(fog_node["public_ip"])
 
     response_dataset = _invoke_jmeter_test(test_file)
-    all_data = _analyze_dataset(response_dataset)
+
+    if ASYNC_PROCESSING:
+        response = async_results.collect_async_results_awaiting(results_fog_node)
+        all_data = async_results.analyze_dataset(response)
+        
+        _save_result(response, results_dir, "async-response.json")
+    else:
+        all_data = _analyze_dataset(response_dataset)
+
+    all_data = _update_with_summary(all_data)
     _save_result(response_dataset, results_dir, "jmeter-results.csv")
     _save_result(all_data, results_dir, "analyzed-dataset.json")
 
@@ -407,6 +417,7 @@ if __name__ == "__main__":
                         fog_node_a = aws.locate_vm_data_with_name("fog_node_a")[0]
                         fog_node_b = aws.locate_vm_data_with_name("fog_node_b")[0]
 
+                        results_fog_node = aws.locate_vm_data_with_name("results_fog_node")[0]
 
                         properties.update_properties(
                             fog_nodes=all_fog_nodes,

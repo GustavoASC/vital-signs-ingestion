@@ -287,7 +287,7 @@ def _run_test_scenario(test_file):
     for fog_node in all_fog_nodes:
         metrics.clear_metrics(fog_node["public_ip"])
 
-    response_dataset = _invoke_jmeter_test(test_file)
+    jmeter_results = _invoke_jmeter_test(test_file)
 
     if ASYNC_PROCESSING:
         response = async_results.collect_async_results_awaiting(results_fog_node)
@@ -295,10 +295,10 @@ def _run_test_scenario(test_file):
 
         _save_result(response, results_dir, "async-response.json")
     else:
-        all_data = _analyze_dataset(response_dataset)
+        all_data = _analyze_dataset(jmeter_results)
 
     all_data = _update_with_summary(all_data)
-    _save_result(response_dataset, results_dir, "jmeter-results.csv")
+    _save_result(jmeter_results, results_dir, "jmeter-results.csv")
     _save_result(all_data, results_dir, "analyzed-dataset.json")
 
     cpu_usage = {}

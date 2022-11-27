@@ -19,3 +19,14 @@ def get(url):
 
     _check_error(r)
     return json.loads(r.data)
+
+
+def post(url, json_payload):
+    _check_error(
+        http.request(
+            "POST",
+            url,
+            headers={"Content-Type": "application/json"},
+            body=json.dumps(json_payload).encode("utf-8"),
+        )
+    )

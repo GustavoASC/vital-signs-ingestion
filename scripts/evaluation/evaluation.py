@@ -13,6 +13,7 @@ import metrics
 import warm
 import async_results
 import properties
+import utils
 from io import StringIO
 import time
 from threading import Thread
@@ -141,15 +142,7 @@ def _check_error(response):
 
 def _update_cpu_interval(threads_cpu_collection, cpu_interval, fog_node):
     logging.info("Updating the CPU collection interval to {} seconds with {} threads...".format(cpu_interval, threads_cpu_collection))
-    _check_error(
-        http.request(
-            "POST",
-            "http://{}:8099/machine-resources".format(fog_node),
-            headers={"Content-Type": "application/json"},
-            body=json.dumps({"update_interval": cpu_interval, "total_threads": threads_cpu_collection}).encode("utf-8"),
-        )
-    )
-
+    utils.post(f"http://{fog_node}:8099/machine-resources", {"update_interval": cpu_interval, "total_threads": threads_cpu_collection})
     logging.info("Waiting for a while until the CPU collection threads are stable...")
     time.sleep(1)
 
@@ -299,7 +292,7 @@ def _run_test_scenario(test_file):
     if ASYNC_PROCESSING:
         response = async_results.collect_async_results_awaiting(results_fog_node)
         all_data = async_results.analyze_dataset(response)
-        
+
         _save_result(response, results_dir, "async-response.json")
     else:
         all_data = _analyze_dataset(response_dataset)

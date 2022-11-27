@@ -63,8 +63,8 @@
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
                 <stringProp name="Argument.value">{&#xd;
-    &quot;service_name&quot;: &quot;body-temperature-monitor&quot;,&#xd;
-    &quot;vital_sign&quot;: &quot;{\&quot;temperature\&quot;: 40}&quot;,&#xd;
+    &quot;service_name&quot;: &quot;heart-failure-predictor&quot;,&#xd;
+    &quot;vital_sign&quot;: &quot;{\&quot;heartbeat\&quot;: 97,\&quot;spo2\&quot;: 99,\&quot;temperature\&quot;: 40}&quot;,&#xd;
     &quot;user_priority&quot;: 5&#xd;
 }</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
@@ -267,8 +267,8 @@
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
                 <stringProp name="Argument.value">{&#xd;
-    &quot;service_name&quot;: &quot;body-temperature-monitor&quot;,&#xd;
-    &quot;vital_sign&quot;: &quot;{\&quot;temperature\&quot;: 40}&quot;,&#xd;
+    &quot;service_name&quot;: &quot;heart-failure-predictor&quot;,&#xd;
+    &quot;vital_sign&quot;: &quot;{\&quot;heartbeat\&quot;: 97,\&quot;spo2\&quot;: 99,\&quot;temperature\&quot;: 40}&quot;,&#xd;
     &quot;user_priority&quot;: 4&#xd;
 }</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
@@ -471,8 +471,8 @@
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
                 <stringProp name="Argument.value">{&#xd;
-    &quot;service_name&quot;: &quot;body-temperature-monitor&quot;,&#xd;
-    &quot;vital_sign&quot;: &quot;{\&quot;temperature\&quot;: 40}&quot;,&#xd;
+    &quot;service_name&quot;: &quot;heart-failure-predictor&quot;,&#xd;
+    &quot;vital_sign&quot;: &quot;{\&quot;heartbeat\&quot;: 97,\&quot;spo2\&quot;: 99,\&quot;temperature\&quot;: 40}&quot;,&#xd;
     &quot;user_priority&quot;: 3&#xd;
 }</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
@@ -675,8 +675,8 @@
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
                 <stringProp name="Argument.value">{&#xd;
-    &quot;service_name&quot;: &quot;body-temperature-monitor&quot;,&#xd;
-    &quot;vital_sign&quot;: &quot;{\&quot;temperature\&quot;: 40}&quot;,&#xd;
+    &quot;service_name&quot;: &quot;heart-failure-predictor&quot;,&#xd;
+    &quot;vital_sign&quot;: &quot;{\&quot;heartbeat\&quot;: 97,\&quot;spo2\&quot;: 99,\&quot;temperature\&quot;: 40}&quot;,&#xd;
     &quot;user_priority&quot;: 2&#xd;
 }</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>
@@ -879,8 +879,8 @@
               <elementProp name="" elementType="HTTPArgument">
                 <boolProp name="HTTPArgument.always_encode">false</boolProp>
                 <stringProp name="Argument.value">{&#xd;
-    &quot;service_name&quot;: &quot;body-temperature-monitor&quot;,&#xd;
-    &quot;vital_sign&quot;: &quot;{\&quot;temperature\&quot;: 40}&quot;,&#xd;
+    &quot;service_name&quot;: &quot;heart-failure-predictor&quot;,&#xd;
+    &quot;vital_sign&quot;: &quot;{\&quot;heartbeat\&quot;: 97,\&quot;spo2\&quot;: 99,\&quot;temperature\&quot;: 40}&quot;,&#xd;
     &quot;user_priority&quot;: 1&#xd;
 }</stringProp>
                 <stringProp name="Argument.metadata">=</stringProp>

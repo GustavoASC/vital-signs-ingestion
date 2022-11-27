@@ -287,7 +287,7 @@ def _run_test_scenario(test_file):
     for fog_node in all_fog_nodes:
         metrics.clear_metrics(fog_node["public_ip"])
 
-    jmeter_results = _invoke_jmeter_test(test_file)
+    jmeter_results = _invoke_test_edge_nodes(test_file)
 
     if ASYNC_PROCESSING:
         response = async_results.collect_async_results_awaiting(results_fog_node)
@@ -323,36 +323,47 @@ def _save_result(data, result_dir, filename):
 def _wrap_dir(file):
     return "./scripts/evaluation/" + file
 
-def _invoke_jmeter_thread(test_file, edge_node, fog_node, results, index_results):
+def _invoke_test_thread(test_file, edge_node, service_executor_url, results, index_results):
     logging.info("\n\n")
-    logging.info("Invoking JMeter on remote edge node...")
+    logging.info("Invoking test on remote edge node...")
     logging.info("Edge node public IP: {}".format(edge_node))
-    logging.info("Fog node private IP: {}".format(fog_node))
+    logging.info("Target service executor IP: {}".format(service_executor_url))
 
     r = http.request(
         "POST",
-        "http://{}:9002/invoke-test-plan".format(edge_node),
+        f"http://{edge_node}:9002/invoke-test-plan",
         headers={"Content-Type": "application/json"},
         body=json.dumps(
-            {"target_fog_node": fog_node, "test_plan": test_file}
+            {
+                "service_executor_url": service_executor_url,
+                "async_results_url": f"{results_fog_node}:9095",
+                "test_plan": test_file}
         ).encode("utf-8"),
     )
 
     _check_error(r)
     results[index_results] = (r.data.decode("UTF-8"))
 
-def _invoke_jmeter_test(test_file):
+def _invoke_test_edge_nodes(test_file):
 
-    results = [None] * 2
+    results = [None] * 4
 
-    first_execution = Thread(target=_invoke_jmeter_thread, args=(test_file, edge_node_a["public_ip"], fog_node_a["private_ip"], results, 0,))
+    first_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_a["public_ip"], fog_node_a["private_ip"], results, 0,))
     first_execution.start()
 
-    # second_execution = Thread(target=_invoke_jmeter_thread, args=(test_file, edge_node_b["public_ip"], fog_node_b["private_ip"], results, 1,))
-    # second_execution.start()
+    second_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_b["public_ip"], fog_node_b["private_ip"], results, 1,))
+    second_execution.start()
+
+    third_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_c["public_ip"], fog_node_b["private_ip"], results, 1,))
+    third_execution.start()
+
+    fourth_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_d["public_ip"], fog_node_b["private_ip"], results, 1,))
+    fourth_execution.start()
 
     first_execution.join()
-    # second_execution.join()
+    second_execution.join()
+    third_execution.join()
+    fourth_execution.join()
     return results[0]
 
 
@@ -406,15 +417,19 @@ if __name__ == "__main__":
                         
                         edge_node_a = aws.locate_vm_data_with_name("edge_node_a")[0]
                         edge_node_b = aws.locate_vm_data_with_name("edge_node_b")[0]
+                        edge_node_c = aws.locate_vm_data_with_name("edge_node_c")[0]
+                        edge_node_d = aws.locate_vm_data_with_name("edge_node_d")[0]
 
                         fog_node_a = aws.locate_vm_data_with_name("fog_node_a")[0]
                         fog_node_b = aws.locate_vm_data_with_name("fog_node_b")[0]
 
                         results_fog_node = aws.locate_vm_data_with_name("results_fog_node")[0]
 
+                        cloud_api_adapter_url = "https://4il3sb7a77.execute-api.eu-west-2.amazonaws.com"
+
                         properties.update_properties(
                             fog_nodes=all_fog_nodes,
-                            cloud_api_adapter_url="https://x7fusq6sruwliycun2bdnfbx2e0iobzz.lambda-url.eu-west-2.on.aws/",
+                            cloud_api_adapter_url=cloud_api_adapter_url,
                         )
 
                         for fog_node in all_fog_nodes:

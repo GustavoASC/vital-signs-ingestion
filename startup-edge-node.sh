@@ -1,1 +1,1 @@
-cd /home/ec2-user/vital-signs-ingestion && make collect-cpu
+cd /home/ec2-user/vital-signs-ingestion && make listen-test-executor

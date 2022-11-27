@@ -30,13 +30,13 @@ def register_request_started(id, data, async_results_url):
     #
     payload = dict(data)
     payload["start_timestamp"] = int(datetime.datetime.now().timestamp() * 1000)
-    send_http_request(f"{async_results_url}/{id}", payload, "PUT")
+    send_http_request(f"{async_results_url}/results/{id}", payload, "PUT")
 
 
 def dispatch_vital_sign(id, data, service_executor_url):
     payload = dict(data)
     payload["id"] = id
-    send_http_request(service_executor_url, payload, "POST")
+    send_http_request(f"{service_executor_url}/function/service-executor", payload, "POST")
 
 
 def ingest_vital_sign(payload, service_executor_url, async_results_url):

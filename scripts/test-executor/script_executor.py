@@ -58,7 +58,7 @@ def scenario_one(service_executor_url, async_results_url):
         for j in range(THREADS_PER_PRIORITY):
             for service in HEALTH_SERVICES:
                 payload = {
-                    "user_priority": i,
+                    "user_priority": i + 1,
                     "service_name": service,
                     "vital_sign": '{"heartbeat": 97, "spo2": 99, "temperature": 40}',
                 }

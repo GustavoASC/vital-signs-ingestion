@@ -16,72 +16,82 @@ import json
 #     }
 # }
 
-results = {}
+running_requests = {}
+finished_requests = {}
 
 
 class Serv(BaseHTTPRequestHandler):
     def do_GET(self):
 
-        id = self.path.split("/")[-1]
+        id = self.id_from_path_param()
         if id == "results":
-            current_response = results
+            current_response = {
+                "running_requests": running_requests,
+                "finished_requests": finished_requests,
+            }
+        elif id == "summary":
+            current_response = {
+                "total_running_requests": len(running_requests),
+                "total_finished_requests": len(finished_requests),
+            }
         else:
-            current_response = results[id]
+            if id in finished_requests:
+                current_response = finished_requests[id]
+            else:
+                current_response = running_requests[id]
 
-        response_bytes = json.dumps(current_response).encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        self.wfile.write(response_bytes)
+        self.write_json_response(current_response)
 
     def do_PATCH(self):
-        global results
+        global running_requests
+        global finished_requests
 
-        content_len = int(self.headers.get("Content-Length"))
-        post_body = self.rfile.read(content_len)
+        id = self.id_from_path_param()
 
-        id = self.path.split("/")[-1]
-
-        current_update = json.loads(post_body)
-        existing_result = results[id]
+        current_update = self.request_body()
+        existing_result = running_requests[id]
 
         existing_result["end_timestamp"] = current_update["end_timestamp"]
-        existing_result["result_received_at"] = int(datetime.datetime.now().timestamp() * 1000)
+        existing_result["result_received_at"] = int(
+            datetime.datetime.now().timestamp() * 1000
+        )
 
-        self.send_response(200)
-        self.send_header("Content-type", "application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps({}).encode("utf-8"))
+        finished_requests[id] = existing_result
+        del running_requests[id]
+
+        self.write_json_response({})
 
     def do_PUT(self):
-        global results
+        global running_requests
 
-        content_len = int(self.headers.get("Content-Length"))
-        post_body = self.rfile.read(content_len)
+        id = self.id_from_path_param()
+        running_requests[id] = self.request_body()
 
-        id = self.path.split("/")[-1]
+        self.write_json_response({})
 
-        current_result = json.loads(post_body)
-        results[id] = current_result
+    def do_POST(self):
+        global running_requests
+        global finished_requests
 
+        if self.path.startswith("/clear"):
+            running_requests = {}
+            finished_requests = {}
+
+            self.write_json_response({})
+
+    def write_json_response(self, response_json):
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
-        self.wfile.write(json.dumps({}).encode("utf-8"))
+        self.wfile.write(json.dumps(response_json).encode("utf-8"))
 
-    def do_POST(self):
-        global results
+    def id_from_path_param(self):
+        return self.path.split("/")[-1]
 
-        
-        if self.path.startswith("/clear"):
-            results = {}
-
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({}).encode("utf-8"))
-            
-        
+    def request_body(self):
+        content_len = int(self.headers.get("Content-Length"))
+        text_content = self.rfile.read(content_len)
+        return json.loads(text_content)
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):

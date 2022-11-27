@@ -27,6 +27,9 @@ deployfn:
 run:
 	@./mvnw -Dquarkus.http.port=8097 quarkus:dev &
 
+collect-results:
+	@python3 scripts/results/results.py &
+
 collect-cpu:
 	@python3 scripts/cpu-provider/cpu-provider.py &
 	@python3 scripts/metrics/metrics.py &
@@ -55,4 +58,11 @@ install-software-fog-node:
 	sudo systemctl enable docker.service
 	sudo systemctl start docker.service
 	crontab -e
-	@reboot /home/ec2-user/vital-signs-ingestion/startup.sh
+	# Paste this: @reboot /home/ec2-user/vital-signs-ingestion/startup-fog-node.sh
+
+install-software-results-node:
+	sudo yum update
+	sudo yum install git
+	git clone https://github.com/GustavoASC/vital-signs-ingestion
+	crontab -e
+	# Paste this: @reboot /home/ec2-user/vital-signs-ingestion/startup-results-node.sh

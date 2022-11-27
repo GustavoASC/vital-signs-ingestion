@@ -34,8 +34,8 @@ collect-cpu:
 	@python3 scripts/cpu-provider/cpu-provider.py &
 	@python3 scripts/metrics/metrics.py &
 
-listen-jmeter:
-	cd scripts/jmeter && python3 jmeter-server.py &
+listen-test-executor:
+	cd scripts/test-executor && python3 test_executor.py &
 
 eval:
 	@python3 scripts/evaluation.py &
@@ -59,6 +59,13 @@ install-software-fog-node:
 	sudo systemctl start docker.service
 	crontab -e
 	# Paste this: @reboot /home/ec2-user/vital-signs-ingestion/startup-fog-node.sh
+
+install-software-edge-node:
+	sudo yum update
+	sudo yum install git
+	git clone https://github.com/GustavoASC/vital-signs-ingestion
+	crontab -e
+	# Paste this: @reboot /home/ec2-user/vital-signs-ingestion/startup-edge-node.sh
 
 install-software-results-node:
 	sudo yum update

@@ -13,6 +13,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.UUID;
 
 import org.acme.quickstart.input.ServiceExecutorInputDto;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
@@ -62,7 +63,8 @@ public class ServiceExecutorClientIT {
         ServiceExecutorInputDto input = new ServiceExecutorInputDto(
             "bar-function",
             "{\"heartbeat\": 100}",
-            3
+            3,
+            UUID.fromString("4ae04269-8d88-4fa7-bbcb-34c39cad3601")
         );
         assertThat(serviceExecutorClient.runServiceExecutor(input))
             .isNull();

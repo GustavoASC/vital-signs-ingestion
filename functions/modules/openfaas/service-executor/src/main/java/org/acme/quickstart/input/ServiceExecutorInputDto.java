@@ -1,6 +1,7 @@
 package org.acme.quickstart.input;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
@@ -10,11 +11,13 @@ public class ServiceExecutorInputDto {
     private final String serviceName;
     private final String vitalSign;
     private final Integer userPriority;
+    private final UUID id;
 
-    public ServiceExecutorInputDto(String serviceName, String vitalSign, int userPriority) {
+    public ServiceExecutorInputDto(String serviceName, String vitalSign, int userPriority, UUID id) {
         this.serviceName = serviceName;
         this.vitalSign = vitalSign;
         this.userPriority = userPriority;
+        this.id = id;
     }
 
     public String getServiceName() {
@@ -29,12 +32,17 @@ public class ServiceExecutorInputDto {
         return this.userPriority;
     }
 
+    public UUID getId() {
+        return this.id;
+    }
+
     @Override
     public String toString() {
         return "{" +
                 " serviceName='" + getServiceName() + "'" +
                 ", vitalSign='" + getVitalSign() + "'" +
                 ", userPriority='" + getUserPriority() + "'" +
+                ", id='" + getId() + "'" +
                 "}";
     }
 
@@ -45,15 +53,16 @@ public class ServiceExecutorInputDto {
         if (!(o instanceof ServiceExecutorInputDto)) {
             return false;
         }
-        ServiceExecutorInputDto vitalSignInputDto = (ServiceExecutorInputDto) o;
-        return Objects.equals(serviceName, vitalSignInputDto.serviceName)
-                && Objects.equals(vitalSign, vitalSignInputDto.vitalSign)
-                && userPriority == vitalSignInputDto.userPriority;
+        ServiceExecutorInputDto serviceExecutorInputDto = (ServiceExecutorInputDto) o;
+        return Objects.equals(serviceName, serviceExecutorInputDto.serviceName)
+                && Objects.equals(vitalSign, serviceExecutorInputDto.vitalSign)
+                && Objects.equals(userPriority, serviceExecutorInputDto.userPriority)
+                && Objects.equals(id, serviceExecutorInputDto.id);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(serviceName, vitalSign, userPriority);
+        return Objects.hash(serviceName, vitalSign, userPriority, id);
     }
 
 }

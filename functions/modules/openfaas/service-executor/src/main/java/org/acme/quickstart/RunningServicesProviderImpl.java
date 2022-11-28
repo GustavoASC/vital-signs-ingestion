@@ -28,11 +28,9 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     }
 
     @Override
-    public UUID executionStarted(String service, int ranking) {
-        var id = UUID.randomUUID();
+    public void executionStarted(UUID id, String service, int ranking) {
         var executionStart = clock.instant();
         services.put(id, new ExecutionWithDuration(new ServiceExecution(service, ranking), executionStart));
-        return id;
     }
 
     @Override

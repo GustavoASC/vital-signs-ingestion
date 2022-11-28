@@ -3,6 +3,7 @@ package org.acme.quickstart;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -26,7 +27,8 @@ public class RunningServicesProviderIT {
                 .boxed()
                 .parallel()
                 .forEach(i -> {
-                    var id = runningServicesProviderImpl.executionStarted("body-temperature-monitor", 7);
+                    var id = UUID.randomUUID();
+                    runningServicesProviderImpl.executionStarted(id, "body-temperature-monitor", 7);
 
                     runningServicesProviderImpl.getDurationsForService("body-temperature-monitor")
                             .stream()

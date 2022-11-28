@@ -1,6 +1,8 @@
 package org.acme.quickstart;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -24,11 +26,15 @@ public class ServiceExecutorResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public Response hello(ServiceExecutorInputDto inputDto) {
+        
+        UUID id = Optional.ofNullable(inputDto.getId())
+                           .orElseGet(UUID::randomUUID);
+
         String service = inputDto.getServiceName();
         if (service == null) {
-            vitalSignService.ingestVitalSignRunningAllServices(inputDto.getVitalSign(), inputDto.getUserPriority());
+            vitalSignService.ingestVitalSignRunningAllServices(id, inputDto.getVitalSign(), inputDto.getUserPriority());
         } else {
-            vitalSignService.ingestVitalSign(List.of(service), inputDto.getVitalSign(), inputDto.getUserPriority());
+            vitalSignService.ingestVitalSign(id, List.of(service), inputDto.getVitalSign(), inputDto.getUserPriority());
         }
         return Response.ok().build();
     }

@@ -63,12 +63,12 @@ public class VitalSignServiceImpl implements VitalSignService {
     }
 
     @Override
-    public void ingestVitalSignRunningAllServices(String vitalSign, int userPriority) {
-        ingestVitalSign(FUNCTIONS, vitalSign, userPriority);
+    public void ingestVitalSignRunningAllServices(UUID id, String vitalSign, int userPriority) {
+        ingestVitalSign(id, FUNCTIONS, vitalSign, userPriority);
     }
 
     @Override
-    public void ingestVitalSign(List<String> services, String vitalSign, int userPriority) {
+    public void ingestVitalSign(UUID id, List<String> services, String vitalSign, int userPriority) {
         services.stream()
                 .forEach(fn -> {
 
@@ -81,14 +81,14 @@ public class VitalSignServiceImpl implements VitalSignService {
 
                         // Vertical offloading to process vital signs on the parent node within the hierarchy
                         metrics.offloading = true;
-                        ServiceExecutorInputDto input = new ServiceExecutorInputDto(fn, vitalSign, userPriority);
+                        ServiceExecutorInputDto input = new ServiceExecutorInputDto(fn, vitalSign, userPriority, id);
                         serviceExecutorClient.runServiceExecutor(input);
 
                     } else {
 
                         // Runs on the local machine
                         metrics.runningLocally = true;
-                        UUID id = runningServicesProvider.executionStarted(fn, metrics.ranking);
+                        runningServicesProvider.executionStarted(id, fn, metrics.ranking);
                         serverlessFunctionClient.runFunction(fn, vitalSign);
                         runningServicesProvider.executionFinished(id);
                     }

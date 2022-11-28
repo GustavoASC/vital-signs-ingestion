@@ -45,11 +45,17 @@ public class RunningServicesProviderTest {
         when(clock.instant())
                 .thenReturn(Instant.ofEpochMilli(1663527788128l));
 
-        var first = runningServicesProvider.executionStarted("body-temperature-monitor", 1);
-        var second = runningServicesProvider.executionStarted("body-temperature-monitor", 7);
-        var third = runningServicesProvider.executionStarted("body-temperature-monitor", 9);
-        var fourth = runningServicesProvider.executionStarted("bar-function", 15);
-        var fifth = runningServicesProvider.executionStarted("bar-function", 2);
+        var first = UUID.randomUUID();
+        var second = UUID.randomUUID();
+        var third = UUID.randomUUID();
+        var fourth = UUID.randomUUID();
+        var fifth = UUID.randomUUID();
+        
+        runningServicesProvider.executionStarted(first, "body-temperature-monitor", 1);
+        runningServicesProvider.executionStarted(second, "body-temperature-monitor", 7);
+        runningServicesProvider.executionStarted(third, "body-temperature-monitor", 9);
+        runningServicesProvider.executionStarted(fourth, "bar-function", 15);
+        runningServicesProvider.executionStarted(fifth, "bar-function", 2);
 
         assertThat(runningServicesProvider.getRankingsForRunningServices())
                 .isEqualTo(List.of(1, 7, 9, 15, 2));
@@ -117,8 +123,9 @@ public class RunningServicesProviderTest {
                         Instant.ofEpochMilli(1663527788128l),
                         Instant.ofEpochMilli(1663527789759l));
 
-        runningServicesProvider.executionFinished(
-                runningServicesProvider.executionStarted("body-temperature-monitor", 7));
+        var id = UUID.randomUUID();
+        runningServicesProvider.executionStarted(id, "body-temperature-monitor", 7);
+        runningServicesProvider.executionFinished(id);
 
         assertThat(runningServicesProvider.getDurationsForService("body-temperature-monitor"))
                 .isEqualTo(List.of(Duration.ofMillis(1631l)));

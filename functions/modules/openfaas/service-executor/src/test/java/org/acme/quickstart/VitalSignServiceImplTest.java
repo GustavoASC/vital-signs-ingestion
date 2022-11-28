@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.UUID;
 
 import org.acme.quickstart.calculator.RankingCalculator;
 import org.acme.quickstart.input.ServiceExecutorInputDto;
@@ -34,6 +35,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class VitalSignServiceImplTest {
 
+        private static final UUID ID = UUID.fromString("18404589-0e1b-4f72-b6e2-b6765b949c10");
         private static final String VITAL_SIGN = "{ \"heartbeat\": 100}";
         private static final int USER_PRIORITY = 7;
 
@@ -97,7 +99,7 @@ public class VitalSignServiceImplTest {
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(new ResourcesLocatorResponse(new BigDecimal("97.75"), null));
 
-                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+                ingestVitalSign();
 
                 Metrics metrics;
                 metrics = new Metrics();
@@ -123,7 +125,7 @@ public class VitalSignServiceImplTest {
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(new ResourcesLocatorResponse(new BigDecimal("97.75"), new BigDecimal("87.3")));
 
-                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+                ingestVitalSign();
 
                 Metrics metrics;
                 metrics = new Metrics();
@@ -149,12 +151,12 @@ public class VitalSignServiceImplTest {
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(new ResourcesLocatorResponse(new BigDecimal("90.01"), null));
 
-                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+                ingestVitalSign();
 
                 verify(serviceExecutorClient, times(1))
-                                .runServiceExecutor(new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY));
+                                .runServiceExecutor(new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY, ID));
                 verify(serviceExecutorClient, times(1))
-                                .runServiceExecutor(new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
+                                .runServiceExecutor(new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY, ID));
                 verify(resourcesLocator, times(2))
                                 .getUsedCpuPercentage();
         }
@@ -169,7 +171,7 @@ public class VitalSignServiceImplTest {
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(new ResourcesLocatorResponse(new BigDecimal("74"), null));
 
-                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+                ingestVitalSign();
 
                 verify(resourcesLocator, times(2))
                                 .getUsedCpuPercentage();
@@ -181,14 +183,14 @@ public class VitalSignServiceImplTest {
                 InOrder orderVerifier = inOrder(runningServicesProvider, serverlessFunctionClient);
 
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .executionStarted("body-temperature-monitor", 13);
+                                .executionStarted(ID, "body-temperature-monitor", 13);
                 orderVerifier.verify(serverlessFunctionClient, times(1))
                                 .runFunction("body-temperature-monitor", VITAL_SIGN);
                 orderVerifier.verify(runningServicesProvider, times(1))
                                 .executionFinished(any());
 
                 orderVerifier.verify(runningServicesProvider, times(1))
-                                .executionStarted("bar-function", 17);
+                                .executionStarted(ID, "bar-function", 17);
                 orderVerifier.verify(serverlessFunctionClient, times(1))
                                 .runFunction("bar-function", VITAL_SIGN);
                 orderVerifier.verify(runningServicesProvider, times(1))
@@ -205,12 +207,12 @@ public class VitalSignServiceImplTest {
                 when(resourcesLocator.getUsedCpuPercentage())
                                 .thenReturn(new ResourcesLocatorResponse(new BigDecimal("91"), null));
 
-                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+                ingestVitalSign();
 
                 verify(serviceExecutorClient, times(1))
-                                .runServiceExecutor(new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY));
+                                .runServiceExecutor(new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY, ID));
                 verify(serviceExecutorClient, times(1))
-                                .runServiceExecutor(new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
+                                .runServiceExecutor(new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY, ID));
                 verify(resourcesLocator, times(2))
                                 .getUsedCpuPercentage();
         }
@@ -228,12 +230,12 @@ public class VitalSignServiceImplTest {
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(14))
                                 .thenReturn(true);
 
-                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+                ingestVitalSign();
 
                 verify(serviceExecutorClient, times(1))
-                                .runServiceExecutor(new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY));
+                                .runServiceExecutor(new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY, ID));
                 verify(serviceExecutorClient, times(1))
-                                .runServiceExecutor(new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY));
+                                .runServiceExecutor(new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY, ID));
                 verify(resourcesLocator, times(2))
                                 .getUsedCpuPercentage();
                 verify(offloadingHeuristicByRanking, times(1))
@@ -260,15 +262,15 @@ public class VitalSignServiceImplTest {
                 when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(17, "bar-function"))
                                 .thenThrow(new CouldNotDetermineException());
 
-                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+                ingestVitalSign();
 
                 verify(runningServicesProvider, times(1))
-                                .executionStarted("body-temperature-monitor", 13);
+                                .executionStarted(ID, "body-temperature-monitor", 13);
                 verify(serverlessFunctionClient, times(1))
                                 .runFunction("body-temperature-monitor", VITAL_SIGN);
 
                 verify(runningServicesProvider, times(1))
-                                .executionStarted("bar-function", 17);
+                                .executionStarted(ID, "bar-function", 17);
                 verify(serverlessFunctionClient, times(1))
                                 .runFunction("bar-function", VITAL_SIGN);
 
@@ -294,20 +296,24 @@ public class VitalSignServiceImplTest {
                 when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(17, "bar-function"))
                                 .thenReturn(false);
 
-                vitalSignService.ingestVitalSignRunningAllServices(VITAL_SIGN, USER_PRIORITY);
+                ingestVitalSign();
 
                 verify(runningServicesProvider, times(1))
-                                .executionStarted("body-temperature-monitor", 13);
+                                .executionStarted(ID, "body-temperature-monitor", 13);
                 verify(serverlessFunctionClient, times(1))
                                 .runFunction("body-temperature-monitor", VITAL_SIGN);
 
                 verify(runningServicesProvider, times(1))
-                                .executionStarted("bar-function", 17);
+                                .executionStarted(ID, "bar-function", 17);
                 verify(serverlessFunctionClient, times(1))
                                 .runFunction("bar-function", VITAL_SIGN);
 
                 verify(runningServicesProvider, times(2))
                                 .executionFinished(any());
+        }
+
+        private void ingestVitalSign() {
+            vitalSignService.ingestVitalSignRunningAllServices(ID, VITAL_SIGN, USER_PRIORITY);
         }
 
 }

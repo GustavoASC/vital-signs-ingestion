@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 public interface RunningServicesProvider {
 
-    UUID executionStarted(String service, int ranking);
+    void executionStarted(UUID id, String service, int ranking);
     void executionFinished(UUID id);
     List<ServiceExecution> getRunningServices();
     List<Duration> getDurationsForService(String service);

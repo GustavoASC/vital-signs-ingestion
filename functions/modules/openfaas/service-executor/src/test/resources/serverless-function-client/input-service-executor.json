@@ -1,5 +1,6 @@
 {
   "service_name": "bar-function",
   "vital_sign": "{\"heartbeat\": 100}",
-  "user_priority": 3
+  "user_priority": 3,
+  "id": "4ae04269-8d88-4fa7-bbcb-34c39cad3601"
 }

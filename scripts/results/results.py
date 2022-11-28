@@ -48,6 +48,10 @@ class Serv(BaseHTTPRequestHandler):
 
         id = self.id_from_path_param()
 
+        if id in finished_requests:
+            self.write_json_response({})
+            return
+
         current_update = self.request_body()
         existing_result = running_requests[id]
 

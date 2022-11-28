@@ -11,14 +11,21 @@ VITAL_SIGNS_PER_THREAD = 1000
 
 
 def send_http_request(url, payload, method):
-    req = urllib.request.Request(
-        url=url,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"content-type": "application/json"},
-        method=method,
-    )
-    with urllib.request.urlopen(req) as response:
-        print(f"Response: {str(response.read())}")
+    keep_trying = True
+    while (keep_trying):
+        try:
+            req = urllib.request.Request(
+                url=url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"content-type": "application/json"},
+                method=method,
+            )
+            with urllib.request.urlopen(req) as response:
+                print(f"Response: {str(response.read())}")
+                keep_trying = False
+        except Exception as e:
+            print(f"Unexpected problem when sending request to {url}: {traceback.format_exc()}")
+            print("Will retry...")
 
 
 def register_request_started(id, data, async_results_url):

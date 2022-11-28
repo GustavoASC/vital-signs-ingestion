@@ -1,7 +1,7 @@
 import time, utils
 import datetime as dt
 
-TOTAL_EXECUTIONS = 100
+TOTAL_EXECUTIONS = 80000
 
 
 def _await_executions_finish(results_machine_ip):
@@ -12,7 +12,7 @@ def _await_executions_finish(results_machine_ip):
 
         total_processed = payload["total_finished_requests"]
         if total_processed != TOTAL_EXECUTIONS:
-            time.sleep(5)
+            time.sleep(30)
         else:
             awaiting = False
 
@@ -20,6 +20,10 @@ def _await_executions_finish(results_machine_ip):
 def collect_async_results_awaiting(results_machine_ip):
     _await_executions_finish(results_machine_ip)
     return utils.get(f"http://{results_machine_ip}:9095/results")
+
+
+def clear_all_results(results_machine_ip):
+    utils.post(f"http://{results_machine_ip}:9095/clear", {})
 
 
 def analyze_dataset(payload):

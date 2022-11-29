@@ -9,6 +9,6 @@ import org.acme.quickstart.input.ServiceExecutorInputDto;
 public interface ServiceExecutorClient {
 
     @POST
-    Void runServiceExecutor(ServiceExecutorInputDto payload);
+    byte[] runServiceExecutor(ServiceExecutorInputDto payload);
 
 }

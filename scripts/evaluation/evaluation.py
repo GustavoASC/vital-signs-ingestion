@@ -24,7 +24,7 @@ JMETER_TIMESTAMP = "timeStamp"
 
 EXPERIMENT_ITERATIONS = 1
 ASSERTION_ENABLED = False
-ASYNC_PROCESSING = False
+ASYNC_PROCESSING = True
 
 http = urllib3.PoolManager()
 
@@ -69,6 +69,8 @@ def _deploy_service_executor_openfaas(
             "THRESHOLD_CRITICAL_CPU_USAGE={}".format(critical_threshold),
             "-e",
             "THRESHOLD_WARNING_CPU_USAGE={}".format(warning_threshold),
+            "-e",
+            "RESULTS_URL={}".format(results_fog_node["public_ip"]),
         ],
         cwd="./functions",
     )
@@ -287,10 +289,13 @@ def _run_test_scenario(test_file):
     for fog_node in all_fog_nodes:
         metrics.clear_metrics(fog_node["public_ip"])
 
+    if ASYNC_PROCESSING:
+        async_results.clear_all_results(results_fog_node["public_ip"])
+
     jmeter_results = _invoke_test_edge_nodes(test_file)
 
     if ASYNC_PROCESSING:
-        response = async_results.collect_async_results_awaiting(results_fog_node)
+        response = async_results.collect_async_results_awaiting(results_fog_node["public_ip"])
         all_data = async_results.analyze_dataset(response)
 
         _save_result(response, results_dir, "async-response.json")
@@ -329,6 +334,8 @@ def _invoke_test_thread(test_file, edge_node, service_executor_url, results, ind
     logging.info("Edge node public IP: {}".format(edge_node))
     logging.info("Target service executor IP: {}".format(service_executor_url))
 
+    results_public_ip = results_fog_node["public_ip"]
+
     r = http.request(
         "POST",
         f"http://{edge_node}:9002/invoke-test-plan",
@@ -336,7 +343,7 @@ def _invoke_test_thread(test_file, edge_node, service_executor_url, results, ind
         body=json.dumps(
             {
                 "service_executor_url": service_executor_url,
-                "async_results_url": f"{results_fog_node}:9095",
+                "async_results_url": f"http://{results_public_ip}:9095",
                 "test_plan": test_file}
         ).encode("utf-8"),
     )
@@ -348,16 +355,16 @@ def _invoke_test_edge_nodes(test_file):
 
     results = [None] * 4
 
-    first_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_a["public_ip"], fog_node_a["private_ip"], results, 0,))
+    first_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_a["public_ip"], cloud_api_adapter_url, results, 0,))
     first_execution.start()
 
-    second_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_b["public_ip"], fog_node_b["private_ip"], results, 1,))
+    second_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_b["public_ip"], cloud_api_adapter_url, results, 1,))
     second_execution.start()
 
-    third_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_c["public_ip"], fog_node_b["private_ip"], results, 1,))
+    third_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_c["public_ip"], cloud_api_adapter_url, results, 2,))
     third_execution.start()
 
-    fourth_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_d["public_ip"], fog_node_b["private_ip"], results, 1,))
+    fourth_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_d["public_ip"], cloud_api_adapter_url, results, 3,))
     fourth_execution.start()
 
     first_execution.join()
@@ -420,8 +427,8 @@ if __name__ == "__main__":
                         edge_node_c = aws.locate_vm_data_with_name("edge_node_c")[0]
                         edge_node_d = aws.locate_vm_data_with_name("edge_node_d")[0]
 
-                        fog_node_a = aws.locate_vm_data_with_name("fog_node_a")[0]
-                        fog_node_b = aws.locate_vm_data_with_name("fog_node_b")[0]
+                        # fog_node_a = aws.locate_vm_data_with_name("fog_node_a")[0]
+                        # fog_node_b = aws.locate_vm_data_with_name("fog_node_b")[0]
 
                         results_fog_node = aws.locate_vm_data_with_name("results_fog_node")[0]
 
@@ -446,4 +453,4 @@ if __name__ == "__main__":
                             node_public_ip = fog_node["public_ip"]
                             warm.warmup_functions(node_public_ip)
 
-                        _run_test_scenario(test_file="scenario-1.jmx")
+                        _run_test_scenario(test_file="scenario-1")

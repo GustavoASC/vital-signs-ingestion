@@ -3,16 +3,10 @@ import json
 import urllib.request, traceback, uuid, datetime
 from threading import Thread
 
-TOTAL_USER_PRIORITIES = 5
-THREADS_PER_PRIORITY = 2
-HEALTH_SERVICES = ["body-temperature-monitor", "heart-failure-predictor"]
-
-VITAL_SIGNS_PER_THREAD = 1000
-
 
 def send_http_request(url, payload, method):
     keep_trying = True
-    while (keep_trying):
+    while keep_trying:
         try:
             req = urllib.request.Request(
                 url=url,
@@ -24,7 +18,9 @@ def send_http_request(url, payload, method):
                 print(f"Response: {str(response.read())}")
                 keep_trying = False
         except Exception as e:
-            print(f"Unexpected problem when sending request to {url}: {traceback.format_exc()}")
+            print(
+                f"Unexpected problem when sending request to {url}: {traceback.format_exc()}"
+            )
             print("Will retry...")
 
 
@@ -43,12 +39,16 @@ def register_request_started(id, data, async_results_url):
 def dispatch_vital_sign(id, data, service_executor_url):
     payload = dict(data)
     payload["id"] = id
-    send_http_request(f"{service_executor_url}/function/service-executor", payload, "POST")
+    send_http_request(
+        f"{service_executor_url}/function/service-executor", payload, "POST"
+    )
 
 
-def ingest_vital_sign(payload, service_executor_url, async_results_url):
+def ingest_vital_sign(
+    payload, service_executor_url, async_results_url, vital_signs_per_thread
+):
 
-    for i in range(VITAL_SIGNS_PER_THREAD):
+    for i in range(vital_signs_per_thread):
         id = str(uuid.uuid4())
         try:
             register_request_started(id, payload, async_results_url)
@@ -57,13 +57,21 @@ def ingest_vital_sign(payload, service_executor_url, async_results_url):
             print(f"Unexpected problem happened: {traceback.format_exc()}")
 
 
-def scenario_one(service_executor_url, async_results_url):
+def scenario_one(settings):
 
     all_threads = []
 
-    for i in range(TOTAL_USER_PRIORITIES):
-        for j in range(THREADS_PER_PRIORITY):
-            for service in HEALTH_SERVICES:
+    total_user_priorities = int(settings["total_user_priorities"])
+    threads_per_priority = int(settings["threads_per_priority"])
+    vital_signs_per_thread = int(settings["vital_signs_per_thread"])
+
+    service_executor_url = settings["service_executor_url"]
+    async_results_url = settings["async_results_url"]
+    health_services = settings["health_services"]
+
+    for i in range(total_user_priorities):
+        for j in range(threads_per_priority):
+            for service in health_services:
                 payload = {
                     "user_priority": i + 1,
                     "service_name": service,
@@ -75,6 +83,7 @@ def scenario_one(service_executor_url, async_results_url):
                         payload,
                         service_executor_url,
                         async_results_url,
+                        vital_signs_per_thread,
                     ),
                 )
                 print("Starting thread...")
@@ -93,12 +102,10 @@ class Serv(BaseHTTPRequestHandler):
         if self.path.startswith("/invoke-test-plan"):
 
             settings = self.request_body()
-            service_executor_url = settings["service_executor_url"]
-            async_results_url = settings["async_results_url"]
 
             if settings["test_plan"] == "scenario-1":
                 print("Invoking scenario one...")
-                scenario_one(service_executor_url, async_results_url)
+                scenario_one(settings)
 
             self.write_json_response({})
 

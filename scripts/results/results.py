@@ -52,6 +52,10 @@ class Serv(BaseHTTPRequestHandler):
             self.write_json_response({})
             return
 
+        if id not in running_requests:
+            self.write_json_response({})
+            return
+
         current_update = self.request_body()
         existing_result = running_requests[id]
 

@@ -60,6 +60,12 @@ class Serv(BaseHTTPRequestHandler):
             datetime.datetime.now().timestamp() * 1000
         )
 
+        if "origin" in current_update:
+            origin = current_update["origin"]
+        else:
+            origin = "fog"
+        existing_result["origin"] = origin
+        
         finished_requests[id] = existing_result
         del running_requests[id]
 

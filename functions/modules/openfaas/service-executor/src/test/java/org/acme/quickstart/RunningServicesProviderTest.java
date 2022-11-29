@@ -1,6 +1,7 @@
 package org.acme.quickstart;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
@@ -9,8 +10,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.acme.quickstart.results.Results;
+import org.acme.quickstart.results.ResultsClient;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,8 +26,17 @@ public class RunningServicesProviderTest {
     @Mock
     Clock clock;
 
+    @Mock
+    ResultsClient resultsClient;
+
     @InjectMocks
     RunningServicesProviderImpl runningServicesProvider;
+
+    @Captor
+    ArgumentCaptor<String> idCaptor;
+
+    @Captor
+    ArgumentCaptor<Results> resultsCaptor;
 
     @Test
     public void shouldReturnEmptyListWhenNoServiceIsRunning() {
@@ -123,12 +137,24 @@ public class RunningServicesProviderTest {
                         Instant.ofEpochMilli(1663527788128l),
                         Instant.ofEpochMilli(1663527789759l));
 
-        var id = UUID.randomUUID();
+        doNothing().when(resultsClient)
+                .sendResults(idCaptor.capture(), resultsCaptor.capture());
+
+        var id = UUID.fromString("84cf7632-e76d-4c3c-8fee-cc16e6e1c41e");
         runningServicesProvider.executionStarted(id, "body-temperature-monitor", 7);
         runningServicesProvider.executionFinished(id);
 
         assertThat(runningServicesProvider.getDurationsForService("body-temperature-monitor"))
                 .isEqualTo(List.of(Duration.ofMillis(1631l)));
 
+        assertThat(idCaptor.getValue())
+                .isEqualTo("84cf7632-e76d-4c3c-8fee-cc16e6e1c41e");
+        
+        Results results = new Results();
+        results.initialServiceTimestamp = 1663527788128l;
+        results.endTimestamp = 1663527789759l;
+
+        assertThat(resultsCaptor.getValue())
+                .isEqualTo(results);
     }
 }

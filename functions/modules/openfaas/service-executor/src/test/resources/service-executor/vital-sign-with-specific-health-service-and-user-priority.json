@@ -1,5 +1,6 @@
 {
     "service_name" : "specific-health-service",
     "vital_sign" : "{\"heartbeat\": 100}",
-    "user_priority" : 3
+    "user_priority" : 3,
+    "id": "4cd7df5c-6056-42c3-8783-7254a2b734fc"
   }

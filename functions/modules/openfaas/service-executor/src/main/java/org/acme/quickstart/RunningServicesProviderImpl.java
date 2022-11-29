@@ -13,6 +13,10 @@ import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 
+import org.acme.quickstart.results.Results;
+import org.acme.quickstart.results.ResultsClient;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+
 import io.quarkus.arc.Lock;
 
 @Lock
@@ -22,9 +26,11 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     private final Map<UUID, ExecutionWithDuration> services = new LinkedHashMap<>();
     private final Map<String, List<Duration>> durations = new LinkedHashMap<>();
     private final Clock clock;
+    private final ResultsClient resultsClient;
 
-    public RunningServicesProviderImpl(Clock clock) {
+    public RunningServicesProviderImpl(Clock clock, @RestClient ResultsClient resultsClient) {
         this.clock = clock;
+        this.resultsClient = resultsClient;
     }
 
     @Override
@@ -42,6 +48,11 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
                     var now = clock.instant();
                     getDurationsWithoutCloning(service.execution().serviceName())
                             .add(Duration.between(service.executionStart(), now));
+
+                    Results results = new Results();
+                    results.initialServiceTimestamp = service.executionStart.toEpochMilli();
+                    results.endTimestamp = now.toEpochMilli();
+                    resultsClient.sendResults(id.toString(), results);
 
                 });
 

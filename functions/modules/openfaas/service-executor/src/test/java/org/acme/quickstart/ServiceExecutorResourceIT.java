@@ -5,6 +5,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.okJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.patch;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
@@ -45,6 +46,7 @@ public class ServiceExecutorResourceIT {
     private static final int SERVERLESS_PLATFORM_PORT = 8586;
     private static final int MACHINE_RESOURCES_PORT = 8597;
     private static final int METRICS_PORT = 8674;
+    private static final int RESULTS_PORT = 8678;
 
     private static final long DELAY_NONE = 0;
     private static final long DELAY_TWO_SECONDS = 2;
@@ -53,6 +55,7 @@ public class ServiceExecutorResourceIT {
     MockServer wmServerless;
     MockServer wmMachineResources;
     MockServer wmMetrics;
+    MockServer wmResults;
 
     @Inject
     RunningServicesProvider runningServicesProvider;
@@ -80,10 +83,16 @@ public class ServiceExecutorResourceIT {
             .notifier(new Slf4jNotifier(true))
         );
 
+        wmResults = new MockServer(WireMockConfiguration.wireMockConfig()
+            .port(RESULTS_PORT)
+            .notifier(new Slf4jNotifier(true))
+        );
+
         wmServerless.start();
         wmServiceExecutor.start();
         wmMachineResources.start();
         wmMetrics.start();
+        wmResults.start();
 
         runningServicesProvider.clearDataForTests();
 
@@ -96,6 +105,7 @@ public class ServiceExecutorResourceIT {
         wmServiceExecutor.stop();
         wmMachineResources.stop();
         wmMetrics.stop();
+        wmResults.stop();
     }
 
     @Test
@@ -104,6 +114,7 @@ public class ServiceExecutorResourceIT {
         stubUsedCpuPercentage(85);
         stubServiceExecutor();
         stubMetrics();
+        stubResults();
 
         given()
             .contentType(ContentType.JSON)
@@ -137,6 +148,7 @@ public class ServiceExecutorResourceIT {
         stubUsedCpuPercentage(85);
         stubServiceExecutor();
         stubMetrics();
+        stubResults();
 
         given()
             .contentType(ContentType.JSON)
@@ -171,6 +183,7 @@ public class ServiceExecutorResourceIT {
         stubHealthServerlessFunctions(DELAY_NONE, functions);
         stubUsedCpuPercentage(0);
         stubMetrics();
+        stubResults();
         
         given()
             .contentType(ContentType.JSON)
@@ -193,6 +206,7 @@ public class ServiceExecutorResourceIT {
         stubRankingOffloadingFunctionToRunLocally();
         stubUsedCpuPercentage(85);
         stubMetrics();
+        stubResults();
         
         given()
             .contentType(ContentType.JSON)
@@ -214,6 +228,7 @@ public class ServiceExecutorResourceIT {
         stubHealthServerlessFunctions(DELAY_NONE, functions);
         stubUsedCpuPercentage(0);
         stubMetrics();
+        stubResults();
         
         given()
             .contentType(ContentType.JSON)
@@ -237,6 +252,7 @@ public class ServiceExecutorResourceIT {
         stubDurationOffloadingFunctionToRunLocally();
         stubUsedCpuPercentage(85);
         stubMetrics();
+        stubResults();
         
         given()
             .contentType(ContentType.JSON)
@@ -258,6 +274,7 @@ public class ServiceExecutorResourceIT {
         stubHealthServerlessFunctions(DELAY_TWO_SECONDS, functions);
         stubUsedCpuPercentage(0);
         stubMetrics();
+        stubResults();
         
         given()
             .contentType(ContentType.JSON)
@@ -286,6 +303,7 @@ public class ServiceExecutorResourceIT {
         stubUsedCpuPercentage(99);
         stubServiceExecutor();
         stubMetrics();
+        stubResults();
         
         given()
             .contentType(ContentType.JSON)
@@ -403,6 +421,13 @@ public class ServiceExecutorResourceIT {
         configureFor(wmMetrics.getClient());
         stubFor(
             post("/metrics")
+        );
+    }
+
+    private void stubResults() {
+        configureFor(wmResults.getClient());
+        stubFor(
+            patch(urlEqualTo("/results/4cd7df5c-6056-42c3-8783-7254a2b734fc"))
         );
     }
 

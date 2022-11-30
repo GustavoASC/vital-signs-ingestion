@@ -18,7 +18,9 @@ public class ResourcesLocatorImpl implements ResourcesLocator {
         var resources = machineResourcesClient.getMachineResources();
         return new ResourcesLocatorResponse(
             resources.getCpu(),
-            resources.getLastObservation()
+            resources.getLastObservation(),
+            null,
+            null
         );
     }
 

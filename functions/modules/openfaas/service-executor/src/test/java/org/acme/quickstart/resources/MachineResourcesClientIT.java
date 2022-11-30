@@ -55,7 +55,7 @@ public class MachineResourcesClientIT {
                     .willReturn(okJson(jsonFromResource("output-machine-resources-with-cpu.json"))));
 
         assertThat(machineResourcesClient.getMachineResources())
-            .isEqualTo(new MachineResourcesOutputDto(new BigDecimal("27.8"), null));
+            .isEqualTo(new MachineResourcesOutputDto(new BigDecimal("27.8"), null, null, null));
     }
 
     @Test
@@ -65,7 +65,34 @@ public class MachineResourcesClientIT {
                     .willReturn(okJson(jsonFromResource("output-machine-resources-with-cpu-and-last-observation.json"))));
 
         assertThat(machineResourcesClient.getMachineResources())
-            .isEqualTo(new MachineResourcesOutputDto(new BigDecimal("18.090625000000003"), new BigDecimal("19.3")));
+            .isEqualTo(new MachineResourcesOutputDto(new BigDecimal("18.090625000000003"), new BigDecimal("19.3"), null, null));
+    }
+
+    @Test
+    public void shouldReturnMachineResourcesWithCpuAndMemory() throws Throwable {
+        stubFor(
+            get("/machine-resources")
+                    .willReturn(okJson(jsonFromResource("output-machine-resources-with-cpu-and-memory.json"))));
+
+        BigDecimal usedCpu = new BigDecimal("18.090625000000003");
+        BigDecimal lastCpuObservation = new BigDecimal("19.3");
+        BigDecimal usedMemory = new BigDecimal("85.43");
+        assertThat(machineResourcesClient.getMachineResources())
+            .isEqualTo(new MachineResourcesOutputDto(usedCpu, lastCpuObservation, usedMemory, null));
+    }
+
+    @Test
+    public void shouldReturnMachineResourcesWithCpuAndMemoryWithLastObservations() throws Throwable {
+        stubFor(
+            get("/machine-resources")
+                    .willReturn(okJson(jsonFromResource("output-machine-resources-with-cpu-and-memory-with-last-observations.json"))));
+
+        BigDecimal usedCpu = new BigDecimal("18.090625000000003");
+        BigDecimal lastCpuObservation = new BigDecimal("19.3");
+        BigDecimal usedMemory = new BigDecimal("85.43");
+        BigDecimal usedMemoryLastMobservation = new BigDecimal("83.27");
+        assertThat(machineResourcesClient.getMachineResources())
+            .isEqualTo(new MachineResourcesOutputDto(usedCpu, lastCpuObservation, usedMemory, usedMemoryLastMobservation));
     }
 
     private String jsonFromResource(String resourcePath) throws IOException {

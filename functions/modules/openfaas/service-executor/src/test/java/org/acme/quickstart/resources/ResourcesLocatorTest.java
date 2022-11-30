@@ -24,7 +24,7 @@ public class ResourcesLocatorTest {
     public void shouldRetrieveCpuWithoutLastObservation() {
         
         when(machineResourcesClient.getMachineResources())
-            .thenReturn(new MachineResourcesOutputDto(new BigDecimal("14.6"), null));
+            .thenReturn(new MachineResourcesOutputDto(new BigDecimal("14.6"), null, null, null));
 
         assertThat(resourcesLocator.getUsedCpuPercentage())
                 .isEqualTo(new ResourcesLocatorResponse(new BigDecimal("14.6"), null));
@@ -34,7 +34,7 @@ public class ResourcesLocatorTest {
     public void shouldRetrieveCpuWithLastObservation() {
         
         when(machineResourcesClient.getMachineResources())
-            .thenReturn(new MachineResourcesOutputDto(new BigDecimal("18.090625000000003"), new BigDecimal("19.3")));
+            .thenReturn(new MachineResourcesOutputDto(new BigDecimal("18.090625000000003"), new BigDecimal("19.3"), null, null));
 
         assertThat(resourcesLocator.getUsedCpuPercentage())
                 .isEqualTo(new ResourcesLocatorResponse(new BigDecimal("18.090625000000003"), new BigDecimal("19.3")));

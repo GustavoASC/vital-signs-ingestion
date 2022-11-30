@@ -5,7 +5,9 @@ def update_properties(fog_nodes, cloud_api_adapter_url):
     logging.info("Generating nodes-mappings.properties with nodes configuration...")
 
     relationship = {
-        "fog_node_a": "cloud_api_adapter"
+        "fog_node_a": "fog_node_c",
+        "fog_node_b": "fog_node_c",
+        "fog_node_c": "cloud_api_adapter",
     }
 
     lines = []

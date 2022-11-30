@@ -238,12 +238,12 @@ def _plot_response_time(all_data):
 def _plot_offloading_reasons(all_data, fog_name):
     _initialize_chart()
     x = []
-    exceeded_critical_threshold = []
+    exceeded_critical_cpu_threshold = []
     heuristic_by_ranking = []
     for key, thread_data in sorted(all_data.items()):
         x.append(key)
-        exceeded_critical_threshold.append(
-            thread_data["fog_nodes_data"][fog_name]["total_exceeded_critical_threshold"]
+        exceeded_critical_cpu_threshold.append(
+            thread_data["fog_nodes_data"][fog_name]["total_exceeded_critical_cpu_threshold"]
         )
         heuristic_by_ranking.append(
             thread_data["fog_nodes_data"][fog_name][
@@ -253,7 +253,7 @@ def _plot_offloading_reasons(all_data, fog_name):
 
     plt.bar(
         x,
-        exceeded_critical_threshold,
+        exceeded_critical_cpu_threshold,
         color="g",
         width=0.4,
         label="Exceeded critical threshold",
@@ -261,7 +261,7 @@ def _plot_offloading_reasons(all_data, fog_name):
     plt.bar(
         x,
         heuristic_by_ranking,
-        bottom=exceeded_critical_threshold,
+        bottom=exceeded_critical_cpu_threshold,
         color="r",
         width=0.4,
         label="Heuristic by ranking",

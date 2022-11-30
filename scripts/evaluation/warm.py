@@ -109,6 +109,7 @@ def _warmup_service_executor(fog_node_ip):
                     "service_name": "body-temperature-monitor",
                     "vital_sign": '{"temperature": 40}',
                     "user_priority": 3,
+                    "id": "3df4f9e3-f9e8-4cc1-9b18-7a8893a14838"
                 }
             ).encode("utf-8"),
         )

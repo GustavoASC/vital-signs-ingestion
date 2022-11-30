@@ -70,7 +70,7 @@ def _deploy_service_executor_openfaas(
             "-e",
             "THRESHOLD_WARNING_CPU_USAGE={}".format(warning_threshold),
             "-e",
-            "RESULTS_URL={}".format(results_fog_node["public_ip"]),
+            "RESULTS_URL=http://{}:9095".format(results_fog_node["public_ip"]),
         ],
         cwd="./functions",
     )
@@ -225,8 +225,8 @@ def _update_with_summary(all_data):
                 "total_local_execution"
             ]
             current_fog_node_data[
-                "total_exceeded_critical_threshold"
-            ] = metrics_summary["total_exceeded_critical_threshold"]
+                "total_exceeded_critical_cpu_threshold"
+            ] = metrics_summary["total_exceeded_critical_cpu_threshold"]
             current_fog_node_data[
                 "total_triggered_heuristic_by_rankings"
             ] = metrics_summary["total_triggered_heuristic_by_rankings"]
@@ -329,23 +329,29 @@ def _wrap_dir(file):
     return "./scripts/evaluation/" + file
 
 def _invoke_test_thread(test_file, edge_node, service_executor_url, results, index_results):
-    logging.info("\n\n")
-    logging.info("Invoking test on remote edge node...")
-    logging.info("Edge node public IP: {}".format(edge_node))
-    logging.info("Target service executor IP: {}".format(service_executor_url))
 
     results_public_ip = results_fog_node["public_ip"]
+    request_payload = {
+                "service_executor_url": f"http://{service_executor_url}:8080",
+                "async_results_url": f"http://{results_public_ip}:9095",
+                "test_plan": test_file,
+                "total_user_priorities": 5,
+                "threads_per_priority": 2,
+                "vital_signs_per_thread": 1000,
+                "health_services": [
+                    "heart-failure-predictor"
+                ]
+            }
+
+    logging.info("\n\n")
+    logging.info("Invoking test on remote edge node...")
+    logging.info(f"Request payload: {json.dumps(request_payload)}")
 
     r = http.request(
         "POST",
         f"http://{edge_node}:9002/invoke-test-plan",
         headers={"Content-Type": "application/json"},
-        body=json.dumps(
-            {
-                "service_executor_url": service_executor_url,
-                "async_results_url": f"http://{results_public_ip}:9095",
-                "test_plan": test_file}
-        ).encode("utf-8"),
+        body=json.dumps(request_payload).encode("utf-8"),
     )
 
     _check_error(r)
@@ -355,16 +361,16 @@ def _invoke_test_edge_nodes(test_file):
 
     results = [None] * 4
 
-    first_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_a["public_ip"], cloud_api_adapter_url, results, 0,))
+    first_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_a["public_ip"], fog_node_a["public_ip"], results, 0,))
     first_execution.start()
 
-    second_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_b["public_ip"], cloud_api_adapter_url, results, 1,))
+    second_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_b["public_ip"], fog_node_a["public_ip"], results, 1,))
     second_execution.start()
 
-    third_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_c["public_ip"], cloud_api_adapter_url, results, 2,))
+    third_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_c["public_ip"], fog_node_b["public_ip"], results, 2,))
     third_execution.start()
 
-    fourth_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_d["public_ip"], cloud_api_adapter_url, results, 3,))
+    fourth_execution = Thread(target=_invoke_test_thread, args=(test_file, edge_node_d["public_ip"], fog_node_b["public_ip"], results, 3,))
     fourth_execution.start()
 
     first_execution.join()
@@ -388,8 +394,8 @@ if __name__ == "__main__":
 
     threads_cpu_collection = [1]
     cpu_interval = [1]
-    warning_thresholds = [75]
-    critical_thresholds = [90]
+    warning_thresholds = [40]
+    critical_thresholds = [85]
     
     for i in range(EXPERIMENT_ITERATIONS):
         for current_thread_cpu_collection in threads_cpu_collection:
@@ -427,8 +433,8 @@ if __name__ == "__main__":
                         edge_node_c = aws.locate_vm_data_with_name("edge_node_c")[0]
                         edge_node_d = aws.locate_vm_data_with_name("edge_node_d")[0]
 
-                        # fog_node_a = aws.locate_vm_data_with_name("fog_node_a")[0]
-                        # fog_node_b = aws.locate_vm_data_with_name("fog_node_b")[0]
+                        fog_node_a = aws.locate_vm_data_with_name("fog_node_a")[0]
+                        fog_node_b = aws.locate_vm_data_with_name("fog_node_b")[0]
 
                         results_fog_node = aws.locate_vm_data_with_name("results_fog_node")[0]
 

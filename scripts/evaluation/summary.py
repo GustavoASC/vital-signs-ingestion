@@ -37,7 +37,7 @@ def _print_fog_node_data(fog_node_data):
     )
     logging.info(
         "###      Tot.exceeded critical threshold: {}".format(
-            fog_node_data["total_exceeded_critical_threshold"]
+            fog_node_data["total_exceeded_critical_cpu_threshold"]
         )
     )
     logging.info(

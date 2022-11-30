@@ -12,6 +12,8 @@ public class Metrics {
     public int ranking;
     public BigDecimal usedCpu;
     public BigDecimal lastCpuObservation;
+    public BigDecimal usedMem;
+    public BigDecimal lastMemObservation;
     public long cpuCollectionTimestamp;
     public String function;
     public boolean offloading;
@@ -30,6 +32,8 @@ public class Metrics {
                 ", ranking='" + ranking + "'" +
                 ", usedCpu='" + usedCpu + "'" +
                 ", lastCpuObservation='" + lastCpuObservation + "'" +
+                ", usedMem='" + usedMem + "'" +
+                ", lastMemObservation='" + lastMemObservation + "'" +
                 ", cpuCollectionTimestamp='" + cpuCollectionTimestamp + "'" +
                 ", function='" + function + "'" +
                 ", offloading='" + offloading + "'" +
@@ -54,6 +58,8 @@ public class Metrics {
         return userPriority == metrics.userPriority && ranking == metrics.ranking
                 && Objects.equals(usedCpu, metrics.usedCpu)
                 && Objects.equals(lastCpuObservation, metrics.lastCpuObservation)
+                && Objects.equals(usedMem, metrics.usedMem)
+                && Objects.equals(lastMemObservation, metrics.lastMemObservation)
                 && cpuCollectionTimestamp == metrics.cpuCollectionTimestamp
                 && Objects.equals(function, metrics.function) && offloading == metrics.offloading
                 && runningLocally == metrics.runningLocally
@@ -67,10 +73,10 @@ public class Metrics {
 
     @Override
     public int hashCode() {
-        return Objects.hash(userPriority, ranking, usedCpu, lastCpuObservation, cpuCollectionTimestamp, function,
-                offloading, runningLocally, exceededCriticalThreshold, triggeredHeuristicByRanking,
-                resultForHeuristicByRanking, triggeredHeuristicByDuration, resultForHeuristicByDuration,
-                assumingFallbackForHeuristics);
+        return Objects.hash(userPriority, ranking, usedCpu, lastCpuObservation, usedMem, lastMemObservation,
+                cpuCollectionTimestamp, function, offloading, runningLocally, exceededCriticalThreshold,
+                triggeredHeuristicByRanking, resultForHeuristicByRanking, triggeredHeuristicByDuration,
+                resultForHeuristicByDuration, assumingFallbackForHeuristics);
     }
 
 }

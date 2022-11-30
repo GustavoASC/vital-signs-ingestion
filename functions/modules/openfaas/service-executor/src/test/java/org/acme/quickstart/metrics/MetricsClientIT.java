@@ -49,15 +49,35 @@ public class MetricsClientIT {
     }
 
     @Test
-    public void shouldReturnMachineResources() throws Throwable {
+    public void shouldReturnMachineResourcesWithoutMemory() throws Throwable {
         stubFor(
             post("/metrics")
-                .withRequestBody(equalToJson(jsonFromResource(("input-metrics.json")))));
+                .withRequestBody(equalToJson(jsonFromResource(("input-metrics-missing-memory.json")))));
 
         Metrics metrics = new Metrics();
         metrics.function = "foo-function";
         metrics.usedCpu = new BigDecimal("96");
         metrics.lastCpuObservation = new BigDecimal("18.090625000000003");
+        metrics.cpuCollectionTimestamp = 1663527788128l;
+        metrics.userPriority = 5;
+        metrics.ranking = 8;
+        metrics.offloading = true;
+        
+        assertThat(metricsClient.sendMetrics(metrics))
+            .isNull();
+    }
+
+    @Test
+    public void shouldReturnMachineResourcesWithMemory() throws Throwable {
+        stubFor(
+            post("/metrics")
+                .withRequestBody(equalToJson(jsonFromResource(("input-metrics-with-memory.json")))));
+
+        Metrics metrics = new Metrics();
+        metrics.function = "foo-function";
+        metrics.usedCpu = new BigDecimal("96");
+        metrics.lastCpuObservation = new BigDecimal("18.090625000000003");
+        metrics.usedMem = new BigDecimal("86.43");
         metrics.cpuCollectionTimestamp = 1663527788128l;
         metrics.userPriority = 5;
         metrics.ranking = 8;

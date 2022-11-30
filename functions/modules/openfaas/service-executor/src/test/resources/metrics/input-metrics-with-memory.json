@@ -1,0 +1,18 @@
+{
+    "user_priority": 5,
+    "ranking": 8,
+    "used_cpu": 96,
+    "last_cpu_observation": 18.090625000000003,
+    "used_mem": 86.43,
+    "last_mem_observation": null,
+    "cpu_collection_timestamp": 1663527788128,
+    "function": "foo-function",
+    "offloading": true,
+    "running_locally": false,
+    "exceeded_critical_threshold": false,
+    "triggered_heuristic_by_ranking": false,
+    "result_for_heuristic_by_ranking": false,
+    "triggered_heuristic_by_duration": false,
+    "result_for_heuristic_by_duration": false,
+    "assuming_fallback_for_heuristics": false
+}

@@ -4,6 +4,8 @@
     "used_cpu": 96,
     "last_cpu_observation": 18.090625000000003,
     "cpu_collection_timestamp": 1663527788128,
+    "used_mem": null,
+    "last_mem_observation": null,
     "function": "foo-function",
     "offloading": true,
     "running_locally": false,

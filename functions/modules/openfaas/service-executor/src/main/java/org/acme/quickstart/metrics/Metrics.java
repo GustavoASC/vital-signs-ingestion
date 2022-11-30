@@ -18,7 +18,8 @@ public class Metrics {
     public String function;
     public boolean offloading;
     public boolean runningLocally;
-    public boolean exceededCriticalThreshold;
+    public boolean exceededCriticalCpuThreshold;
+    public boolean exceededCriticalMemThreshold;
     public boolean triggeredHeuristicByRanking;
     public boolean resultForHeuristicByRanking;
     public boolean triggeredHeuristicByDuration;
@@ -38,7 +39,8 @@ public class Metrics {
                 ", function='" + function + "'" +
                 ", offloading='" + offloading + "'" +
                 ", runningLocally='" + runningLocally + "'" +
-                ", exceededCriticalThreshold='" + exceededCriticalThreshold + "'" +
+                ", exceededCriticalCpuThreshold='" + exceededCriticalCpuThreshold + "'" +
+                ", exceededCriticalMemThreshold='" + exceededCriticalMemThreshold + "'" +
                 ", triggeredHeuristicByRanking='" + triggeredHeuristicByRanking + "'" +
                 ", resultForHeuristicByRanking='" + resultForHeuristicByRanking + "'" +
                 ", triggeredHeuristicByDuration='" + triggeredHeuristicByDuration + "'" +
@@ -63,7 +65,8 @@ public class Metrics {
                 && cpuCollectionTimestamp == metrics.cpuCollectionTimestamp
                 && Objects.equals(function, metrics.function) && offloading == metrics.offloading
                 && runningLocally == metrics.runningLocally
-                && exceededCriticalThreshold == metrics.exceededCriticalThreshold
+                && exceededCriticalCpuThreshold == metrics.exceededCriticalCpuThreshold
+                && exceededCriticalMemThreshold == metrics.exceededCriticalMemThreshold
                 && triggeredHeuristicByRanking == metrics.triggeredHeuristicByRanking
                 && resultForHeuristicByRanking == metrics.resultForHeuristicByRanking
                 && triggeredHeuristicByDuration == metrics.triggeredHeuristicByDuration
@@ -74,9 +77,9 @@ public class Metrics {
     @Override
     public int hashCode() {
         return Objects.hash(userPriority, ranking, usedCpu, lastCpuObservation, usedMem, lastMemObservation,
-                cpuCollectionTimestamp, function, offloading, runningLocally, exceededCriticalThreshold,
-                triggeredHeuristicByRanking, resultForHeuristicByRanking, triggeredHeuristicByDuration,
-                resultForHeuristicByDuration, assumingFallbackForHeuristics);
+                cpuCollectionTimestamp, function, offloading, runningLocally, exceededCriticalCpuThreshold,
+                exceededCriticalMemThreshold, triggeredHeuristicByRanking, resultForHeuristicByRanking,
+                triggeredHeuristicByDuration, resultForHeuristicByDuration, assumingFallbackForHeuristics);
     }
 
 }

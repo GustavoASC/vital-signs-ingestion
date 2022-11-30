@@ -110,7 +110,7 @@ public class VitalSignServiceImplTest {
                 metrics.cpuCollectionTimestamp = 1663527788128l;
                 metrics.function = "body-temperature-monitor";
                 metrics.offloading = true;
-                metrics.exceededCriticalThreshold = true;
+                metrics.exceededCriticalCpuThreshold = true;
 
                 verify(metricsClient, times(1))
                     .sendMetrics(metrics);
@@ -137,7 +137,35 @@ public class VitalSignServiceImplTest {
                 metrics.cpuCollectionTimestamp = 1663527788128l;
                 metrics.function = "body-temperature-monitor";
                 metrics.offloading = true;
-                metrics.exceededCriticalThreshold = true;
+                metrics.exceededCriticalCpuThreshold = true;
+
+                verify(metricsClient, times(1))
+                    .sendMetrics(metrics);
+        }
+        @Test
+        public void shouldGenerateMetricsWithCpuAndMemory() {
+
+                when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                                .thenReturn(13);
+                when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                                .thenReturn(17);
+                when(resourcesLocator.getUsedCpuPercentage())
+                                .thenReturn(new ResourcesLocatorResponse(new BigDecimal("10.75"), new BigDecimal("15.3"), new BigDecimal("99.24"), new BigDecimal("14.27")));
+
+                ingestVitalSign();
+
+                Metrics metrics;
+                metrics = new Metrics();
+                metrics.userPriority = USER_PRIORITY;
+                metrics.ranking = 13;
+                metrics.usedCpu = BigDecimal.valueOf(10.75);
+                metrics.usedMem = BigDecimal.valueOf(99.24);
+                metrics.lastCpuObservation = BigDecimal.valueOf(15.3);
+                metrics.lastMemObservation = BigDecimal.valueOf(14.27);
+                metrics.cpuCollectionTimestamp = 1663527788128l;
+                metrics.function = "body-temperature-monitor";
+                metrics.offloading = true;
+                metrics.exceededCriticalMemThreshold = true;
 
                 verify(metricsClient, times(1))
                     .sendMetrics(metrics);

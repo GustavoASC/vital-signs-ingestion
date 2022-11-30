@@ -106,15 +106,17 @@ public class VitalSignServiceImpl implements VitalSignService {
         ResourcesLocatorResponse response = resourcesLocator.getUsedCpuPercentage();
         metrics.cpuCollectionTimestamp = clock.instant().toEpochMilli();
         metrics.usedCpu = response.getUsedCpu();
+        metrics.usedMem = response.getUsedMemory();
         metrics.lastCpuObservation = response.getLastCpuObservation();
+        metrics.lastMemObservation = response.getLastMemoryObservation();
         
         if (metrics.usedCpu.doubleValue() > criticalCpuUsage) {
-            metrics.exceededCriticalThreshold = true;
+            metrics.exceededCriticalCpuThreshold = true;
             return true;
         }
 
-        var memUsage = response.getUsedMemory();
-        if (memUsage != null && memUsage.doubleValue() > criticalMemUsage) {
+        if (metrics.usedMem != null && metrics.usedMem.doubleValue() > criticalMemUsage) {
+            metrics.exceededCriticalMemThreshold = true;
             return true;
         }
 

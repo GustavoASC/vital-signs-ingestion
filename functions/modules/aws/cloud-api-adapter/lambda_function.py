@@ -3,7 +3,7 @@ import boto3
 import datetime
 from urllib import request, error
 
-RESULTS_URL = "https://webhook.site/5ac82c04-796e-412f-a0cd-7272da2f9176"
+RESULTS_URL = "http://ec2-18-231-189-223.sa-east-1.compute.amazonaws.com:9095"
 
 client = boto3.client("lambda")
 
@@ -24,7 +24,8 @@ def notify_vital_sign_processed(id, initial_service_timestamp):
         end_timestamp = current_timestamp()
         data = {
             "initial_service_timestamp": initial_service_timestamp,
-            "end_timestamp": end_timestamp
+            "end_timestamp": end_timestamp,
+            "origin": "cloud"
         }
         print(data)
         req = request.Request(

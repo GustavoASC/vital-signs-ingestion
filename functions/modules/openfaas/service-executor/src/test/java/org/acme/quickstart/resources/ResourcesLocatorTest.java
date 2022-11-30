@@ -40,4 +40,24 @@ public class ResourcesLocatorTest {
                 .isEqualTo(new ResourcesLocatorResponse(new BigDecimal("18.090625000000003"), new BigDecimal("19.3")));
     }
 
+    @Test
+    public void shouldRetrieveCpuWithLastObservationAndMemory() {
+        
+        when(machineResourcesClient.getMachineResources())
+            .thenReturn(new MachineResourcesOutputDto(new BigDecimal("18.090625000000003"), new BigDecimal("19.3"), new BigDecimal("27.38"), null));
+
+        assertThat(resourcesLocator.getUsedCpuPercentage())
+                .isEqualTo(new ResourcesLocatorResponse(new BigDecimal("18.090625000000003"), new BigDecimal("19.3"), new BigDecimal("27.38"), null));
+    }
+
+    @Test
+    public void shouldRetrieveCpuWithLastObservationAndMemoryWithLastObservation() {
+        
+        when(machineResourcesClient.getMachineResources())
+            .thenReturn(new MachineResourcesOutputDto(new BigDecimal("18.090625000000003"), new BigDecimal("19.3"), new BigDecimal("27.38"), new BigDecimal("29.54")));
+
+        assertThat(resourcesLocator.getUsedCpuPercentage())
+                .isEqualTo(new ResourcesLocatorResponse(new BigDecimal("18.090625000000003"), new BigDecimal("19.3"), new BigDecimal("27.38"), new BigDecimal("29.54")));
+    }
+
 }

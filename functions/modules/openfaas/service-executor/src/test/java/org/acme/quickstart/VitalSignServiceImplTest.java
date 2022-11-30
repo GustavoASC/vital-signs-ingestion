@@ -39,6 +39,7 @@ public class VitalSignServiceImplTest {
         private static final String VITAL_SIGN = "{ \"heartbeat\": 100}";
         private static final int USER_PRIORITY = 7;
 
+        private static final int CRITICAL_MEM_USAGE = 95;
         private static final int CRITICAL_CPU_USAGE = 90;
         private static final int WARNING_CPU_USAGE = 75;
 
@@ -73,7 +74,7 @@ public class VitalSignServiceImplTest {
         @BeforeEach
         public void beforeEach() {
             this.clock = Clock.fixed(Instant.ofEpochMilli(1663527788128l), ZoneId.of("UTC"));
-            this.vitalSignService = new VitalSignServiceImpl(CRITICAL_CPU_USAGE, WARNING_CPU_USAGE,
+            this.vitalSignService = new VitalSignServiceImpl(CRITICAL_MEM_USAGE, CRITICAL_CPU_USAGE, WARNING_CPU_USAGE,
                     serverlessFunctionClient, metricsClient, serviceExecutorClient, resourcesLocator, offloadingHeuristicByRanking,
                     offloadingHeuristicByDuration, rankingCalculator, runningServicesProvider, clock);
         }
@@ -311,6 +312,95 @@ public class VitalSignServiceImplTest {
                 verify(runningServicesProvider, times(2))
                                 .executionFinished(any());
         }
+
+        @Test
+        void shouldOffloadWhenMemoryExceedsCriticalThreshold() {
+            when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                        .thenReturn(13);
+            when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                        .thenReturn(14);
+            when(resourcesLocator.getUsedCpuPercentage())
+                        .thenReturn(new ResourcesLocatorResponse(new BigDecimal("10.01"), null, new BigDecimal("95.01"), null));
+
+            ingestVitalSign();
+
+            verify(serviceExecutorClient, times(1))
+                        .runServiceExecutor(new ServiceExecutorInputDto("body-temperature-monitor", VITAL_SIGN, USER_PRIORITY, ID));
+            verify(serviceExecutorClient, times(1))
+                        .runServiceExecutor(new ServiceExecutorInputDto("bar-function", VITAL_SIGN, USER_PRIORITY, ID));
+            verify(resourcesLocator, times(2))
+                        .getUsedCpuPercentage();
+        }
+
+        @Test
+        void shouldNotOffloadWhenMemoryIsEqualToCriticalThreshold() {
+            when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                            .thenReturn(13);
+            when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                            .thenReturn(17);
+            when(resourcesLocator.getUsedCpuPercentage())
+                            .thenReturn(new ResourcesLocatorResponse(new BigDecimal("74"), null, new BigDecimal("95"), null));
+
+            ingestVitalSign();
+
+            verify(resourcesLocator, times(2))
+                            .getUsedCpuPercentage();
+            verify(rankingCalculator, times(1))
+                            .calculate(USER_PRIORITY, "body-temperature-monitor");
+            verify(rankingCalculator, times(1))
+                            .calculate(USER_PRIORITY, "bar-function");
+
+            InOrder orderVerifier = inOrder(runningServicesProvider, serverlessFunctionClient);
+
+            orderVerifier.verify(runningServicesProvider, times(1))
+                            .executionStarted(ID, "body-temperature-monitor", 13);
+            orderVerifier.verify(serverlessFunctionClient, times(1))
+                            .runFunction("body-temperature-monitor", VITAL_SIGN);
+            orderVerifier.verify(runningServicesProvider, times(1))
+                            .executionFinished(any());
+
+            orderVerifier.verify(runningServicesProvider, times(1))
+                            .executionStarted(ID, "bar-function", 17);
+            orderVerifier.verify(serverlessFunctionClient, times(1))
+                            .runFunction("bar-function", VITAL_SIGN);
+            orderVerifier.verify(runningServicesProvider, times(1))
+                            .executionFinished(any());
+        }
+
+        @Test
+        void shouldNotOffloadWhenMemoryIsLowerThanCriticalThreshold() {
+            when(rankingCalculator.calculate(USER_PRIORITY, "body-temperature-monitor"))
+                            .thenReturn(13);
+            when(rankingCalculator.calculate(USER_PRIORITY, "bar-function"))
+                            .thenReturn(17);
+            when(resourcesLocator.getUsedCpuPercentage())
+                            .thenReturn(new ResourcesLocatorResponse(new BigDecimal("74"), null, new BigDecimal("10"), null));
+
+            ingestVitalSign();
+
+            verify(resourcesLocator, times(2))
+                            .getUsedCpuPercentage();
+            verify(rankingCalculator, times(1))
+                            .calculate(USER_PRIORITY, "body-temperature-monitor");
+            verify(rankingCalculator, times(1))
+                            .calculate(USER_PRIORITY, "bar-function");
+
+            InOrder orderVerifier = inOrder(runningServicesProvider, serverlessFunctionClient);
+
+            orderVerifier.verify(runningServicesProvider, times(1))
+                            .executionStarted(ID, "body-temperature-monitor", 13);
+            orderVerifier.verify(serverlessFunctionClient, times(1))
+                            .runFunction("body-temperature-monitor", VITAL_SIGN);
+            orderVerifier.verify(runningServicesProvider, times(1))
+                            .executionFinished(any());
+
+            orderVerifier.verify(runningServicesProvider, times(1))
+                            .executionStarted(ID, "bar-function", 17);
+            orderVerifier.verify(serverlessFunctionClient, times(1))
+                            .runFunction("bar-function", VITAL_SIGN);
+            orderVerifier.verify(runningServicesProvider, times(1))
+                            .executionFinished(any());
+        }        
 
         private void ingestVitalSign() {
             vitalSignService.ingestVitalSignRunningAllServices(ID, VITAL_SIGN, USER_PRIORITY);

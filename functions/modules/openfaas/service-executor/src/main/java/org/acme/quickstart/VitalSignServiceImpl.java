@@ -25,6 +25,7 @@ public class VitalSignServiceImpl implements VitalSignService {
 
     private static final List<String> FUNCTIONS = List.of("body-temperature-monitor", "bar-function");
 
+    private final int criticalMemUsage;
     private final int criticalCpuUsage;
     private final int warningCpuUsage;
     private final ServerlessFunctionClient serverlessFunctionClient;
@@ -38,6 +39,7 @@ public class VitalSignServiceImpl implements VitalSignService {
     private final Clock clock;
 
     public VitalSignServiceImpl(
+            @ConfigProperty(name = "offloading.threshold.critical-mem-usage") int criticalMemUsage,
             @ConfigProperty(name = "offloading.threshold.critical-cpu-usage") int criticalCpuUsage,
             @ConfigProperty(name = "offloading.threshold.warning-cpu-usage") int warningCpuUsage,
             @RestClient ServerlessFunctionClient serverlessFunctionClient,
@@ -49,6 +51,7 @@ public class VitalSignServiceImpl implements VitalSignService {
             RankingCalculator rankingCalculator,
             RunningServicesProvider runningServicesProvider,
             Clock clock) {
+        this.criticalMemUsage = criticalMemUsage;
         this.criticalCpuUsage = criticalCpuUsage;
         this.warningCpuUsage = warningCpuUsage;
         this.serverlessFunctionClient = serverlessFunctionClient;
@@ -107,6 +110,11 @@ public class VitalSignServiceImpl implements VitalSignService {
         
         if (metrics.usedCpu.doubleValue() > criticalCpuUsage) {
             metrics.exceededCriticalThreshold = true;
+            return true;
+        }
+
+        var memUsage = response.getUsedMemory();
+        if (memUsage != null && memUsage.doubleValue() > criticalMemUsage) {
             return true;
         }
 

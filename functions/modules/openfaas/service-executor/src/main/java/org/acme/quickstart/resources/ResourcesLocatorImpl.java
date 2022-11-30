@@ -19,8 +19,8 @@ public class ResourcesLocatorImpl implements ResourcesLocator {
         return new ResourcesLocatorResponse(
             resources.getCpu(),
             resources.getLastObservation(),
-            null,
-            null
+            resources.getMemory(),
+            resources.getLastMemoryObservation()
         );
     }
 

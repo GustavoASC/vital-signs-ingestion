@@ -102,11 +102,13 @@ class Serv(BaseHTTPRequestHandler):
 
         if self.path.startswith("/metrics/cpu"):
             response_bytes = self.fetch_cpu_metrics()
+            self.send_response(200)
+
         elif self.path.startswith("/metrics/mem"):
             response_bytes = self.fetch_mem_metrics()
             self.send_response(200)
-        elif self.path.startswith("/metrics/summary"):
 
+        elif self.path.startswith("/metrics/summary"):
             user_priority = urllib.parse.parse_qs(parsed_url.query)["user_priority"][0]
             user_priority = int(user_priority)
             response_bytes = self.fetch_metrics_summary(user_priority)

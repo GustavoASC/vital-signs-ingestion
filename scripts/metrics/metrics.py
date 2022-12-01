@@ -26,13 +26,31 @@ class Serv(BaseHTTPRequestHandler):
 
         return wrap_response(occurences)
 
+    def fetch_mem_metrics(self):
+        global metrics
+        occurences = []
+        for current_metric in metrics:
+            json_metric = json.loads(current_metric)
+            occurences.append(
+                {
+                    "mem": json_metric.get("used_mem"),
+                    "last_mem_observation": json_metric.get("last_mem_observation"),
+
+                    # This field is cpu_collection_timestamp but is the same for memory collection
+                    "collection_timestamp": json_metric["cpu_collection_timestamp"], 
+                }
+            )
+
+        return wrap_response(occurences)
+
     def fetch_metrics_summary(self, user_priority_filter):
 
         global metrics
 
         total_offloading = 0
         total_local_execution = 0
-        total_exceeded_critical_threshold = 0
+        total_exceeded_critical_cpu_threshold = 0
+        total_exceeded_critical_mem_threshold = 0
         total_triggered_heuristic_by_rankings = 0
         total_result_for_heuristic_by_ranking = 0
         total_triggered_heuristic_by_duration = 0
@@ -49,8 +67,10 @@ class Serv(BaseHTTPRequestHandler):
                     total_offloading += 1
                 if json_metric["running_locally"]:
                     total_local_execution += 1
-                if json_metric["exceeded_critical_threshold"]:
-                    total_exceeded_critical_threshold += 1
+                if json_metric["exceeded_critical_cpu_threshold"]:
+                    total_exceeded_critical_cpu_threshold += 1
+                if json_metric["exceeded_critical_mem_threshold"]:
+                    total_exceeded_critical_mem_threshold += 1
                 if json_metric["triggered_heuristic_by_ranking"]:
                     total_triggered_heuristic_by_rankings += 1
                 if json_metric["result_for_heuristic_by_ranking"]:
@@ -66,7 +86,8 @@ class Serv(BaseHTTPRequestHandler):
             {
                 "total_offloading": total_offloading,
                 "total_local_execution": total_local_execution,
-                "total_exceeded_critical_threshold": total_exceeded_critical_threshold,
+                "total_exceeded_critical_cpu_threshold": total_exceeded_critical_cpu_threshold,
+                "total_exceeded_critical_mem_threshold": total_exceeded_critical_mem_threshold,
                 "total_triggered_heuristic_by_rankings": total_triggered_heuristic_by_rankings,
                 "total_result_for_heuristic_by_ranking": total_result_for_heuristic_by_ranking,
                 "total_triggered_heuristic_by_duration": total_triggered_heuristic_by_duration,
@@ -81,6 +102,8 @@ class Serv(BaseHTTPRequestHandler):
 
         if self.path.startswith("/metrics/cpu"):
             response_bytes = self.fetch_cpu_metrics()
+        if self.path.startswith("/metrics/mem"):
+            response_bytes = self.fetch_mem_metrics()
             self.send_response(200)
         elif self.path.startswith("/metrics/summary"):
 

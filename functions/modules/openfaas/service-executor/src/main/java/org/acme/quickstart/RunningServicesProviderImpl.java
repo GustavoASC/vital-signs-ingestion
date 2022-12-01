@@ -23,6 +23,8 @@ import io.quarkus.arc.Lock;
 @ApplicationScoped
 public class RunningServicesProviderImpl implements RunningServicesProvider {
 
+    private static final int MAX_HISTORICAL_DURATIONS = 6;
+    
     private final Map<UUID, ExecutionWithDuration> services = new LinkedHashMap<>();
     private final Map<String, List<Duration>> durations = new LinkedHashMap<>();
     private final Clock clock;
@@ -46,8 +48,17 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
                 .ifPresent(service -> {
 
                     var now = clock.instant();
-                    getDurationsWithoutCloning(service.execution().serviceName())
+                    var durationsForService = getDurationsWithoutCloning(service.execution().serviceName());
+                    
+                    durationsForService
                             .add(Duration.between(service.executionStart(), now));
+
+                    // Ensures that only the most recent values will be available
+                    // This is to avoid huge memory usage and also because prediction
+                    // only cares about the most recent values
+                    if (durationsForService.size() > MAX_HISTORICAL_DURATIONS) {
+                        durationsForService.remove(0);
+                    }
 
                     Results results = new Results();
                     results.initialServiceTimestamp = service.executionStart.toEpochMilli();

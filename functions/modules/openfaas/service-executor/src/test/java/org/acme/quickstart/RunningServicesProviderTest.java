@@ -23,6 +23,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class RunningServicesProviderTest {
 
+    private static final int MAX_DURATIONS_FOR_SERVICE = 6;
+
     @Mock
     Clock clock;
 
@@ -156,5 +158,52 @@ public class RunningServicesProviderTest {
 
         assertThat(resultsCaptor.getValue())
                 .isEqualTo(results);
+    }
+
+    @Test
+    public void shouldNotStoreMoreThanMaximumDurationsForService() throws Exception {
+
+        when(clock.instant())
+                .thenReturn(
+                    
+                    // Each one has 1000 millis of difference
+                    Instant.ofEpochMilli(1663527788128l),
+                    Instant.ofEpochMilli(1663527788228l),
+                    Instant.ofEpochMilli(1663527788328l),
+                    Instant.ofEpochMilli(1663527788428l),
+                    Instant.ofEpochMilli(1663527788528l),
+                    Instant.ofEpochMilli(1663527788628l),
+                    Instant.ofEpochMilli(1663527788728l),
+                    Instant.ofEpochMilli(1663527788828l),
+
+                    // These have more difference
+                    Instant.ofEpochMilli(1663527718928l),
+                    Instant.ofEpochMilli(1663527719028l),
+                    Instant.ofEpochMilli(1663527728128l),
+                    Instant.ofEpochMilli(1663527738228l),
+
+                    // These have even more
+                    Instant.ofEpochMilli(1663527318928l),
+                    Instant.ofEpochMilli(1663527718928l),
+
+                    // These even more
+                    Instant.ofEpochMilli(1663547318928l),
+                    Instant.ofEpochMilli(1663557718928l)
+        );
+
+        for (int i = 0; i < 8; i++) {
+            var id = UUID.randomUUID();
+            runningServicesProvider.executionStarted(id, "body-temperature-monitor", 7);
+            runningServicesProvider.executionFinished(id);
+        }
+
+        var durations = runningServicesProvider.getDurationsForService("body-temperature-monitor");
+        assertThat(durations)
+                .hasSize(MAX_DURATIONS_FOR_SERVICE);
+
+        assertThat(durations.get(5))
+                .isEqualTo(Duration.ofSeconds(10400));
+
+
     }
 }

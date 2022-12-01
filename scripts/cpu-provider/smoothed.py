@@ -28,13 +28,16 @@ class Serv(BaseHTTPRequestHandler):
             "Current amount of cpu (last observation): "
             + str(cpu_info["last_observation"])
         )
+
+        mem = psutil.virtual_memory()
         print("Current amount of cpu (smoothed): " + str(cpu_info["smoothed"]))
-        print("Current amount of memory: " + str(psutil.virtual_memory()))
+        print("Current amount of memory: " + str(mem))
 
         response_bytes = json.dumps(
             {
                 "cpu": cpu_info["smoothed"],
                 "last_observation": cpu_info["last_observation"],
+                "memory": mem.percent
             }
         ).encode("utf-8")
         self.send_response(200)

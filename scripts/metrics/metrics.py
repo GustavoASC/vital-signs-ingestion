@@ -102,7 +102,7 @@ class Serv(BaseHTTPRequestHandler):
 
         if self.path.startswith("/metrics/cpu"):
             response_bytes = self.fetch_cpu_metrics()
-        if self.path.startswith("/metrics/mem"):
+        elif self.path.startswith("/metrics/mem"):
             response_bytes = self.fetch_mem_metrics()
             self.send_response(200)
         elif self.path.startswith("/metrics/summary"):

@@ -2,6 +2,8 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 import psutil
 import json
+import gc
+import time
 from socketserver import ThreadingMixIn
 
 MAX_WINDOW = 6
@@ -77,6 +79,13 @@ def update_cpu_percent_loop():
             "smoothed": aging(observations)
         }
 
+def garbage_collector():
+    while True:
+        time.sleep(10)
+        
+        print("Running GC...")
+        gc.collect()
+
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
@@ -85,6 +94,9 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
 def start():
     thread = Thread(target=update_cpu_percent_loop)
     thread.start()
+
+    gc = Thread(target=garbage_collector)
+    gc.start()
 
     print("Starting the HTTP server...")
     httpd = ThreadedHTTPServer(("", 8099), Serv)

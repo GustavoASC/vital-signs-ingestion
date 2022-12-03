@@ -20,7 +20,16 @@ public class MappingResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public MappingResourceResponse hello() {
-        String destination = mappingResolver.resolveMappingForCurrentHostname();
-        return new MappingResourceResponse(destination);
+        try {
+
+           String destination = mappingResolver.resolveMappingForCurrentHostname();
+           return new MappingResourceResponse(destination);
+
+        } finally {
+
+            System.out.println(("Invoking garbage collector..."));
+            System.gc();
+    
+        }
     }
 }

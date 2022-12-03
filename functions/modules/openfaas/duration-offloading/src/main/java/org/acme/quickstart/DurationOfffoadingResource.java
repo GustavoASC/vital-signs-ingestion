@@ -43,6 +43,11 @@ public class DurationOfffoadingResource {
         } catch (CouldNotDetermineException e) {
             logger.error("Unexpected error: ", e);
             return new OutputDto(OffloadingDecision.UNKNOWN);
+        } finally {
+
+            System.out.println(("Invoking garbage collector..."));
+            System.gc();
+            
         }
     }
 }

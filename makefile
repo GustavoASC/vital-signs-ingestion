@@ -28,17 +28,17 @@ run:
 	@./mvnw -Dquarkus.http.port=8097 quarkus:dev &
 
 collect-results:
-	@python3 scripts/results/results.py &
+	@python3.8 scripts/results/results.py &
 
 collect-cpu:
-	@python3 scripts/cpu-provider/cpu-provider.py &
-	@python3 scripts/metrics/metrics.py &
+	@python3.8 scripts/cpu-provider/cpu-provider.py &
+	@python3.8 scripts/metrics/metrics.py &
 
 listen-test-executor:
 	cd scripts/test-executor && python3 test_executor.py &
 
 eval:
-	@python3 scripts/evaluation.py &
+	@python3.8 scripts/evaluation.py &
 
 logs:
 	@journalctl -t openfaas-fn:$$FN_NAME -f
@@ -46,8 +46,12 @@ logs:
 install-software-fog-node:
 	sudo yum update
 	sudo yum install git
-	sudo ./hack/install.sh
-	sudo ./hack/install.sh # runs again because only on the second time it finds the arkade dependency
+	git clone https://github.com/openfaas/faasd
+	cd faasd
+	./hack/install.sh
+	cd ..
+	sudo vim /var/lib/faasd/secrets/basic-auth-password
+	# Paste a secret that will be the same on all fog nodes
 	git clone https://github.com/GustavoASC/vital-signs-ingestion
 	cd vital-signs-ingestion
 	pip3 install psutil
@@ -57,6 +61,7 @@ install-software-fog-node:
 	newgrp docker
 	sudo systemctl enable docker.service
 	sudo systemctl start docker.service
+	sudo amazon-linux-extras install python3.8
 	crontab -e
 	# Paste this: @reboot /home/ec2-user/vital-signs-ingestion/startup-fog-node.sh
 

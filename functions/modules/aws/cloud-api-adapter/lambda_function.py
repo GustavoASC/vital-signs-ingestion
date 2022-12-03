@@ -20,23 +20,27 @@ def current_timestamp():
     return int(datetime.datetime.now().timestamp() * 1000)
 
 def notify_vital_sign_processed(id, initial_service_timestamp):
-    try:
-        end_timestamp = current_timestamp()
-        data = {
-            "initial_service_timestamp": initial_service_timestamp,
-            "end_timestamp": end_timestamp,
-            "origin": "cloud"
-        }
-        print(data)
-        req = request.Request(
-            url="{}/{}".format(RESULTS_URL, id),
-            data=json.dumps(data).encode("utf-8"),
-            method="PATCH",
-        )
-        request.urlopen(req)
-    except error.HTTPError as e:
-        body = e.read().decode()
-        print(body)
+    keep_trying = True
+    while keep_trying:
+        try:
+            end_timestamp = current_timestamp()
+            data = {
+                "initial_service_timestamp": initial_service_timestamp,
+                "end_timestamp": end_timestamp,
+                "origin": "cloud"
+            }
+            print(data)
+            req = request.Request(
+                url="{}/{}".format(RESULTS_URL, id),
+                data=json.dumps(data).encode("utf-8"),
+                method="PATCH",
+            )
+            with request.urlopen(req):
+                keep_trying = False
+        except error.HTTPError as e:
+            body = e.read().decode()
+            print(body)
+            print("Will retry...")
 
 
 def lambda_handler(event, context):

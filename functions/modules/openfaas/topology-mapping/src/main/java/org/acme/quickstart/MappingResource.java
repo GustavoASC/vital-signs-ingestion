@@ -27,7 +27,7 @@ public class MappingResource {
 
         } finally {
 
-            System.out.println(("Invoking garbage collector..."));
+            System.out.println("Invoking garbage collector...");
             System.gc();
     
         }

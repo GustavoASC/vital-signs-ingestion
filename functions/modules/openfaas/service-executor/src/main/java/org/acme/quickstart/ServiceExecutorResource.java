@@ -37,7 +37,7 @@ public class ServiceExecutorResource {
             vitalSignService.ingestVitalSign(id, List.of(service), inputDto.getVitalSign(), inputDto.getUserPriority());
         }
 
-        System.out.println(("Invoking garbage collector..."));
+        System.out.println("Invoking garbage collector...");
         System.gc();
 
         return Response.ok().build();

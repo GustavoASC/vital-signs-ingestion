@@ -45,7 +45,7 @@ public class DurationOfffoadingResource {
             return new OutputDto(OffloadingDecision.UNKNOWN);
         } finally {
 
-            System.out.println(("Invoking garbage collector..."));
+            System.out.println("Invoking garbage collector...");
             System.gc();
             
         }

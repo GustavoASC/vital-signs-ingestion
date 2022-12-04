@@ -1,7 +1,7 @@
 import time, utils
 import datetime as dt
 
-TOTAL_EXECUTIONS = 80000
+TOTAL_EXECUTIONS = 40000
 
 
 def _await_executions_finish(results_machine_ip):

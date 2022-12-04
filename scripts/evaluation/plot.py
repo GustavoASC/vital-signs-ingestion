@@ -22,7 +22,7 @@ def _finalize_chart(name):
         plt.show()
 
 
-def plot_all_charts(result_dir, cpu_usage, all_data):
+def plot_all_charts(result_dir, cpu_usage, mem_usage, all_data):
 
     global global_result_dir
     global_result_dir = result_dir
@@ -33,6 +33,9 @@ def plot_all_charts(result_dir, cpu_usage, all_data):
 
     for machine_name, current_cpu_node_data in cpu_usage.items():
         _plot_chart_cpu_usage(machine_name, current_cpu_node_data)
+
+    for machine_name, current_mem_node_data in mem_usage.items():
+        _plot_chart_mem_usage(machine_name, current_mem_node_data)
 
     for priority, thread_data in sorted(all_data.items()):
         for fog_name in thread_data["fog_nodes_data"]:
@@ -64,6 +67,26 @@ def _plot_chart_cpu_usage(machine_name, cpu_usage):
     plt.xlabel("Timestamp")
     plt.ylabel("CPU Usage")
     _finalize_chart("cpu_usage_{}.png".format(machine_name))
+
+def _plot_chart_mem_usage(machine_name, mem_usage):
+    _initialize_chart()
+
+    all_datetimes = []
+    all_mems = []
+    for index in range(len(mem_usage)):
+        current_json = mem_usage[index]
+        all_mems.append(current_json["mem"])
+        all_datetimes.append(
+            dt.datetime.fromtimestamp(current_json["collection_timestamp"] / 1e3)
+        )
+
+    all_datetimes, all_mems = zip(*sorted(zip(all_datetimes, all_mems)))
+
+    plt.plot(all_datetimes, all_mems, label = "Memory percent")
+    plt.title("Memory Usage during tests for machine {}".format(machine_name))
+    plt.xlabel("Timestamp")
+    plt.ylabel("Memory Usage")
+    _finalize_chart("mem_usage_{}.png".format(machine_name))
 
 
 def _plot_chart_response_time(all_data):
@@ -239,11 +262,15 @@ def _plot_offloading_reasons(all_data, fog_name):
     _initialize_chart()
     x = []
     exceeded_critical_cpu_threshold = []
+    exceeded_critical_mem_threshold = []
     heuristic_by_ranking = []
     for key, thread_data in sorted(all_data.items()):
         x.append(key)
         exceeded_critical_cpu_threshold.append(
             thread_data["fog_nodes_data"][fog_name]["total_exceeded_critical_cpu_threshold"]
+        )
+        exceeded_critical_mem_threshold.append(
+            thread_data["fog_nodes_data"][fog_name]["total_exceeded_critical_mem_threshold"]
         )
         heuristic_by_ranking.append(
             thread_data["fog_nodes_data"][fog_name][
@@ -256,7 +283,14 @@ def _plot_offloading_reasons(all_data, fog_name):
         exceeded_critical_cpu_threshold,
         color="g",
         width=0.4,
-        label="Exceeded critical threshold",
+        label="Exceeded critical CPU threshold",
+    )
+    plt.bar(
+        x,
+        exceeded_critical_mem_threshold,
+        color="b",
+        width=0.4,
+        label="Exceeded critical memory threshold",
     )
     plt.bar(
         x,

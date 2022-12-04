@@ -36,8 +36,13 @@ def _print_fog_node_data(fog_node_data):
         "###      Tot.local exec: {}".format(fog_node_data["total_local_execution"])
     )
     logging.info(
-        "###      Tot.exceeded critical threshold: {}".format(
+        "###      Tot.exceeded critical cpu threshold: {}".format(
             fog_node_data["total_exceeded_critical_cpu_threshold"]
+        )
+    )
+    logging.info(
+        "###      Tot.exceeded critical mem threshold: {}".format(
+            fog_node_data["total_exceeded_critical_mem_threshold"]
         )
     )
     logging.info(

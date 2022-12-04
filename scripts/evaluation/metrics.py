@@ -4,6 +4,8 @@ import logging, utils
 def collect_cpu_usage(fog_node_ip):
     return utils.get(f"http://{fog_node_ip}:9001/metrics/cpu")["response"]
 
+def collect_mem_usage(fog_node_ip):
+    return utils.get(f"http://{fog_node_ip}:9001/metrics/mem")["response"]
 
 def clear_metrics(fog_node_ip):
     logging.info("Clearing metrics...")

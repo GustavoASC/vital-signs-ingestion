@@ -35,7 +35,7 @@ collect-cpu:
 	@python3.8 scripts/metrics/metrics.py &
 
 listen-test-executor:
-	cd scripts/test-executor && python3 test_executor.py &
+	cd scripts/test-executor && python3.8 test_executor.py &
 
 eval:
 	@python3.8 scripts/evaluation.py &
@@ -54,20 +54,21 @@ install-software-fog-node:
 	# Paste a secret that will be the same on all fog nodes
 	git clone https://github.com/GustavoASC/vital-signs-ingestion
 	cd vital-signs-ingestion
-	pip3 install psutil
+	sudo amazon-linux-extras install python3.8
+	pip3.8 install psutil
 	sudo yum install docker
 	sudo usermod -a -G docker ec2-user
 	id ec2-user
 	newgrp docker
 	sudo systemctl enable docker.service
 	sudo systemctl start docker.service
-	sudo amazon-linux-extras install python3.8
 	crontab -e
 	# Paste this: @reboot /home/ec2-user/vital-signs-ingestion/startup-fog-node.sh
 
 install-software-edge-node:
 	sudo yum update
 	sudo yum install git
+	sudo amazon-linux-extras install python3.8
 	git clone https://github.com/GustavoASC/vital-signs-ingestion
 	crontab -e
 	# Paste this: @reboot /home/ec2-user/vital-signs-ingestion/startup-edge-node.sh
@@ -75,6 +76,7 @@ install-software-edge-node:
 install-software-results-node:
 	sudo yum update
 	sudo yum install git
+	sudo amazon-linux-extras install python3.8
 	git clone https://github.com/GustavoASC/vital-signs-ingestion
 	crontab -e
 	# Paste this: @reboot /home/ec2-user/vital-signs-ingestion/startup-results-node.sh

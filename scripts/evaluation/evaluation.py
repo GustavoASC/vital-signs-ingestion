@@ -29,32 +29,32 @@ ASYNC_PROCESSING = True
 http = urllib3.PoolManager()
 
 
-def _get_results_dir(_threads_cpu_collection, cpu_interval, warning_threshold, critical_threshold):
+def _get_results_dir(_threads_cpu_collection, cpu_interval, warning_cpu_threshold, critical_cpu_threshold, critical_mem_threshold):
     datetime = dt.datetime.today().strftime("%Y-%m-%d-%H:%M:%S")
-    return "./results/smoothed/cpu_interval_{}/warning_{}/critical_{}/{}".format(
-        cpu_interval, warning_threshold, critical_threshold, datetime
+    return "./results/smoothed/cpu_interval_{}/warning_cpu_{}/critical_cpu_{}/critical_mem_{}/{}".format(
+        cpu_interval, warning_cpu_threshold, critical_cpu_threshold, critical_mem_threshold, datetime
     )
 
 
 def _update_thresholds_for_virtual_machine(
-    threads_cpu_collection, cpu_interval, warning_threshold, critical_threshold, node_name, node_public_ip
+    threads_cpu_collection, cpu_interval, warning_cpu_threshold, critical_cpu_threshold, critical_mem_threshold, node_name, node_public_ip
 ):
     _update_cpu_interval(threads_cpu_collection, cpu_interval, node_public_ip)
     _authenticate_openfaas(node_public_ip)
     _deploy_service_executor_openfaas(
-        warning_threshold, critical_threshold, node_public_ip
+        warning_cpu_threshold, critical_cpu_threshold, critical_mem_threshold, node_public_ip
     )
     _deploy_topology_mapping_with_node_name(node_name, node_public_ip)
     _deploy_additional_functions(node_name, node_public_ip)
 
 
 def _deploy_service_executor_openfaas(
-    warning_threshold, critical_threshold, node_public_ip
+    warning_cpu_threshold, critical_cpu_threshold, critical_mem_threshold, node_public_ip
 ):
     logging.info("\n\n")
     logging.info(
-        "Re-deploying service-executor module on remote fog node with {} warning threshold and {} critical threshold...".format(
-            warning_threshold, critical_threshold
+        "Re-deploying service-executor module on remote fog node with {} warning cpu threshold, {} critical cpu threshold, and {} critical mem threshold...".format(
+            warning_cpu_threshold, critical_cpu_threshold, critical_mem_threshold
         )
     )
     subprocess.call(
@@ -66,9 +66,11 @@ def _deploy_service_executor_openfaas(
             "-f",
             "service-executor.yml",
             "-e",
-            "THRESHOLD_CRITICAL_CPU_USAGE={}".format(critical_threshold),
+            "THRESHOLD_CRITICAL_MEM_USAGE={}".format(critical_mem_threshold),
             "-e",
-            "THRESHOLD_WARNING_CPU_USAGE={}".format(warning_threshold),
+            "THRESHOLD_CRITICAL_CPU_USAGE={}".format(critical_cpu_threshold),
+            "-e",
+            "THRESHOLD_WARNING_CPU_USAGE={}".format(warning_cpu_threshold),
             "-e",
             "RESULTS_URL=http://{}:9095".format(results_fog_node["public_ip"]),
         ],
@@ -228,6 +230,9 @@ def _update_with_summary(all_data):
                 "total_exceeded_critical_cpu_threshold"
             ] = metrics_summary["total_exceeded_critical_cpu_threshold"]
             current_fog_node_data[
+                "total_exceeded_critical_mem_threshold"
+            ] = metrics_summary["total_exceeded_critical_mem_threshold"]
+            current_fog_node_data[
                 "total_triggered_heuristic_by_rankings"
             ] = metrics_summary["total_triggered_heuristic_by_rankings"]
             current_fog_node_data[
@@ -307,17 +312,22 @@ def _run_test_scenario(test_file):
     _save_result(all_data, results_dir, "analyzed-dataset.json")
 
     cpu_usage = {}
+    mem_usage = {}
     for fog_node in all_fog_nodes:
         node_name = fog_node["name"]
         node_public_ip = fog_node["public_ip"]
+        
         cpu_usage[node_name] = metrics.collect_cpu_usage(node_public_ip)
         _save_result(cpu_usage[node_name], results_dir, "cpu-usage_{}.json".format(node_name))
+        
+        mem_usage[node_name] = metrics.collect_mem_usage(node_public_ip)
+        _save_result(mem_usage[node_name], results_dir, "mem-usage_{}.json".format(node_name))
 
     if ASSERTION_ENABLED:
         assertions.make_assertions(cpu_usage, all_data)
 
     summary.print_summary(all_data)
-    plot.plot_all_charts(results_dir, cpu_usage, all_data)
+    plot.plot_all_charts(results_dir, cpu_usage, mem_usage, all_data)
 
 
 def _save_result(data, result_dir, filename):
@@ -394,69 +404,74 @@ if __name__ == "__main__":
 
     threads_cpu_collection = [1]
     cpu_interval = [1]
-    warning_thresholds = [40]
-    critical_thresholds = [85]
+    warning_cpu_thresholds = [60]
+    critical_cpu_thresholds = [98]
+    critical_mem_thresholds = [100]
     
     for i in range(EXPERIMENT_ITERATIONS):
         for current_thread_cpu_collection in threads_cpu_collection:
             for current_cpu_interval in cpu_interval:
-                for current_warning_threshold in warning_thresholds:
-                    for current_critical_threshold in critical_thresholds:
+                for current_warning_cpu_threshold in warning_cpu_thresholds:
+                    for current_critical_cpu_threshold in critical_cpu_thresholds:
+                        for current_critical_mem_threshold in critical_mem_thresholds:
 
-                        settings = {
-                            "threads_cpu_collection": current_thread_cpu_collection,
-                            "cpu_interval": current_cpu_interval,
-                            "warning_threshold": current_warning_threshold,
-                            "critical_threshold": current_critical_threshold,
-                        }
+                            settings = {
+                                "threads_cpu_collection": current_thread_cpu_collection,
+                                "cpu_interval": current_cpu_interval,
+                                "warning_cpu_threshold": current_warning_cpu_threshold,
+                                "critical_cpu_threshold": current_critical_cpu_threshold,
+                                "critical_mem_threshold": current_critical_mem_threshold,
+                            }
 
-                        results_dir = _get_results_dir(
-                            settings["threads_cpu_collection"],
-                            settings["cpu_interval"],
-                            settings["warning_threshold"],
-                            settings["critical_threshold"],
-                        )
-                        os.makedirs(results_dir)
-
-                        logging.basicConfig(
-                            filename="{}/log.txt".format(results_dir),
-                            force=True,
-                            level=logging.INFO,
-                            format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
-                            datefmt="%Y-%m-%d %H:%M:%S",
-                        )
-
-                        all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
-                        
-                        edge_node_a = aws.locate_vm_data_with_name("edge_node_a")[0]
-                        edge_node_b = aws.locate_vm_data_with_name("edge_node_b")[0]
-                        edge_node_c = aws.locate_vm_data_with_name("edge_node_c")[0]
-                        edge_node_d = aws.locate_vm_data_with_name("edge_node_d")[0]
-
-                        fog_node_a = aws.locate_vm_data_with_name("fog_node_a")[0]
-                        fog_node_b = aws.locate_vm_data_with_name("fog_node_b")[0]
-
-                        results_fog_node = aws.locate_vm_data_with_name("results_fog_node")[0]
-
-                        cloud_api_adapter_url = "https://4il3sb7a77.execute-api.eu-west-2.amazonaws.com"
-
-                        properties.update_properties(
-                            fog_nodes=all_fog_nodes,
-                            cloud_api_adapter_url=cloud_api_adapter_url,
-                        )
-
-                        for fog_node in all_fog_nodes:
-                            _update_thresholds_for_virtual_machine(
+                            results_dir = _get_results_dir(
                                 settings["threads_cpu_collection"],
                                 settings["cpu_interval"],
-                                settings["warning_threshold"],
-                                settings["critical_threshold"],
-                                fog_node["name"],
-                                fog_node["public_ip"],
+                                settings["warning_cpu_threshold"],
+                                settings["critical_cpu_threshold"],
+                                settings["critical_mem_threshold"],
+                            )
+                            os.makedirs(results_dir)
+
+                            logging.basicConfig(
+                                filename="{}/log.txt".format(results_dir),
+                                force=True,
+                                level=logging.INFO,
+                                format="%(asctime)s.%(msecs)03d %(levelname)s %(message)s",
+                                datefmt="%Y-%m-%d %H:%M:%S",
                             )
 
-                        for fog_node in all_fog_nodes:
-                            node_public_ip = fog_node["public_ip"]
-                            warm.warmup_functions(node_public_ip)
+                            all_fog_nodes = aws.locate_vm_data_with_name("fog_node_*")
+                        
+                            edge_node_a = aws.locate_vm_data_with_name("edge_node_a")[0]
+                            edge_node_b = aws.locate_vm_data_with_name("edge_node_b")[0]
+                            edge_node_c = aws.locate_vm_data_with_name("edge_node_c")[0]
+                            edge_node_d = aws.locate_vm_data_with_name("edge_node_d")[0]
 
-                        _run_test_scenario(test_file="scenario-1")
+                            fog_node_a = aws.locate_vm_data_with_name("fog_node_a")[0]
+                            fog_node_b = aws.locate_vm_data_with_name("fog_node_b")[0]
+
+                            results_fog_node = aws.locate_vm_data_with_name("results_fog_node")[0]
+
+                            cloud_api_adapter_url = "https://4il3sb7a77.execute-api.eu-west-2.amazonaws.com"
+
+                            properties.update_properties(
+                                 fog_nodes=all_fog_nodes,
+                                 cloud_api_adapter_url=cloud_api_adapter_url,
+                            )
+
+                            for fog_node in all_fog_nodes:
+                                 _update_thresholds_for_virtual_machine(
+                                     settings["threads_cpu_collection"],
+                                     settings["cpu_interval"],
+                                     settings["warning_cpu_threshold"],
+                                     settings["critical_cpu_threshold"],
+                                     settings["critical_mem_threshold"],
+                                     fog_node["name"],
+                                     fog_node["public_ip"],
+                                )
+
+                            for fog_node in all_fog_nodes:
+                                node_public_ip = fog_node["public_ip"]
+                                warm.warmup_functions(node_public_ip)
+
+                            _run_test_scenario(test_file="scenario-1")

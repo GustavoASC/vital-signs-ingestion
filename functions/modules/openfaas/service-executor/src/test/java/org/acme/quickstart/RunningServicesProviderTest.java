@@ -1,14 +1,19 @@
 package org.acme.quickstart;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+
+import javax.ws.rs.WebApplicationException;
 
 import org.acme.quickstart.results.Results;
 import org.acme.quickstart.results.ResultsClient;
@@ -18,6 +23,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -158,6 +164,30 @@ public class RunningServicesProviderTest {
 
         assertThat(resultsCaptor.getValue())
                 .isEqualTo(results);
+    }
+
+    @Test
+    public void shouldRetrySendingDurationWhenEndpointFails() throws Exception {
+
+        when(clock.instant())
+                .thenReturn(
+                        Instant.ofEpochMilli(1663527788128l),
+                        Instant.ofEpochMilli(1663527789759l));         
+
+        doThrow(new WebApplicationException())
+                .doNothing()
+                .when(resultsClient).sendResults(any(), any());
+
+        var id = UUID.fromString("84cf7632-e76d-4c3c-8fee-cc16e6e1c41e");
+        runningServicesProvider.executionStarted(id, "body-temperature-monitor", 7);
+        runningServicesProvider.executionFinished(id);
+        
+        Results results = new Results();
+        results.initialServiceTimestamp = 1663527788128l;
+        results.endTimestamp = 1663527789759l;
+
+        verify(resultsClient, Mockito.times(2))
+                .sendResults(id.toString(), results);
     }
 
     @Test

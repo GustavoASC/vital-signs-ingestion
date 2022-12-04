@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.WebApplicationException;
 
 import org.acme.quickstart.results.Results;
 import org.acme.quickstart.results.ResultsClient;
@@ -24,6 +25,7 @@ import io.quarkus.arc.Lock;
 public class RunningServicesProviderImpl implements RunningServicesProvider {
 
     private static final int MAX_HISTORICAL_DURATIONS = 6;
+    private static final int MAX_RETRIES = 5;
     
     private final Map<UUID, ExecutionWithDuration> services = new LinkedHashMap<>();
     private final Map<String, List<Duration>> durations = new LinkedHashMap<>();
@@ -45,13 +47,13 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
     public void executionFinished(UUID id) {
 
         Optional.ofNullable(services.get(id))
-                .ifPresent(service -> {
+                .ifPresent(sendResults -> {
 
                     var now = clock.instant();
-                    var durationsForService = getDurationsWithoutCloning(service.execution().serviceName());
+                    var durationsForService = getDurationsWithoutCloning(sendResults.execution().serviceName());
                     
                     durationsForService
-                            .add(Duration.between(service.executionStart(), now));
+                            .add(Duration.between(sendResults.executionStart(), now));
 
                     // Ensures that only the most recent values will be available
                     // This is to avoid huge memory usage and also because prediction
@@ -60,15 +62,37 @@ public class RunningServicesProviderImpl implements RunningServicesProvider {
                         durationsForService.remove(0);
                     }
 
-                    Results results = new Results();
-                    results.initialServiceTimestamp = service.executionStart.toEpochMilli();
-                    results.endTimestamp = now.toEpochMilli();
-                    resultsClient.sendResults(id.toString(), results);
+                    sendResults(id, sendResults, now);
 
                 });
 
         services.remove(id);
 
+    }
+
+    private void sendResults(UUID id, ExecutionWithDuration service, Instant now) {
+        
+        boolean keepTrying = true;
+        int retries = 0;
+
+        while (keepTrying) {
+            try {
+                Results results = new Results();
+                results.initialServiceTimestamp = service.executionStart.toEpochMilli();
+                results.endTimestamp = now.toEpochMilli();
+                resultsClient.sendResults(id.toString(), results);
+                keepTrying = false;
+            } catch (WebApplicationException e) {
+                e.printStackTrace();
+                if (retries++ > MAX_RETRIES) {
+                    System.out.println("Exceeded maximum limit of " + MAX_RETRIES + " retries...");
+                    throw e;
+                } else {
+                    System.out.println("Retrying...");
+                }
+                
+            }
+        }
     }
 
     @Override

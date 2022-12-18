@@ -5,6 +5,7 @@ import javax.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class RankingCalculatorImpl implements RankingCalculator {
 
+    private static final int USER_PRIORITY_WEIGHT = 2;
     private final ServicePriorityLocator servicePriorityLocator;
 
     public RankingCalculatorImpl(ServicePriorityLocator servicePriorityLocator) {
@@ -12,7 +13,7 @@ public class RankingCalculatorImpl implements RankingCalculator {
     }
 
     public int calculate(int userPriority, String serviceName) {
-        return userPriority + servicePriorityLocator.locate(serviceName);
+        return (userPriority * USER_PRIORITY_WEIGHT) + servicePriorityLocator.locate(serviceName);
     }
 
 }

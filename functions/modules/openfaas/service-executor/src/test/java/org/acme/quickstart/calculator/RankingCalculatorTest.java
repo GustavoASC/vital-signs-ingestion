@@ -22,12 +22,24 @@ public class RankingCalculatorTest {
     private RankingCalculatorImpl calculator;
 
     @Test
-    public void shouldCalculateRankingForUserAndService() {
+    public void shouldCalculateRankingForUserWithLowPriorityAndService() {
         when(servicePriorityLocator.locate("foo"))
                 .thenReturn(6);
 
         assertThat(calculator.calculate(1, "foo"))
-                .isEqualTo(7);
+                .isEqualTo(8);
+
+        verify(servicePriorityLocator, times(1))
+                .locate(any());
+    }
+
+    @Test
+    public void shouldCalculateRankingForUserWithHighPriorityAndService() {
+        when(servicePriorityLocator.locate("foo"))
+                .thenReturn(6);
+
+        assertThat(calculator.calculate(5, "foo"))
+                .isEqualTo(16);
 
         verify(servicePriorityLocator, times(1))
                 .locate(any());

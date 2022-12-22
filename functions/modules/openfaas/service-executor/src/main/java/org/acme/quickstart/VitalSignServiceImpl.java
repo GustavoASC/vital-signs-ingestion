@@ -128,7 +128,7 @@ public class VitalSignServiceImpl implements VitalSignService {
             } catch (CouldNotDetermineException e) {
                 try {
                     metrics.triggeredHeuristicByDuration = true;
-                    metrics.resultForHeuristicByDuration = offloadingHeuristicByDuration.shouldOffloadVitalSigns(ranking, fn);
+                    metrics.resultForHeuristicByDuration = offloadingHeuristicByDuration.shouldOffloadVitalSigns(fn);
                     return metrics.resultForHeuristicByDuration;
                 } catch (CouldNotDetermineException e1) {
                     // Run locally because it is a match and we could not detect which request is

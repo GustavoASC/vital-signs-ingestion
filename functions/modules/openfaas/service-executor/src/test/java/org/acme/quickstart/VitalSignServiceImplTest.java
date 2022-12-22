@@ -286,9 +286,9 @@ public class VitalSignServiceImplTest {
                                 .thenThrow(new CouldNotDetermineException());
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(17))
                                 .thenThrow(new CouldNotDetermineException());
-                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(13, "body-temperature-monitor"))
+                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns("body-temperature-monitor"))
                                 .thenThrow(new CouldNotDetermineException());
-                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(17, "bar-function"))
+                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns("bar-function"))
                                 .thenThrow(new CouldNotDetermineException());
 
                 ingestVitalSign();
@@ -320,9 +320,9 @@ public class VitalSignServiceImplTest {
                                 .thenThrow(new CouldNotDetermineException());
                 when(offloadingHeuristicByRanking.shouldOffloadVitalSigns(17))
                                 .thenThrow(new CouldNotDetermineException());
-                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(13, "body-temperature-monitor"))
+                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns("body-temperature-monitor"))
                                 .thenReturn(false);
-                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns(17, "bar-function"))
+                when(offloadingHeuristicByDuration.shouldOffloadVitalSigns("bar-function"))
                                 .thenReturn(false);
 
                 ingestVitalSign();

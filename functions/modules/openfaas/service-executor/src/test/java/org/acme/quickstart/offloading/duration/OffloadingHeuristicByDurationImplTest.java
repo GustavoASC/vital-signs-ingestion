@@ -56,7 +56,7 @@ public class OffloadingHeuristicByDurationImplTest {
         when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForSingleService))
             .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
         
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(FOO_SERVICE))
             .isFalse();    
     }
 
@@ -76,7 +76,7 @@ public class OffloadingHeuristicByDurationImplTest {
     public void shouldInvokeDurationHeuristicForMultipleServicesWithDifferentRankings() throws Throwable {
 
         OffloadDurationInputDto inputForMultipleServices = new OffloadDurationInputDto(
-            List.of(),
+            List.of(List.of(DURATION_BAR_SERVICE)),
             List.of(DURATION_FOO_SERVICE)
         );
 
@@ -90,10 +90,13 @@ public class OffloadingHeuristicByDurationImplTest {
         when(servicesProvider.getDurationsForService(FOO_SERVICE))
             .thenReturn(List.of(Duration.ofMillis(DURATION_FOO_SERVICE)));
 
+        when(servicesProvider.getDurationsForService(BAR_SERVICE))
+            .thenReturn(List.of(Duration.ofMillis(DURATION_BAR_SERVICE)));
+
         when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForMultipleServices))
             .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
         
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(FOO_SERVICE))
             .isFalse();    
     }
 
@@ -101,9 +104,7 @@ public class OffloadingHeuristicByDurationImplTest {
     public void shouldInvokeDurationHeuristicForMultipleServicesWithSameRankings() throws Throwable {
 
         OffloadDurationInputDto inputForMultipleServices = new OffloadDurationInputDto(
-            List.of(
-                List.of(DURATION_BAR_SERVICE)
-            ),
+            List.of(List.of(DURATION_BAR_SERVICE)),
             List.of(DURATION_FOO_SERVICE)
         );
 
@@ -117,13 +118,13 @@ public class OffloadingHeuristicByDurationImplTest {
         when(servicesProvider.getDurationsForService(FOO_SERVICE))
             .thenReturn(List.of(Duration.ofMillis(DURATION_FOO_SERVICE)));
 
-            when(servicesProvider.getDurationsForService(BAR_SERVICE))
+        when(servicesProvider.getDurationsForService(BAR_SERVICE))
             .thenReturn(List.of(Duration.ofMillis(DURATION_BAR_SERVICE)));
 
         when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForMultipleServices))
             .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
         
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(FOO_SERVICE))
             .isFalse();    
     }
 
@@ -144,7 +145,7 @@ public class OffloadingHeuristicByDurationImplTest {
         when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForMultipleServices))
             .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
         
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(FOO_SERVICE))
             .isFalse();
     }
 
@@ -165,7 +166,7 @@ public class OffloadingHeuristicByDurationImplTest {
         when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForMultipleServices))
             .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
         
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(FOO_SERVICE))
             .isFalse();
     }
 
@@ -194,7 +195,7 @@ public class OffloadingHeuristicByDurationImplTest {
         when(serverlessFunctionClient.runOffloadingDuration("duration-offloading", inputForMultipleServices))
             .thenReturn(new OffloadDurationOutputDto("RUN_LOCALLY"));
         
-        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(RANKING_A, FOO_SERVICE))
+        assertThat(offloadingHeuristicByDuration.shouldOffloadVitalSigns(FOO_SERVICE))
             .isFalse();    
     
     }

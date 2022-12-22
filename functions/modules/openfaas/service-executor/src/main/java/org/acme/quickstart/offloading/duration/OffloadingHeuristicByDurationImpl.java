@@ -29,11 +29,10 @@ public class OffloadingHeuristicByDurationImpl implements OffloadingHeuristicByD
     }
 
     @Override
-    public boolean shouldOffloadVitalSigns(int filterRanking, String service) throws CouldNotDetermineException {
+    public boolean shouldOffloadVitalSigns(String service) throws CouldNotDetermineException {
 
         List<List<Long>> previousDurations = servicesProvider.getRunningServices()
                 .stream()
-                .filter(execution -> execution.ranking() == filterRanking)
                 .filter(execution -> !execution.serviceName().equals(service))
                 .map(ServiceExecution::serviceName)
                 .distinct()

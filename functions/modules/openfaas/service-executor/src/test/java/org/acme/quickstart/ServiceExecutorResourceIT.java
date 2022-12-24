@@ -354,7 +354,7 @@ public class ServiceExecutorResourceIT {
         );
         stubFor(
             post("/function/ranking-offloading")
-                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-10.json")))
+                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-7.json")))
                 .willReturn(okJson(jsonFromResource("output-run-locally.json")))
         );
     }
@@ -373,7 +373,7 @@ public class ServiceExecutorResourceIT {
         );
         stubFor(
             post("/function/ranking-offloading")
-                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-10.json")))
+                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-7.json")))
                 .willReturn(okJson(jsonFromResource("output-unknown.json")))
         );
     }
@@ -382,12 +382,12 @@ public class ServiceExecutorResourceIT {
         configureFor(wmServerless.getClient());
         stubFor(
             post("/function/ranking-offloading")
-                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-12.json")))
+                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-7.json")))
                 .willReturn(okJson(jsonFromResource("output-offload.json")))
         );
         stubFor(
             post("/function/ranking-offloading")
-                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-10.json")))
+                .withRequestBody(equalToJson(jsonFromResource("input-ranking-heuristic-without-any-ranking-and-calculated-12.json")))
                 .willReturn(okJson(jsonFromResource("output-offload.json")))
         );
     }

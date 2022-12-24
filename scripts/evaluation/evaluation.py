@@ -349,7 +349,8 @@ def _invoke_test_thread(test_file, edge_node, service_executor_url, results, ind
                 "threads_per_priority": 2,
                 "vital_signs_per_thread": 1000,
                 "health_services": [
-                    "heart-failure-predictor"
+                    "heart-failure-predictor",
+                    "body-temperature-monitor"
                 ]
             }
 

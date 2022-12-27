@@ -212,6 +212,10 @@ def _update_with_summary(all_data):
         thread_data["percentile_70"] = np.percentile(thread_data["elapsed"], 70)
         thread_data["percentile_60"] = np.percentile(thread_data["elapsed"], 60)
         thread_data["percentile_50"] = np.percentile(thread_data["elapsed"], 50)
+        thread_data["percentile_40"] = np.percentile(thread_data["elapsed"], 40)
+        thread_data["percentile_30"] = np.percentile(thread_data["elapsed"], 30)
+        thread_data["percentile_20"] = np.percentile(thread_data["elapsed"], 20)
+        thread_data["percentile_10"] = np.percentile(thread_data["elapsed"], 10)
         thread_data["average"] = np.average(thread_data["elapsed"])
 
         thread_data["fog_nodes_data"] = {}

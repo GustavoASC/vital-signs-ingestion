@@ -30,3 +30,8 @@ target/
 
 # Secrets file
 .env
+
+
+results/**
+results-cpu-without-decimals/**
+result-requests.csv
